@@ -10,6 +10,7 @@
 // Si falta la configuración de una parte, esa parte se omite sin romper la otra.
 
 import crypto from "node:crypto";
+import type { APIContext } from "astro";
 
 const TZ = "America/New_York";
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || "ledtechmiami@gmail.com";
@@ -25,9 +26,15 @@ const MORNING = 9 * 60;       // fuera de horario → 9:00 AM
 // tipo = "Línea: Servicio" (p. ej. "Marino: Pisos EVA foam para botes")
 const LIMITS = { nombre: 100, telefono: 40, email: 200, tipo: 120, zona: 100, detalles: 3000 };
 
+// Solicitud ya recortada a los límites
+type Lead = Record<keyof typeof LIMITS, string> & { lang: "es" | "en" };
+// Fecha y hora de pared en Miami (minutos desde medianoche)
+type Slot = { y: number; m: number; d: number; min: number };
+type ServiceAccount = { client_email: string; private_key: string };
+
 /* ---------- Horario ---------- */
 
-function wallClock(date) {
+function wallClock(date: Date): Slot {
   const p = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
       timeZone: TZ, hourCycle: "h23",
@@ -39,7 +46,7 @@ function wallClock(date) {
 
 // Devuelve la hora local de Miami de la llamada: 1 h después, redondeada al cuarto
 // de hora; de madrugada pasa a las 9 AM de ese día, después del cierre a las 9 AM del siguiente.
-export function nextCallSlot(now = new Date()) {
+export function nextCallSlot(now = new Date()): Slot {
   const t = wallClock(new Date(now.getTime() + LEAD_MIN * 60000));
   let { y, m, d } = t;
   let min = Math.ceil(t.min / 15) * 15;
@@ -53,12 +60,12 @@ export function nextCallSlot(now = new Date()) {
   return { y, m, d, min };
 }
 
-const pad = (n) => String(n).padStart(2, "0");
-const localIso = ({ y, m, d }, min) =>
+const pad = (n: number) => String(n).padStart(2, "0");
+const localIso = ({ y, m, d }: Slot, min: number) =>
   `${y}-${pad(m)}-${pad(d)}T${pad(Math.floor(min / 60))}:${pad(min % 60)}:00`;
 
 // "mié, 10 sep, 3:15 p. m." — se formatea en UTC porque los números ya son hora de Miami
-export function slotLabel(slot) {
+export function slotLabel(slot: Slot) {
   const asUtc = new Date(Date.UTC(slot.y, slot.m - 1, slot.d, Math.floor(slot.min / 60), slot.min % 60));
   return new Intl.DateTimeFormat("es-US", {
     timeZone: "UTC", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit",
@@ -70,9 +77,9 @@ const nowLabel = () =>
 
 /* ---------- Google Calendar (cuenta de servicio, sin librerías) ---------- */
 
-async function googleToken(sa) {
+async function googleToken(sa: ServiceAccount) {
   const now = Math.floor(Date.now() / 1000);
-  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
   const unsigned = `${b64({ alg: "RS256", typ: "JWT" })}.${b64({
     iss: sa.client_email,
     scope: "https://www.googleapis.com/auth/calendar.events",
@@ -91,13 +98,14 @@ async function googleToken(sa) {
     }),
     signal: AbortSignal.timeout(8000),
   });
-  const json = await res.json().catch(() => ({}));
+  const json: { access_token?: string; error?: string } = await res.json().catch(() => ({}));
   if (!res.ok || !json.access_token) throw new Error(`token ${res.status} ${json.error || ""}`);
   return json.access_token;
 }
 
-async function createEvent(q, slot) {
-  const sa = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+async function createEvent(q: Lead, slot: Slot) {
+  // Solo se llama cuando la variable existe (ver POST)
+  const sa: ServiceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON!);
   const token = await googleToken(sa);
 
   const description = [
@@ -134,7 +142,7 @@ async function createEvent(q, slot) {
 
 /* ---------- WhatsApp (CallMeBot) ---------- */
 
-async function sendWhatsApp(q, slot) {
+async function sendWhatsApp(q: Lead, slot: Slot) {
   const text = [
     "🔔 Nueva cotización, LED Tech Miami",
     `Cliente: ${q.nombre}`,
@@ -144,10 +152,11 @@ async function sendWhatsApp(q, slot) {
     "Los detalles están en el calendario y en tu correo.",
   ].join("\n");
 
+  // Solo se llama cuando CALLMEBOT_APIKEY existe (ver POST)
   const url = "https://api.callmebot.com/whatsapp.php?" + new URLSearchParams({
     phone: WA_PHONE,
     text,
-    apikey: process.env.CALLMEBOT_APIKEY,
+    apikey: process.env.CALLMEBOT_APIKEY!,
   });
   const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`callmebot ${res.status}`);
@@ -155,9 +164,9 @@ async function sendWhatsApp(q, slot) {
 
 /* ---------- Handler ---------- */
 
-function clean(body) {
-  const q = {};
-  for (const [key, max] of Object.entries(LIMITS)) {
+function clean(body: Record<string, unknown>): Lead {
+  const q = {} as Lead;
+  for (const [key, max] of Object.entries(LIMITS) as [keyof typeof LIMITS, number][]) {
     q[key] = String(body[key] ?? "").trim().slice(0, max);
   }
   q.lang = body.lang === "en" ? "en" : "es";
@@ -167,19 +176,19 @@ function clean(body) {
 // Se ejecuta en cada solicitud (no se genera al publicar)
 export const prerender = false;
 
-const json = (status, data, headers = {}) =>
+const json = (status: number, data: unknown, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", ...headers } });
 
 export const ALL = () => json(405, { ok: false }, { Allow: "POST" });
 
-export async function POST({ request }) {
+export async function POST({ request }: APIContext) {
   // Solo se aceptan envíos desde el propio sitio (sirve también con dominio propio)
   const origin = request.headers.get("origin");
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
   if (origin && new URL(origin).host !== host) return json(403, { ok: false });
 
   const raw = await request.json().catch(() => null);
-  const body = raw && typeof raw === "object" ? raw : {};
+  const body: Record<string, unknown> = raw && typeof raw === "object" ? raw : {};
   if (body.botcheck) return json(200, { ok: true }); // trampa anti-spam
 
   const q = clean(body);
@@ -188,12 +197,12 @@ export async function POST({ request }) {
   }
 
   const slot = nextCallSlot();
-  const tasks = {
+  const tasks: Record<"calendar" | "whatsapp", Promise<void> | null> = {
     calendar: process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? createEvent(q, slot) : null,
     whatsapp: process.env.CALLMEBOT_APIKEY ? sendWhatsApp(q, slot) : null,
   };
 
-  const result = {};
+  const result: Record<string, "ok" | "error" | "not_configured"> = {};
   await Promise.all(
     Object.entries(tasks).map(async ([name, task]) => {
       if (!task) return (result[name] = "not_configured");
@@ -201,7 +210,7 @@ export async function POST({ request }) {
         await task;
         result[name] = "ok";
       } catch (err) {
-        console.error(`[quote] ${name} failed:`, err.message);
+        console.error(`[quote] ${name} failed:`, (err as Error).message);
         result[name] = "error";
       }
     })

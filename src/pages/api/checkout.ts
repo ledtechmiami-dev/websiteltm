@@ -8,8 +8,15 @@
 //                          (antes: dirección de la oficina y registro de Florida en Stripe → Tax)
 // Sin STRIPE_SECRET_KEY responde 503 y el carrito ofrece enviar el pedido por WhatsApp.
 
-import { DELIVERY, canBuy, deliveryCost, productByKey, unitPrice } from "../../data/shop";
+import type { APIContext } from "astro";
+import { DELIVERY, canBuy, deliveryCost, productByKey, unitPrice, type Product } from "../../data/shop";
+import type { Lang } from "../../data/site";
 import { ROUTES } from "../../i18n/routes";
+
+// Lo que manda el carrito del navegador: sin validar todavía
+type CartBody = { lang?: unknown; items?: unknown; entrega?: unknown };
+type RawItem = { id?: unknown; v?: unknown; q?: unknown } | null;
+type Line = { product: Product; variant: number | null; qty: number; price: number };
 
 const MAX_LINES = 50;
 const MAX_QTY = 99;
@@ -18,14 +25,14 @@ const STRIPE_VERSION = "2026-08-26.dahlia";
 
 export const prerender = false;
 
-const json = (status, data, headers = {}) =>
+const json = (status: number, data: unknown, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", ...headers } });
 
 export const ALL = () => json(405, { ok: false }, { Allow: "POST" });
 
-const cents = (usd) => Math.round(usd * 100);
+const cents = (usd: number) => Math.round(usd * 100);
 
-export async function POST({ request }) {
+export async function POST({ request }: APIContext) {
   // Solo desde el propio sitio
   const origin = request.headers.get("origin");
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
@@ -34,19 +41,20 @@ export async function POST({ request }) {
   const secret = process.env.STRIPE_SECRET_KEY;
   if (!secret) return json(503, { ok: false, error: "not_configured" });
 
-  const body = await request.json().catch(() => null);
-  const lang = body?.lang === "en" ? "en" : "es";
-  const items = Array.isArray(body?.items) ? body.items : [];
+  const body: CartBody | null = await request.json().catch(() => null);
+  const lang: Lang = body?.lang === "en" ? "en" : "es";
+  const items: RawItem[] = Array.isArray(body?.items) ? body.items : [];
   if (!items.length || items.length > MAX_LINES) return json(400, { ok: false, error: "empty" });
 
   // Cada línea se valida contra el catálogo publicado
-  const lines = [];
+  const lines: Line[] = [];
   for (const raw of items) {
     const product = productByKey(String(raw?.id ?? ""));
-    const variant = Number.isInteger(raw?.v) ? raw.v : null;
-    const qty = Number.isInteger(raw?.q) ? raw.q : 0;
+    const variant = Number.isInteger(raw?.v) ? (raw!.v as number) : null;
+    const qty = Number.isInteger(raw?.q) ? (raw!.q as number) : 0;
     if (!product || !canBuy(product) || qty < 1 || qty > MAX_QTY) return json(400, { ok: false, error: "unavailable" });
-    if (product.variants.length ? !product.variants[variant] : variant !== null) return json(400, { ok: false, error: "unavailable" });
+    // Sin opción elegida (null) en un producto con opciones: no hay variante y se rechaza
+    if (product.variants.length ? !product.variants[variant as number] : variant !== null) return json(400, { ok: false, error: "unavailable" });
     const price = unitPrice(product, variant);
     if (price === null) return json(400, { ok: false, error: "unavailable" });
     lines.push({ product, variant, qty, price });
@@ -111,14 +119,14 @@ export async function POST({ request }) {
       body: p,
       signal: AbortSignal.timeout(10000),
     });
-    const data = await res.json().catch(() => ({}));
+    const data: { url?: string; error?: { message?: string } } = await res.json().catch(() => ({}));
     if (!res.ok || !data.url) {
       console.error("[checkout] stripe", res.status, data.error?.message);
       return json(502, { ok: false, error: "stripe" });
     }
     return json(200, { ok: true, url: data.url });
   } catch (err) {
-    console.error("[checkout] failed:", err.message);
+    console.error("[checkout] failed:", (err as Error).message);
     return json(502, { ok: false, error: "stripe" });
   }
 }
