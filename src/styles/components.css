@@ -1,0 +1,121 @@
+/* ---------- Marcadores de marca ---------- */
+.ledbar { position: relative; display: flex; gap: 6px; overflow: hidden; }
+/* Luz que recorre la barra LED cada pocos segundos */
+.ledbar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 22%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  translate: -110% 0;
+  pointer-events: none;
+  animation: led-sweep 6s ease-in-out 1.5s infinite;
+}
+.ledbar i { flex: 1; transform: skewX(-22deg); }
+.ledbar i:first-child { margin-left: -12px; }
+.ledbar i:last-child { margin-right: -12px; }
+.ledbar i:nth-child(1) { background: var(--led-blue); }
+.ledbar i:nth-child(2) { background: var(--led-yellow); }
+.ledbar i:nth-child(3) { background: var(--led-green); }
+.ledbar i:nth-child(4) { background: var(--led-red); }
+
+/* Color de la línea de negocio: paralelogramo con el corte de 22° */
+.chip {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 20px;
+  height: 7px;
+  background: var(--c, var(--ink));
+  transform: skewX(-22deg);
+}
+.chip--lg { width: 28px; height: 9px; }
+
+.pending {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #FFF4C7;
+  color: #6B5400;
+  font-size: 0.86em;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* ---------- Botones: corte de 22° a la derecha ---------- */
+.btn {
+  --h: 52px;
+  --bg-btn: var(--ink);
+  --bg-btn-hover: #2A2E34;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--h);
+  padding: 0 calc(24px + var(--h) * var(--cut)) 0 24px;
+  border: 0;
+  background: none;
+  color: #fff;
+  font: 600 16px/1 var(--font-body);
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--r-sm) 0 0 var(--r-sm);
+  /* Destello que cruza el botón al pasar el cursor */
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.42) 50%, transparent 70%) -150% 0 / 60% 100% no-repeat var(--bg-btn);
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--h) * var(--cut)) 100%, 0 100%);
+  transition: background-color 0.2s ease, background-position 0.7s ease;
+}
+.btn::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -7px;
+  width: calc(100% - var(--h) * var(--cut));
+  height: 3px;
+  background: var(--ledbar);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease;
+}
+.btn:hover::before { background-color: var(--bg-btn-hover); background-position: 250% 0; }
+.btn:hover::after, .btn:focus-visible::after { transform: scaleX(1); }
+.btn:active { translate: 0 1px; }
+.btn--yellow { --bg-btn: var(--led-yellow); --bg-btn-hover: #FFD94D; color: var(--ink); }
+.btn--small { --h: 44px; padding: 0 calc(16px + var(--h) * var(--cut)) 0 16px; font-size: 14px; }
+.btn--full { width: 100%; }
+.btn[disabled] { opacity: 0.6; cursor: wait; }
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.more .icon { transition: translate 0.2s ease; }
+.more:hover { text-decoration: underline; text-underline-offset: 5px; }
+.more:hover .icon { translate: 3px 0; }
+
+.wa-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 600;
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+.wa-link .icon { width: 20px; height: 20px; color: var(--whatsapp-dark); }
+.wa-link:hover { text-decoration: underline; text-underline-offset: 5px; }
+

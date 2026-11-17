@@ -1,0 +1,40 @@
+:root {
+  --led-blue: #0094DA;
+  --led-yellow: #FFCA09;
+  --led-green: #99C941;
+  --led-red: #ED1B24;
+
+  --blue-text: #0070A8;
+  --red-text: #C8141C;
+  --green-text: #4E7A12;
+
+  --ink: #0B0C0E;
+  --ink-2: #1A1D21;
+  --ink-line: #2A2E34;
+  --slate: #59626D;
+  --muted: #9AA1AA;
+  --line: #E3E7EB;
+  --line-strong: #868E98;   /* 3:1 sobre blanco: bordes de campos */
+  --bg: #F4F5F7;
+  --paper: #FFFFFF;
+  --field: #F8F9FA;
+
+  --whatsapp: #25D366;
+  --whatsapp-dark: #128C4A;
+
+  --font-display: "Saira", "Arial Narrow", Arial, sans-serif;
+  --font-label: "Michroma", "Eurostile", Arial, sans-serif;
+  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --cut: 0.404;
+  --r-xl: 24px;
+  --r-lg: 18px;
+  --r-md: 12px;
+  --r-sm: 8px;
+  --max: 1360px;
+  --gutter: 24px;
+  --header-h: 76px;
+  --ledbar: linear-gradient(90deg,
+    var(--led-blue) 0 25%, var(--led-yellow) 25% 50%,
+    var(--led-green) 50% 75%, var(--led-red) 75% 100%);
+}

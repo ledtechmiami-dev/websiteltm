@@ -1,0 +1,59 @@
+/* ---------- Pie de página ---------- */
+.site-footer { margin-top: 72px; background: var(--ink); color: #fff; }
+.site-footer__grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1.4fr;
+  gap: 40px;
+  padding-block: 64px 44px;
+}
+.site-footer__brand { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+.site-footer__brand img { height: 88px; width: auto; }
+.site-footer__brand p { max-width: 34ch; color: #B8BEC6; }
+.site-footer__h {
+  margin-bottom: 14px;
+  color: var(--muted);
+  font: 400 11px/1.4 var(--font-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.site-footer__links { display: grid; gap: 2px; font-size: 15px; }
+.site-footer__links a { display: inline-block; padding: 5px 0; text-decoration: none; }
+.site-footer__links a:hover { color: var(--led-yellow); text-decoration: underline; text-underline-offset: 4px; }
+.site-footer__text { padding: 5px 0; color: #B8BEC6; }
+.site-footer__social { display: flex; gap: 10px; margin-top: 18px; }
+.site-footer__legal { padding-block: 20px 28px; border-top: 1px solid var(--ink-2); color: var(--muted); font-size: 13px; }
+.site-footer > .ledbar { height: 6px; }
+
+/* ---------- WhatsApp flotante ---------- */
+.wa-float {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--whatsapp-dark);
+  color: #fff;
+  box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease;
+}
+.wa-float svg { width: 28px; height: 28px; }
+.wa-float:hover { transform: scale(1.06); }
+.wa-float:focus-visible { outline-color: var(--ink); }
+
+/* ---------- Cinta de servicios ---------- */
+.marquee { margin-top: 14px; }
+.marquee__band { overflow: hidden; border-radius: var(--r-lg); background: var(--ink); color: #fff; }
+.marquee__view {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+}
+.marquee__track { display: flex; width: max-content; animation: marquee 80s linear infinite; }
+.marquee__band:hover .marquee__track { animation-play-state: paused; }
+.marquee ul { display: flex; gap: 40px; padding: 17px 40px 17px 0; }
+.marquee li { display: inline-flex; align-items: center; gap: 12px; white-space: nowrap; font: 600 17px/1 var(--font-display); }
+
