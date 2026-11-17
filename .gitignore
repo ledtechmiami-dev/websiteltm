@@ -1,8 +1,10 @@
 node_modules
 dist
 .astro
+
+# Secretos y enlace a Vercel: nunca al repo
 .vercel
 .env*
 
-.vercel
-.env*
+# Cache de la herramienta local, cambia en cada corrida
+.impeccable/hook.cache.json
