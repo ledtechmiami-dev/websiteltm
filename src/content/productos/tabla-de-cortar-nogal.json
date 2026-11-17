@@ -1,0 +1,23 @@
+{
+  "nombre": "Tabla de cortar de nogal",
+  "nameEn": "Walnut cutting board",
+  "slugEn": "walnut-cutting-board",
+  "categoria": "taller",
+  "orden": 1,
+  "precio": null,
+  "variantes": [],
+  "short": {
+    "es": "Tabla de madera de nogal hecha en nuestro taller de Miami.",
+    "en": "Walnut wood board made in our Miami shop."
+  },
+  "descripcion": {
+    "es": "Tabla de cortar de nogal lista para usar. Si la quieres con grabado o a otra medida, diséñala en la página de tablas de cortar.",
+    "en": "Ready-to-use walnut cutting board. If you want it engraved or in another size, design it on the cutting boards page."
+  },
+  "specs": { "es": [], "en": [] },
+  "imagenes": [],
+  "soloLocal": false,
+  "agotado": false,
+  "ejemplo": true,
+  "publicado": true
+}

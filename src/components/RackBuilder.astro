@@ -1,0 +1,1464 @@
+---
+// Constructor de tarjetas de exhibidor (idea tomada del estudio de diseño de
+// Vistaprint, que las hace de 3.74 × 8.27 in en 13 papeles, con esquinas rectas
+// o redondeadas, una o dos caras, lámina de acento, barniz realzado y talón
+// perforado). Lo propio de este producto es el exhibidor: en un mostrador de
+// varios niveles solo se ve la parte de arriba, y el constructor lo enseña.
+// El dueño confirmó papeles, acabados y esquinas tal como están; la
+// perforación del talón, en cambio, la hace un taller aliado y suma días.
+// No muestra precios: el precio va en la cotización.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Un surtido de los papeles del oficio. tex: cómo se dibuja en la vista previa.
+const STOCKS = [
+  { id: "brillante", es: "Brillante", en: "Glossy", base: "#FFFFFF", edge: "#E4E8EB", ink: "#14161A", sub: "#5A616B", tex: "brillo",
+    sw: "linear-gradient(118deg, #FFF 0 26%, #D8E2EA 44%, #FFF 62%, #EDF1F4)" },
+  { id: "mate", es: "Mate", en: "Matte", base: "#FFFFFF", edge: "#E7E8E6", ink: "#14161A", sub: "#5A616B", tex: "mate",
+    sw: "linear-gradient(135deg, #FFF 0 52%, #EFF0EE)" },
+  { id: "natural", es: "Sin recubrir", en: "Uncoated", base: "#FAF8F3", edge: "#E6E1D6", ink: "#1A1A18", sub: "#5E5B52", tex: "fibra",
+    sw: "linear-gradient(135deg, #FBF9F4, #EBE5D9)" },
+  { id: "reciclado", es: "Reciclado", en: "Recycled", base: "#F0ECE2", edge: "#D9D3C4", ink: "#1E1C17", sub: "#60594B", tex: "reciclado",
+    sw: "linear-gradient(135deg, #F2EEE4, #DED8C9)" },
+  { id: "lino", es: "Lino", en: "Linen", base: "#FBFAF7", edge: "#E6E3DB", ink: "#16171A", sub: "#5C5F66", tex: "lino",
+    sw: "repeating-linear-gradient(90deg, #FBFAF7 0 2px, #EFEDE7 2px 3px), repeating-linear-gradient(0deg, #FBFAF7 0 2px, #F2F0EA 2px 3px)" },
+  { id: "perlado", es: "Perlado", en: "Pearl", base: "#FDFCFA", edge: "#E8E4DF", ink: "#15161A", sub: "#5B5E66", tex: "perla",
+    sw: "linear-gradient(118deg, #FFFDF8 0 30%, #EDE6DC 48%, #FFFEFA 66%, #F3EDE4)" },
+];
+
+// La paleta LED del logo más neutros de imprenta
+const ACCENTS = [
+  { id: "azul", es: "Azul LED", en: "LED blue", hex: "#0094DA" },
+  { id: "amarillo", es: "Amarillo LED", en: "LED yellow", hex: "#FFCA09" },
+  { id: "verde", es: "Verde LED", en: "LED green", hex: "#99C941" },
+  { id: "rojo", es: "Rojo LED", en: "LED red", hex: "#ED1B24" },
+  { id: "negro", es: "Negro", en: "Black", hex: "#0B0C0E" },
+  { id: "pizarra", es: "Gris pizarra", en: "Slate grey", hex: "#59626D" },
+  { id: "marino", es: "Azul marino", en: "Navy", hex: "#16304F" },
+  { id: "vino", es: "Vino", en: "Wine", hex: "#7A1F2B" },
+  { id: "oliva", es: "Verde oliva", en: "Olive", hex: "#4F5B32" },
+  { id: "terracota", es: "Terracota", en: "Terracotta", hex: "#B4522E" },
+];
+
+// Las tiradas que ofrece Vistaprint para este producto
+const QTYS = [50, 100, 250, 500, 750];
+
+const COPY = {
+  es: {
+    title: "Diseña tu tarjeta de exhibidor",
+    lead: "Elige la medida, el papel y el diseño, escribe lo que quieres anunciar y mira cómo queda la tarjeta, incluso lo que se ve de ella metida en el exhibidor. Mándanos el diseño y te respondemos con el precio.",
+    format: "Medida",
+    shapes: { clasica: "Clásica", delgada: "Delgada", grande: "Grande" },
+    shapeHelp: "La clásica de 4 × 9 in es la que entra en casi todos los exhibidores de mostrador.",
+    corners: "Esquinas",
+    cornerOpts: { rectas: "Rectas", redondas: "Redondeadas" },
+    paper: "Papel",
+    thick: "Grosor",
+    thicks: { grueso: "Papel grueso", cartulina: "Cartulina" },
+    thickHelp: {
+      grueso: "100 lb. Firme y económico: para repartir en mano o dejar en el mostrador.",
+      cartulina: "14 pt. Rígida: se sostiene sola en el exhibidor y no se dobla.",
+    },
+    print: "Impresión",
+    sides: "Caras",
+    sideOpts: { una: "Una cara", dos: "Dos caras" },
+    finish: "Acabado",
+    finishes: { ninguno: "Sin acabado", barniz: "Barniz por zonas", oro: "Lámina dorada", plata: "Lámina plateada" },
+    finishHelp: "El barniz es brillo solo encima de las partes de color. La lámina es una capa metálica en el nombre y el logo.",
+    stub: "Talón recortable",
+    stubOpts: { no: "Sin talón", si: "Con talón" },
+    stubHelp: "El talón de abajo va perforado: el cliente lo arranca y se lleva tu teléfono o el cupón. La perforación la hace un taller aliado y suma días a la entrega.",
+    stubText: "Lo que dice el talón",
+    stubPh: "Ej. 10% de descuento con este talón",
+    defStub: "10% de descuento con este talón",
+    design: "Diseño",
+    tpls: { turismo: "Turismo", oferta: "Oferta", servicios: "Servicios", foto: "Foto grande", tipografica: "Solo texto" },
+    type: "Tipografía",
+    types: { moderna: "Moderna", clasica: "Clásica", tecnica: "Técnica", sencilla: "Sencilla" },
+    accent: "Color de acento",
+    bg: "Fondo",
+    bgs: { papel: "Papel blanco", color: "Color de acento", oscuro: "Oscuro" },
+    image: "Imagen",
+    images: { foto: "Espacio para foto", color: "Bloque de color" },
+    imageHelp: "Déjanos el espacio marcado y",
+    imageCta: "mándanos la foto por WhatsApp",
+    imageWa: "Hola, quiero imprimir tarjetas de exhibidor. Les envío la foto y el logo.",
+    photoBox: "TU FOTO",
+    words: "Qué anuncias",
+    business: "Nombre del negocio",
+    businessPh: "Ej. Tu Negocio",
+    defBusiness: "Tu Negocio",
+    headline: "Titular",
+    headlinePh: "Ej. Paseos en bote por la bahía",
+    defHeadline: "Paseos en bote por la bahía",
+    sub: "Segunda línea",
+    subPh: "Ej. Todos los días, de 9 a 7",
+    defSub: "Todos los días, de 9 a 7",
+    offer: "Lo que más destaca",
+    offerPh: "Ej. Niños gratis",
+    defOffer: "Niños gratis",
+    details: "Tres detalles",
+    d1Ph: "Ej. Salidas cada hora",
+    defD1: "Salidas cada hora",
+    d2Ph: "Ej. Guía en español",
+    defD2: "Guía en español",
+    d3Ph: "Ej. Estacionamiento gratis",
+    defD3: "Estacionamiento gratis",
+    biz: "Tus datos",
+    phone: "Teléfono",
+    phonePh: "Ej. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Sitio web o red social",
+    webPh: "Ej. tunegocio.com",
+    defWeb: "tunegocio.com",
+    address: "Dirección",
+    addressPh: "Ej. 123 NW 1st St, Miami, FL",
+    defAddress: "123 NW 1st St, Miami, FL",
+    back: "Reverso",
+    backs: { info: "Más información", cupon: "Cupón recortable", logo: "Logo en color" },
+    backHelp: "El reverso solo se imprime si eliges dos caras.",
+    coupon: "Presenta este cupón",
+    order: "Tu pedido",
+    qty: "Cantidad",
+    qtyHelp: "Lo normal para un mostrador es 250 o 500. Desde 25 en adelante.",
+    guides: "Guías de corte",
+    guidesOn: "Línea roja: sangrado, por donde pasa la cuchilla. Línea azul: zona segura, los textos no deben salir de ahí.",
+    rack: "En el exhibidor",
+    rackOn: "Lo oscuro es lo que tapa el exhibidor cuando las tarjetas van una delante de otra: el nombre y el titular tienen que quedar arriba.",
+    rackLbl: "Lo que se ve",
+    views: { ambas: "Ver: las dos caras", frente: "Ver: solo el frente", reverso: "Ver: solo el reverso" },
+    viewHelp: "Cambiar la vista",
+    approx: "Vista aproximada · el color impreso varía un poco del de la pantalla",
+    front: "Frente",
+    backLbl: "Reverso",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h. Depende del tiraje, del papel y del acabado.",
+    cta: "Cotizar estas tarjetas",
+    wa: "Enviar por WhatsApp",
+    notesPh: "Para cuándo las necesitas, si necesitas también los exhibidores, si ya tienes el diseño hecho…",
+    summary: "Diseño del constructor de tarjetas de exhibidor",
+    sFormat: "Medida",
+    sCorners: "Esquinas",
+    sPaper: "Papel",
+    sThick: "Grosor",
+    sSides: "Caras",
+    sFinish: "Acabado",
+    sStub: "Talón recortable",
+    sDesign: "Diseño",
+    sType: "Tipografía",
+    sAccent: "Color de acento",
+    sBg: "Fondo",
+    sImage: "Imagen",
+    sWords: "Textos",
+    sBiz: "Datos",
+    sBack: "Reverso",
+    sQty: "Cantidad",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesan estas tarjetas de exhibidor:",
+    preview: "Vista previa de la tarjeta de exhibidor",
+  },
+  en: {
+    title: "Design your rack card",
+    lead: "Pick the size, the paper and the layout, type what you want to announce and see how the card looks — including how much of it shows in the display rack. Send us the design and we'll reply with the price.",
+    format: "Size",
+    shapes: { clasica: "Classic", delgada: "Slim", grande: "Large" },
+    shapeHelp: "The classic 4 × 9 in fits just about every countertop display.",
+    corners: "Corners",
+    cornerOpts: { rectas: "Square", redondas: "Rounded" },
+    paper: "Paper",
+    thick: "Thickness",
+    thicks: { grueso: "Heavy paper", cartulina: "Card stock" },
+    thickHelp: {
+      grueso: "100 lb. Solid and cheap: for handing out or leaving on a counter.",
+      cartulina: "14 pt. Stiff: it stands up on its own in the rack and won't curl.",
+    },
+    print: "Printing",
+    sides: "Sides",
+    sideOpts: { una: "Single-sided", dos: "Double-sided" },
+    finish: "Finish",
+    finishes: { ninguno: "No finish", barniz: "Spot gloss", oro: "Gold foil", plata: "Silver foil" },
+    finishHelp: "Spot gloss is shine only on the colored shapes. Foil is a metallic layer on the name and the logo.",
+    stub: "Tear-off stub",
+    stubOpts: { no: "No stub", si: "With stub" },
+    stubHelp: "The stub along the bottom is perforated: people rip it off and take your phone number or the coupon with them. The perforation is done by a partner shop and adds days to the delivery.",
+    stubText: "What the stub says",
+    stubPh: "E.g. 10% off with this stub",
+    defStub: "10% off with this stub",
+    design: "Layout",
+    tpls: { turismo: "Tourism", oferta: "Offer", servicios: "Services", foto: "Big photo", tipografica: "Type only" },
+    type: "Typeface",
+    types: { moderna: "Modern", clasica: "Classic", tecnica: "Technical", sencilla: "Simple" },
+    accent: "Accent color",
+    bg: "Background",
+    bgs: { papel: "White paper", color: "Accent color", oscuro: "Dark" },
+    image: "Image",
+    images: { foto: "Space for a photo", color: "Color block" },
+    imageHelp: "We'll leave the space marked and you can",
+    imageCta: "send us the photo on WhatsApp",
+    imageWa: "Hi, I want to print rack cards. I'll send you the photo and the logo.",
+    photoBox: "YOUR PHOTO",
+    words: "What you're announcing",
+    business: "Business name",
+    businessPh: "E.g. Your Business",
+    defBusiness: "Your Business",
+    headline: "Headline",
+    headlinePh: "E.g. Boat tours around the bay",
+    defHeadline: "Boat tours around the bay",
+    sub: "Second line",
+    subPh: "E.g. Every day, 9 to 7",
+    defSub: "Every day, 9 to 7",
+    offer: "The part that stands out",
+    offerPh: "E.g. Kids go free",
+    defOffer: "Kids go free",
+    details: "Three details",
+    d1Ph: "E.g. Departures every hour",
+    defD1: "Departures every hour",
+    d2Ph: "E.g. Spanish-speaking guide",
+    defD2: "Spanish-speaking guide",
+    d3Ph: "E.g. Free parking",
+    defD3: "Free parking",
+    biz: "Your details",
+    phone: "Phone",
+    phonePh: "E.g. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Website or social handle",
+    webPh: "E.g. yourbusiness.com",
+    defWeb: "yourbusiness.com",
+    address: "Address",
+    addressPh: "E.g. 123 NW 1st St, Miami, FL",
+    defAddress: "123 NW 1st St, Miami, FL",
+    back: "Back",
+    backs: { info: "More information", cupon: "Tear-off coupon", logo: "Logo in color" },
+    backHelp: "The back is only printed if you choose double-sided.",
+    coupon: "Show this coupon",
+    order: "Your order",
+    qty: "Quantity",
+    qtyHelp: "For a counter display, 250 or 500 is normal. From 25 up.",
+    guides: "Cut guides",
+    guidesOn: "Red line: the bleed, where the blade cuts. Blue line: the safe area, keep text inside it.",
+    rack: "In the rack",
+    rackOn: "The dark part is what the display hides when cards sit one in front of another: the name and the headline have to be up top.",
+    rackLbl: "What shows",
+    views: { ambas: "View: both sides", frente: "View: front only", reverso: "View: back only" },
+    viewHelp: "Change the view",
+    approx: "Approximate preview · printed color varies a little from the screen",
+    front: "Front",
+    backLbl: "Back",
+    price: "Price: we send it with your quote, in under 24 hours. It depends on the run, the paper and the finish.",
+    cta: "Quote these cards",
+    wa: "Send on WhatsApp",
+    notesPh: "When you need them, whether you also need the display holders, whether your design is already done…",
+    summary: "Rack card builder design",
+    sFormat: "Size",
+    sCorners: "Corners",
+    sPaper: "Paper",
+    sThick: "Thickness",
+    sSides: "Sides",
+    sFinish: "Finish",
+    sStub: "Tear-off stub",
+    sDesign: "Layout",
+    sType: "Typeface",
+    sAccent: "Accent color",
+    sBg: "Background",
+    sImage: "Image",
+    sWords: "Copy",
+    sBiz: "Details",
+    sBack: "Back",
+    sQty: "Quantity",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in these rack cards:",
+    preview: "Rack card preview",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  stocks: STOCKS.map((s) => ({ id: s.id, base: s.base, edge: s.edge, ink: s.ink, sub: s.sub, tex: s.tex, name: s[lang] })),
+  accents: ACCENTS.map((a) => ({ id: a.id, hex: a.hex, name: a[lang] })),
+  shapes: c.shapes,
+  corners: c.cornerOpts,
+  thicks: c.thicks,
+  thickHelp: c.thickHelp,
+  finishes: c.finishes,
+  sides: c.sideOpts,
+  stubOpts: c.stubOpts,
+  tpls: c.tpls,
+  types: c.types,
+  bgs: c.bgs,
+  images: c.images,
+  backs: c.backs,
+  views: c.views,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    photoBox: c.photoBox,
+    coupon: c.coupon,
+    front: c.front,
+    backLbl: c.backLbl,
+    rackLbl: c.rackLbl,
+    approx: c.approx,
+    guidesOn: c.guidesOn,
+    rackOn: c.rackOn,
+    summary: c.summary,
+    sFormat: c.sFormat,
+    sCorners: c.sCorners,
+    sPaper: c.sPaper,
+    sThick: c.sThick,
+    sSides: c.sSides,
+    sFinish: c.sFinish,
+    sStub: c.sStub,
+    sDesign: c.sDesign,
+    sType: c.sType,
+    sAccent: c.sAccent,
+    sBg: c.sBg,
+    sImage: c.sImage,
+    sWords: c.sWords,
+    sBiz: c.sBiz,
+    sBack: c.sBack,
+    sQty: c.sQty,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+    preview: c.preview,
+    yes: lang === "es" ? "Sí" : "Yes",
+    no: lang === "es" ? "No" : "No",
+  },
+};
+const waPhoto = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.imageWa)}`;
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+const TPLS = Object.keys(c.tpls);
+---
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" />
+
+<section class="section section--flush" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb rc" data-rack data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage">
+        <canvas class="nb__canvas rc__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-guides aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.guides}
+          </button>
+          <button type="button" class="nb__tool" data-rackzone aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.rack}
+          </button>
+          <button type="button" class="nb__tool rc__view" data-view title={c.viewHelp}>{c.views.ambas}</button>
+        </div>
+        <p class="nb__approx" data-approx>{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.format}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.format}>
+            {seg("formato", c.shapes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help"><b data-size-out></b> · {c.shapeHelp}</p>
+          <p class="tb__sub">{c.corners}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.corners}>
+            {seg("esquinas", c.cornerOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.paper}</legend>
+          <div class="tb__mats">
+            {STOCKS.map((s) => (
+              <label class="tb__mat">
+                <input type="radio" name="papel" value={s.id} checked={s.id === "brillante"} />
+                <i style={`--c:${s.sw}`} aria-hidden="true"></i>
+                <span>{s[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.thick}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.thick} aria-describedby="rc-thick-help">
+            {seg("grosor", c.thicks, "cartulina").map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="rc-thick-help" data-thick-help>{c.thickHelp.cartulina}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.print}</legend>
+          <p class="tb__sub">{c.sides}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.sides}>
+            {seg("caras", c.sideOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.finish}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.finish}>
+            {seg("acabado", c.finishes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.finishHelp}</p>
+          <p class="tb__sub">{c.stub}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.stub}>
+            {seg("talon", c.stubOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.stubHelp}</p>
+          <div class="field rc__stub" data-stub-field hidden>
+            <label for="rc-talon">{c.stubText}</label>
+            <input id="rc-talon" type="text" name="textoTalon" maxlength="40" autocomplete="off" placeholder={c.stubPh} value={c.defStub} />
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.design}</legend>
+          <div class="fb__pats rc__tpls" role="radiogroup" aria-label={c.design}>
+            {TPLS.map((id, i) => (
+              <label class="fb__pat rc__tpl">
+                <input type="radio" name="plantilla" value={id} checked={i === 0} />
+                <canvas width="160" height="300" aria-hidden="true"></canvas>
+                <span>{c.tpls[id as keyof typeof c.tpls]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.bg}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.bg}>
+            {seg("fondo", c.bgs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.type}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.type}>
+            {seg("tipografia", c.types).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.accent} · <span class="eb__picked" data-accent-name>{ACCENTS[0][lang]}</span></p>
+          <div class="eb__sws" role="radiogroup" aria-label={c.accent}>
+            {ACCENTS.map((a, i) => (
+              <label class="eb__sw" title={a[lang]}>
+                <input type="radio" name="acento" value={a.id} checked={i === 0} />
+                <i style={`--c:${a.hex}`} aria-hidden="true"></i>
+                <span class="sr-only">{a[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.image}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.image} data-image>
+            {seg("imagen", c.images).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.imageHelp} <a class="eb__link" href={waPhoto} target="_blank" rel="noopener">{c.imageCta}</a>.</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.words}</legend>
+          <div class="tb__words">
+            <div class="field">
+              <label for="rc-negocio">{c.business}</label>
+              <input id="rc-negocio" type="text" name="negocio" maxlength="30" autocomplete="off" placeholder={c.businessPh} value={c.defBusiness} />
+            </div>
+            <div class="field">
+              <label for="rc-titular">{c.headline}</label>
+              <input id="rc-titular" type="text" name="titular" maxlength="34" autocomplete="off" placeholder={c.headlinePh} value={c.defHeadline} />
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="rc-sub">{c.sub}</label>
+                <input id="rc-sub" type="text" name="subtitulo" maxlength="34" autocomplete="off" placeholder={c.subPh} value={c.defSub} />
+              </div>
+              <div class="field">
+                <label for="rc-oferta">{c.offer}</label>
+                <input id="rc-oferta" type="text" name="oferta" maxlength="24" autocomplete="off" placeholder={c.offerPh} value={c.defOffer} />
+              </div>
+            </div>
+            <p class="tb__sub">{c.details}</p>
+            <div class="rc__rows">
+              {[1, 2, 3].map((n) => (
+                <div class="field">
+                  <input
+                    type="text"
+                    name={`detalle${n}`}
+                    maxlength="28"
+                    autocomplete="off"
+                    placeholder={[c.d1Ph, c.d2Ph, c.d3Ph][n - 1]}
+                    value={[c.defD1, c.defD2, c.defD3][n - 1]}
+                    aria-label={`${c.details} ${n}`}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.biz}</legend>
+          <div class="tb__words">
+            <div class="form__row">
+              <div class="field">
+                <label for="rc-tel">{c.phone}</label>
+                <input id="rc-tel" type="text" name="tel" maxlength="24" autocomplete="off" placeholder={c.phonePh} value={c.defPhone} />
+              </div>
+              <div class="field">
+                <label for="rc-web">{c.web}</label>
+                <input id="rc-web" type="text" name="web" maxlength="30" autocomplete="off" placeholder={c.webPh} value={c.defWeb} />
+              </div>
+            </div>
+            <div class="field">
+              <label for="rc-dir">{c.address}</label>
+              <input id="rc-dir" type="text" name="direccion" maxlength="40" autocomplete="off" placeholder={c.addressPh} value={c.defAddress} />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.back}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.back} data-back>
+            {seg("reverso", c.backs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-back-help hidden>{c.backHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="nb__sizes">
+            {QTYS.map((q) => (
+              <button type="button" class="nb__pill" data-qty={q}>{q}</button>
+            ))}
+          </div>
+          <div class="tb__row">
+            <div class="field">
+              <label for="rc-cantidad">{c.qty}</label>
+              <input id="rc-cantidad" type="number" name="cantidad" min="25" max="100000" step="25" value="250" inputmode="numeric" aria-describedby="rc-qty-help" />
+            </div>
+          </div>
+          <p class="nb__help" id="rc-qty-help">{c.qtyHelp}</p>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="rc" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Stock = { id: string; name: string; base: string; edge: string; ink: string; sub: string; tex: string };
+  type Accent = { id: string; name: string; hex: string };
+  type Cfg = {
+    stocks: Stock[];
+    accents: Accent[];
+    shapes: Record<string, string>;
+    corners: Record<string, string>;
+    thicks: Record<string, string>;
+    thickHelp: Record<string, string>;
+    finishes: Record<string, string>;
+    sides: Record<string, string>;
+    stubOpts: Record<string, string>;
+    tpls: Record<string, string>;
+    types: Record<string, string>;
+    bgs: Record<string, string>;
+    images: Record<string, string>;
+    backs: Record<string, string>;
+    views: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+  // Lo que hay que dibujar en una cara, ya resuelto desde el formulario
+  type Face = {
+    w: number; // pulgadas
+    h: number;
+    round: boolean;
+    stock: Stock;
+    accent: string;
+    type: string;
+    tpl: string;
+    bg: string;
+    photo: boolean;
+    stub: boolean;
+    foil: string;
+    gloss: boolean;
+    t: Record<string, string>;
+    mini: boolean;
+  };
+
+  // Medidas de tarjeta de exhibidor, en pulgadas
+  const SHAPES: Record<string, { w: number; h: number }> = {
+    clasica: { w: 4, h: 9 },
+    delgada: { w: 3.5, h: 8.5 },
+    grande: { w: 4.25, h: 11 },
+  };
+  const BLEED = 0.125; // sangrado de imprenta
+  const SAFE = 0.1875; // margen de seguridad hacia dentro
+  const ROUND = 0.125; // radio de las esquinas redondeadas
+  // Lo que se ve de la tarjeta en un exhibidor de varios niveles
+  const VISIBLE = 4;
+
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  // Luminancia relativa: decide si sobre ese color el texto va blanco o negro
+  const lum = (hex: string) =>
+    rgb(hex)
+      .map((v) => v / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)))
+      .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const onColor = (hex: string) => (lum(hex) > 0.42 ? "#0B0C0E" : "#FFFFFF");
+  const mix = (hex: string, t: number) => {
+    const to = t < 0 ? 0 : 255;
+    const a = Math.abs(t);
+    const [r, g, b] = rgb(hex).map((v) => Math.round(v + (to - v) * a));
+    return `rgb(${r},${g},${b})`;
+  };
+  // Azar con semilla: la textura del papel no cambia en cada redibujado
+  const rng = (seed: number) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  // Medidas en pulgadas, escritas como en la imprenta: 8-1/2 in
+  const fmtIn = (v: number) => {
+    const whole = Math.floor(v);
+    const fr = +(v - whole).toFixed(3);
+    const frac: Record<string, string> = { "0.5": "-1/2", "0.25": "-1/4", "0.75": "-3/4" };
+    const f = frac[String(fr)];
+    if (f) return `${whole}${f}`;
+    return fr ? String(+v.toFixed(2)) : String(whole);
+  };
+
+  const FAMS: Record<string, { title: string; body: string; track: string }> = {
+    moderna: { title: '800 {px}px "Saira", "Arial Narrow", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    clasica: { title: '700 {px}px "Playfair Display", Georgia, serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    tecnica: { title: '400 {px}px "Michroma", "Eurostile", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.02em" },
+    sencilla: { title: '600 {px}px "Instrument Sans", system-ui, sans-serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+  };
+  const LABEL = (px: number) => `400 ${px}px "Michroma", "Eurostile", sans-serif`;
+  const setTrack = (c: CanvasRenderingContext2D, v: string) => {
+    (c as unknown as { letterSpacing: string }).letterSpacing = v;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-rack]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const guidesBtn = root.querySelector<HTMLButtonElement>("[data-guides]")!;
+    const rackBtn = root.querySelector<HTMLButtonElement>("[data-rackzone]")!;
+    const viewBtn = root.querySelector<HTMLButtonElement>("[data-view]")!;
+    const tools = root.querySelector<HTMLElement>(".nb__tools")!;
+    const approx = root.querySelector<HTMLElement>("[data-approx]")!;
+    const sizeOut = form.querySelector<HTMLElement>("[data-size-out]")!;
+    const thickHelp = form.querySelector<HTMLElement>("[data-thick-help]")!;
+    const stubField = form.querySelector<HTMLElement>("[data-stub-field]")!;
+    const imageSeg = form.querySelector<HTMLElement>("[data-image]")!;
+    const backSeg = form.querySelector<HTMLElement>("[data-back]")!;
+    const backHelp = form.querySelector<HTMLElement>("[data-back-help]")!;
+    const accentName = form.querySelector<HTMLElement>("[data-accent-name]")!;
+    const qtyEl = form.querySelector<HTMLInputElement>("input[name='cantidad']")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    let guides = false;
+    let rackZone = false;
+    const VIEWS = ["ambas", "frente", "reverso"] as const;
+    let view: (typeof VIEWS)[number] = "ambas";
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const stock = () => cfg.stocks.find((s) => s.id === val("papel")) ?? cfg.stocks[0];
+    const accent = () => cfg.accents.find((a) => a.id === val("acento")) ?? cfg.accents[0];
+    const twoSided = () => val("caras") === "dos";
+    const stub = () => val("talon") === "si";
+    // En el diseño de solo texto no hay hueco de imagen que elegir
+    const hasPhoto = () => val("plantilla") !== "tipografica";
+    const qty = () => Math.max(25, Math.min(100000, Math.round(Number(qtyEl.value) || 250)));
+    const dims = () => SHAPES[val("formato")] ?? SHAPES.clasica;
+    const texts = () => ({
+      negocio: text("negocio"),
+      titular: text("titular"),
+      sub: text("subtitulo"),
+      oferta: text("oferta"),
+      d1: text("detalle1"),
+      d2: text("detalle2"),
+      d3: text("detalle3"),
+      tel: text("tel"),
+      web: text("web"),
+      direccion: text("direccion"),
+      talon: text("textoTalon"),
+    });
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const RADIOS = ["formato", "esquinas", "papel", "grosor", "caras", "acabado", "talon", "plantilla", "fondo", "tipografia", "acento", "imagen", "reverso"];
+    const FIELDS: Array<[string, number]> = [
+      ["negocio", 30],
+      ["titular", 34],
+      ["subtitulo", 34],
+      ["oferta", 24],
+      ["detalle1", 28],
+      ["detalle2", 28],
+      ["detalle3", 28],
+      ["tel", 24],
+      ["web", 30],
+      ["direccion", 40],
+      ["textoTalon", 40],
+    ];
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const params = new URLSearchParams(location.search);
+    if (params.has("plantilla") && params.has("formato")) {
+      RADIOS.forEach((n) => setRadio(n, params.get(n)));
+      FIELDS.forEach(([n, max]) => {
+        const v = params.get(n);
+        if (v !== null) (form.elements.namedItem(n) as HTMLInputElement).value = v.slice(0, max);
+      });
+      const q = Number(params.get("cantidad"));
+      if (q >= 25 && q <= 100000) qtyEl.value = String(Math.round(q));
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams();
+      RADIOS.forEach((n) => p.set(n, val(n)));
+      FIELDS.forEach(([n]) => p.set(n, text(n)));
+      p.set("cantidad", String(qty()));
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Dibujo ----------
+    // Textura del papel
+    const paper = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, st: Stock, s: number) => {
+      c.fillStyle = st.base;
+      c.fillRect(x, y, w, h);
+      const r = rng(st.id.charCodeAt(0) * 131 + st.id.length * 17);
+      if (st.tex === "brillo" || st.tex === "perla") {
+        const g = c.createLinearGradient(x, y + h, x + w, y);
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.44, "rgba(255,255,255,0)");
+        g.addColorStop(0.5, st.tex === "perla" ? "rgba(255,246,228,0.7)" : "rgba(255,255,255,0.55)");
+        g.addColorStop(0.56, "rgba(255,255,255,0)");
+        g.addColorStop(1, st.tex === "perla" ? "rgba(214,198,170,0.2)" : "rgba(180,200,215,0.16)");
+        c.fillStyle = g;
+        c.fillRect(x, y, w, h);
+      }
+      if (st.tex === "lino") {
+        c.strokeStyle = "rgba(90,84,70,0.07)";
+        c.lineWidth = 1;
+        const step = Math.max(2, s * 0.012);
+        c.beginPath();
+        for (let i = 0; i < w; i += step) {
+          c.moveTo(x + i, y);
+          c.lineTo(x + i, y + h);
+        }
+        for (let i = 0; i < h; i += step) {
+          c.moveTo(x, y + i);
+          c.lineTo(x + w, y + i);
+        }
+        c.stroke();
+      }
+      if (st.tex === "fibra" || st.tex === "reciclado") {
+        const n = Math.round((w * h) / 110);
+        const dots = st.tex === "reciclado" ? ["rgba(84,70,44,0.3)", "rgba(255,252,240,0.6)"] : ["rgba(90,84,70,0.13)", "rgba(255,255,255,0.6)"];
+        for (let i = 0; i < n; i++) {
+          c.fillStyle = dots[r() > 0.5 ? 1 : 0];
+          const dw = Math.max(0.6, s * (0.004 + r() * 0.008));
+          c.fillRect(x + r() * w, y + r() * h, dw, dw * (r() > 0.7 ? 2.2 : 1));
+        }
+      }
+      const sh = c.createLinearGradient(x, y, x, y + h);
+      sh.addColorStop(0, "rgba(255,255,255,0.12)");
+      sh.addColorStop(0.5, "rgba(255,255,255,0)");
+      sh.addColorStop(1, "rgba(11,12,14,0.06)");
+      c.fillStyle = sh;
+      c.fillRect(x, y, w, h);
+    };
+
+    // Dibuja una cara de la tarjeta. El talón recortable se lleva la parte de
+    // abajo, igual que en la tarjeta impresa.
+    const drawFace = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Face, back: string | null) => {
+      const { w, h } = o;
+      const X = (v: number) => x0 + v * s;
+      const Y = (v: number) => y0 + v * s;
+      const P = (v: number) => v * s;
+      const st = o.stock;
+      const acc = o.accent;
+      const stubH = o.stub ? Math.min(h * 0.2, 2) : 0;
+      const hL = h - stubH; // alto útil para el diseño
+      const fu = Math.min(hL, w * 1.3); // unidad de texto: manda el lado corto
+      const m = 0.07 * fu;
+      const V = (k: number) => k * hL;
+
+      // ---- Fondo ----
+      paper(c, X(0), Y(0), P(w), P(h), st, s);
+      const dark = o.bg === "oscuro";
+      const colored = o.bg === "color";
+      if (dark || colored) {
+        c.fillStyle = dark ? "#14161A" : acc;
+        c.fillRect(X(0), Y(0), P(w), P(h));
+        c.save();
+        c.globalAlpha = 0.12;
+        c.globalCompositeOperation = "overlay";
+        paper(c, X(0), Y(0), P(w), P(h), st, s);
+        c.restore();
+      }
+      const ink = dark ? "#FFFFFF" : colored ? onColor(acc) : st.ink;
+      const sub = dark ? "#AEB5BD" : colored ? mix(onColor(acc), onColor(acc) === "#FFFFFF" ? -0.2 : 0.35) : st.sub;
+      const mark = colored ? ink : acc;
+      // Sobre una franja, el texto va del color del fondo de la tarjeta
+      const onMark = colored ? acc : onColor(acc);
+
+      // Las formas de acento se van guardando: el barniz por zonas va encima de ellas
+      const marks = new Path2D();
+      const metal = (xIn: number, wIn: number) => {
+        const g = c.createLinearGradient(X(xIn), 0, X(xIn + wIn), 0);
+        const tones =
+          o.foil === "oro"
+            ? ["#8A6316", "#F3D27A", "#C79A2C", "#FFF0BC", "#9C7320"]
+            : ["#6E7479", "#E6EAEE", "#A8B0B6", "#FBFDFF", "#7D848A"];
+        tones.forEach((t, i) => g.addColorStop(i / (tones.length - 1), t));
+        return g;
+      };
+      const nameInk = (xIn: number, wIn: number) => (o.foil === "ninguno" ? mark : metal(xIn, wIn));
+
+      const fam = () => FAMS[o.type] ?? FAMS.moderna;
+      const make = (kind: "title" | "body" | "label", px: number) =>
+        kind === "label" ? LABEL(px) : fam()[kind].replace("{px}", String(px));
+
+      // Un renglón de texto; en las miniaturas se sustituye por una barra
+      const put = (
+        txt: string,
+        kind: "title" | "body" | "label",
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string | CanvasGradient,
+        align: CanvasTextAlign = "left",
+        upper = false
+      ) => {
+        if (!txt) return 0;
+        const px = Math.max(1, P(sizeIn));
+        const maxPx = P(maxIn);
+        const t = upper ? txt.toLocaleUpperCase() : txt;
+        setTrack(c, kind === "label" ? "0.1em" : fam().track);
+        c.font = make(kind, px);
+        let wd = c.measureText(t).width;
+        if (wd > maxPx && wd > 0) {
+          c.font = make(kind, px * (maxPx / wd));
+          wd = maxPx;
+        }
+        c.fillStyle = color;
+        c.textAlign = align;
+        c.textBaseline = "alphabetic";
+        if (o.mini) {
+          const bh = Math.max(1, px * 0.6);
+          const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+          c.fillRect(bx, Y(yIn) - bh, wd, bh);
+        } else {
+          c.fillText(t, X(xIn), Y(yIn));
+        }
+        setTrack(c, "0px");
+        return wd;
+      };
+
+      // Titular: parte en dos renglones antes que achicarse hasta no leerse
+      const headline = (
+        txt: string,
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string | CanvasGradient,
+        align: CanvasTextAlign = "left",
+        mid = false,
+        maxHIn = 0
+      ) => {
+        if (!txt) return yIn;
+        const maxPx = P(maxIn);
+        let px = Math.max(1, P(sizeIn));
+        c.font = make("title", px);
+        const words = txt.split(/\s+/);
+        let lines = [txt];
+        if (words.length > 1 && c.measureText(txt).width > maxPx) {
+          // El corte que deja los renglones más parejos
+          let best = 1;
+          let diff = Infinity;
+          for (let i = 1; i < words.length; i++) {
+            const a = c.measureText(words.slice(0, i).join(" ")).width;
+            const b = c.measureText(words.slice(i).join(" ")).width;
+            if (Math.abs(a - b) < diff) {
+              diff = Math.abs(a - b);
+              best = i;
+            }
+          }
+          lines = [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+        }
+        const widest = Math.max(...lines.map((l) => c.measureText(l).width));
+        if (widest > maxPx) px *= maxPx / widest;
+        c.font = make("title", px);
+        if (maxHIn && lines.length * px * 1.06 > P(maxHIn)) {
+          px *= P(maxHIn) / (lines.length * px * 1.06);
+          c.font = make("title", px);
+        }
+        const lh = px * 1.06;
+        const baseY = Y(yIn) - (mid ? ((lines.length - 1) * lh) / 2 : 0);
+        lines.forEach((l, i) => {
+          const ly = baseY + i * lh;
+          c.fillStyle = color;
+          c.textAlign = align;
+          c.textBaseline = "alphabetic";
+          if (o.mini) {
+            const wd = c.measureText(l).width;
+            const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+            c.fillRect(bx, ly - px * 0.62, wd, px * 0.62);
+          } else {
+            c.fillText(l, X(xIn), ly);
+          }
+        });
+        return (baseY + (lines.length - 1) * lh - y0) / s;
+      };
+
+      const band = (xIn: number, yIn: number, wIn: number, hIn: number, color: string | CanvasGradient = mark) => {
+        c.fillStyle = color;
+        c.fillRect(X(xIn), Y(yIn), P(wIn), P(hIn));
+        marks.rect(X(xIn), Y(yIn), P(wIn), P(hIn));
+      };
+      // Hueco de la foto: rayado en diagonal con su rótulo, o un bloque de color
+      const image = (xIn: number, yIn: number, wIn: number, hIn: number) => {
+        const bx = X(xIn);
+        const by = Y(yIn);
+        const bw = P(wIn);
+        const bh = P(hIn);
+        if (!o.photo) {
+          c.fillStyle = mark;
+          c.fillRect(bx, by, bw, bh);
+          marks.rect(bx, by, bw, bh);
+          return;
+        }
+        c.save();
+        c.beginPath();
+        c.rect(bx, by, bw, bh);
+        c.clip();
+        c.fillStyle = dark ? "#23262B" : colored ? mix(acc, onColor(acc) === "#FFFFFF" ? -0.18 : 0.2) : "#E4E7EA";
+        c.fillRect(bx, by, bw, bh);
+        c.strokeStyle = dark ? "rgba(255,255,255,0.1)" : "rgba(11,12,14,0.09)";
+        c.lineWidth = Math.max(1, P(0.02));
+        const step = Math.max(6, P(0.26));
+        c.beginPath();
+        for (let i = -bh; i < bw; i += step) {
+          c.moveTo(bx + i, by + bh);
+          c.lineTo(bx + i + bh, by);
+        }
+        c.stroke();
+        c.restore();
+        if (!o.mini) {
+          const lbl = Math.min(hIn * 0.12, wIn * 0.075);
+          put(cfg.copy.photoBox, "label", lbl, xIn + wIn / 2, yIn + hIn / 2 + lbl * 0.4, wIn * 0.74, dark ? "#8D949C" : colored ? sub : "#8A9099", "center");
+        }
+      };
+      // Lista con marca de verificación en el color de acento
+      const ticks = (rows: string[], xIn: number, yIn: number, stepIn: number, sizeIn: number, maxIn: number) => {
+        rows.forEach((r, i) => {
+          const ty = yIn + i * stepIn;
+          const rad = sizeIn * 0.34;
+          c.fillStyle = mark;
+          c.beginPath();
+          c.arc(X(xIn + rad), Y(ty) - P(sizeIn * 0.26), P(rad), 0, Math.PI * 2);
+          c.fill();
+          // moveTo antes del arco: si no, el camino del barniz une los círculos con una raya
+          marks.moveTo(X(xIn + rad) + P(rad), Y(ty) - P(sizeIn * 0.26));
+          marks.arc(X(xIn + rad), Y(ty) - P(sizeIn * 0.26), P(rad), 0, Math.PI * 2);
+          if (!o.mini) {
+            c.strokeStyle = onMark;
+            c.lineWidth = Math.max(1, P(rad * 0.26));
+            c.lineCap = "round";
+            c.lineJoin = "round";
+            c.beginPath();
+            c.moveTo(X(xIn + rad * 0.55), Y(ty) - P(sizeIn * 0.26));
+            c.lineTo(X(xIn + rad * 0.88), Y(ty) - P(sizeIn * 0.26) + P(rad * 0.38));
+            c.lineTo(X(xIn + rad * 1.45), Y(ty) - P(sizeIn * 0.26) - P(rad * 0.45));
+            c.stroke();
+          }
+          put(r, "body", sizeIn, xIn + rad * 2.6, ty, maxIn - rad * 2.6, sub);
+        });
+      };
+
+      const details = [o.t.d1, o.t.d2, o.t.d3].filter(Boolean);
+
+      // ---- Reverso ----
+      if (back) {
+        if (back === "logo") {
+          if (!colored && !dark) {
+            c.fillStyle = acc;
+            c.fillRect(X(0), Y(0), P(w), P(h));
+          }
+          const bgInk = colored || dark ? ink : onColor(acc);
+          headline(o.t.negocio, 0.085 * fu, w / 2, V(0.44), w - m * 2, bgInk, "center", true, hL * 0.16);
+          if (o.t.sub) put(o.t.sub, "body", 0.028 * fu, w / 2, V(0.56), w - m * 2, bgInk, "center");
+          if (o.t.tel) put(o.t.tel, "title", 0.042 * fu, w / 2, V(0.66), w - m * 2, bgInk, "center");
+          if (o.t.web) put(o.t.web, "body", 0.028 * fu, w / 2, V(0.72), w - m * 2, bgInk, "center");
+        } else if (back === "cupon") {
+          put(o.t.negocio, "label", 0.024 * fu, w / 2, V(0.1), w - m * 2, sub, "center");
+          c.save();
+          c.setLineDash([P(0.12), P(0.09)]);
+          c.lineWidth = Math.max(1, P(0.025));
+          c.strokeStyle = mark;
+          c.strokeRect(X(m), Y(V(0.18)), P(w - m * 2), P(hL * 0.38));
+          c.restore();
+          headline(o.t.oferta, 0.11 * fu, w / 2, V(0.34), w - m * 3, mark, "center", true, hL * 0.17);
+          put(cfg.copy.coupon, "body", 0.026 * fu, w / 2, V(0.5), w - m * 3, sub, "center");
+          details.forEach((d, i) => put(d, "body", 0.026 * fu, w / 2, V(0.66 + i * 0.05), w - m * 2, sub, "center"));
+          put(o.t.direccion, "body", 0.024 * fu, w / 2, V(0.86), w - m * 2, sub, "center");
+          put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "body", 0.026 * fu, w / 2, V(0.93), w - m * 2, ink, "center");
+        } else {
+          headline(o.t.titular, 0.058 * fu, m, V(0.1), w - m * 2, ink, "left", false, hL * 0.12);
+          band(m, V(0.16), w * 0.18, 0.014 * fu);
+          ticks(details, m, V(0.27), 0.105 * fu, 0.03 * fu, w - m * 2);
+          if (o.t.sub) put(o.t.sub, "body", 0.028 * fu, m, V(0.52), w - m * 2, sub);
+          if (o.photo) image(m, V(0.58), w - m * 2, hL * 0.2);
+          put(o.t.direccion, "body", 0.026 * fu, m, V(0.85), w - m * 2, sub);
+          band(0, hL - 0.13 * fu, w, 0.13 * fu);
+          put(o.t.negocio, "title", 0.04 * fu, m, hL - 0.075 * fu, w - m * 2, onMark);
+          put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "body", 0.026 * fu, m, hL - 0.035 * fu, w - m * 2, onMark);
+        }
+        return;
+      }
+
+      // ---- Frente: cinco diseños. Lo que importa va arriba, que es lo que se
+      // ve cuando la tarjeta está metida en el exhibidor.
+      if (o.tpl === "turismo") {
+        image(0, 0, w, hL * 0.3);
+        put(o.t.negocio, "label", 0.024 * fu, w / 2, V(0.37), w - m * 2, sub, "center");
+        const last = headline(o.t.titular, 0.1 * fu, w / 2, V(0.44), w - m * 2, nameInk(m, w - m * 2), "center", false, hL * 0.17);
+        if (o.t.sub) put(o.t.sub, "body", 0.03 * fu, w / 2, last + 0.06 * fu, w - m * 2, sub, "center");
+        ticks(details, m, V(0.66), 0.07 * fu, 0.028 * fu, w - m * 2);
+        if (o.t.oferta) {
+          band(m, V(0.84), w - m * 2, 0.09 * fu);
+          put(o.t.oferta, "title", 0.04 * fu, w / 2, V(0.84) + 0.063 * fu, w - m * 3, onMark, "center");
+        }
+        band(0, hL - 0.11 * fu, w, 0.11 * fu);
+        put(o.t.tel, "title", 0.038 * fu, w / 2, hL - 0.065 * fu, w - m * 2, onMark, "center");
+        put(o.t.web, "body", 0.026 * fu, w / 2, hL - 0.028 * fu, w - m * 2, onMark, "center");
+      } else if (o.tpl === "oferta") {
+        band(0, 0, w, hL * 0.32);
+        put(o.t.negocio, "label", 0.024 * fu, w / 2, hL * 0.08, w - m * 2, onMark, "center");
+        headline(o.t.oferta, 0.15 * fu, w / 2, hL * 0.2, w - m * 2, onMark, "center", true, hL * 0.18);
+        image(0, hL * 0.34, w, hL * 0.2);
+        const last = headline(o.t.titular, 0.068 * fu, w / 2, V(0.62), w - m * 2, ink, "center", false, hL * 0.13);
+        if (o.t.sub) put(o.t.sub, "body", 0.028 * fu, w / 2, last + 0.055 * fu, w - m * 2, sub, "center");
+        ticks(details, m, V(0.78), 0.06 * fu, 0.026 * fu, w - m * 2);
+        put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "title", 0.034 * fu, w / 2, hL - m * 0.7, w - m * 2, ink, "center");
+      } else if (o.tpl === "servicios") {
+        put(o.t.negocio, "title", 0.05 * fu, m, V(0.07), w - m * 2, nameInk(m, w - m * 2));
+        band(m, V(0.1), w * 0.16, 0.016 * fu);
+        const last = headline(o.t.titular, 0.075 * fu, m, V(0.2), w - m * 2, ink, "left", false, hL * 0.15);
+        if (o.t.sub) put(o.t.sub, "body", 0.028 * fu, m, last + 0.05 * fu, w - m * 2, sub);
+        image(0, V(0.36), w, hL * 0.18);
+        ticks(details, m, V(0.63), 0.07 * fu, 0.028 * fu, w - m * 2);
+        if (o.t.oferta) {
+          band(m, V(0.82), w - m * 2, 0.085 * fu);
+          put(o.t.oferta, "title", 0.038 * fu, w / 2, V(0.82) + 0.06 * fu, w - m * 3, onMark, "center");
+        }
+        band(0, hL - 0.12 * fu, w, 0.12 * fu, dark ? "#23262B" : colored ? ink : mix(acc, -0.25));
+        const footInk = colored ? acc : "#FFFFFF";
+        put(o.t.tel, "title", 0.042 * fu, w / 2, hL - 0.07 * fu, w - m * 2, footInk, "center");
+        put(o.t.web, "body", 0.026 * fu, w / 2, hL - 0.03 * fu, w - m * 2, footInk, "center");
+      } else if (o.tpl === "foto") {
+        image(0, 0, w, hL * 0.62);
+        // Franja oscura para que el titular se lea encima de la foto
+        c.fillStyle = dark || colored ? "rgba(0,0,0,0.42)" : "rgba(11,12,14,0.55)";
+        c.fillRect(X(0), Y(V(0.24)), P(w), P(hL * 0.2));
+        put(o.t.negocio, "label", 0.024 * fu, w / 2, V(0.3), w - m * 2, "rgba(255,255,255,0.82)", "center");
+        headline(o.t.titular, 0.09 * fu, w / 2, V(0.38), w - m * 2, "#FFFFFF", "center", true, hL * 0.13);
+        if (o.t.sub) put(o.t.sub, "body", 0.03 * fu, w / 2, V(0.69), w - m * 2, sub, "center");
+        ticks(details, m, V(0.76), 0.06 * fu, 0.026 * fu, w - m * 2);
+        if (o.t.oferta) {
+          const r = Math.min(w * 0.24, hL * 0.09);
+          c.fillStyle = mark;
+          c.beginPath();
+          c.arc(X(w - m - r), Y(V(0.08) + r), P(r), 0, Math.PI * 2);
+          c.fill();
+          marks.moveTo(X(w - m - r) + P(r), Y(V(0.08) + r));
+          marks.arc(X(w - m - r), Y(V(0.08) + r), P(r), 0, Math.PI * 2);
+          headline(o.t.oferta, 0.036 * fu, w - m - r, V(0.08) + r + 0.012 * fu, r * 1.6, onMark, "center", true, r * 1.5);
+        }
+        band(0, hL - 0.11 * fu, w, 0.11 * fu);
+        put(o.t.tel, "title", 0.038 * fu, w / 2, hL - 0.065 * fu, w - m * 2, onMark, "center");
+        put(o.t.web, "body", 0.026 * fu, w / 2, hL - 0.028 * fu, w - m * 2, onMark, "center");
+      } else {
+        // tipografica: sin imagen, todo el peso lo lleva el texto
+        band(0, 0, w, 0.11 * fu);
+        put(o.t.negocio, "label", 0.026 * fu, m, 0.07 * fu, w - m * 2, onMark);
+        const last = headline(o.t.titular, 0.125 * fu, m, V(0.22), w - m * 2, nameInk(m, w - m * 2), "left", false, hL * 0.22);
+        if (o.t.sub) put(o.t.sub, "body", 0.032 * fu, m, last + 0.07 * fu, w - m * 2, sub);
+        band(m, V(0.45), w * 0.24, 0.016 * fu);
+        ticks(details, m, V(0.57), 0.075 * fu, 0.03 * fu, w - m * 2);
+        if (o.t.oferta) {
+          band(0, V(0.8), w, 0.1 * fu);
+          put(o.t.oferta, "title", 0.046 * fu, w / 2, V(0.8) + 0.07 * fu, w - m * 2, onMark, "center");
+        }
+        put(o.t.tel, "title", 0.04 * fu, m, hL - 0.07 * fu, w - m * 2, ink);
+        put([o.t.web, o.t.direccion].filter(Boolean).join("   ·   "), "body", 0.024 * fu, m, hL - 0.03 * fu, w - m * 2, sub);
+      }
+
+      // Barniz por zonas: brillo en diagonal, solo encima de las formas de color
+      if (o.gloss && !o.mini) {
+        c.save();
+        c.clip(marks);
+        const g = c.createLinearGradient(X(0), Y(h), X(w), Y(0));
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.42, "rgba(255,255,255,0)");
+        g.addColorStop(0.5, "rgba(255,255,255,0.5)");
+        g.addColorStop(0.58, "rgba(255,255,255,0)");
+        g.addColorStop(1, "rgba(255,255,255,0)");
+        c.fillStyle = g;
+        c.fillRect(X(0), Y(0), P(w), P(h));
+        c.restore();
+      }
+    };
+
+    // El talón: la perforación y lo que va impreso en él
+    const drawStub = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Face, printed: boolean) => {
+      const stubH = Math.min(o.h * 0.2, 2);
+      const top = y0 + (o.h - stubH) * s;
+      const fu = Math.min(o.h - stubH, o.w * 1.3);
+      c.save();
+      c.strokeStyle = "rgba(11,12,14,0.32)";
+      c.lineWidth = 1;
+      c.setLineDash([3, 3]);
+      c.beginPath();
+      c.moveTo(x0, top);
+      c.lineTo(x0 + o.w * s, top);
+      c.stroke();
+      c.restore();
+      if (!printed || o.mini) return;
+      const dark = o.bg === "oscuro";
+      const colored = o.bg === "color";
+      const ink = dark ? "#FFFFFF" : colored ? onColor(o.accent) : o.stock.ink;
+      const sub = dark ? "#AEB5BD" : colored ? mix(onColor(o.accent), onColor(o.accent) === "#FFFFFF" ? -0.2 : 0.35) : o.stock.sub;
+      const fam = (FAMS[o.type] ?? FAMS.moderna);
+      const line = (txt: string, font: string, px: number, y: number, color: string) => {
+        if (!txt) return;
+        c.font = font.replace("{px}", String(px));
+        c.fillStyle = color;
+        c.textAlign = "center";
+        c.textBaseline = "alphabetic";
+        const max = (o.w - 0.3) * s;
+        const wd = c.measureText(txt).width;
+        if (wd > max) c.font = font.replace("{px}", String(px * (max / wd)));
+        c.fillText(txt, x0 + (o.w * s) / 2, top + y);
+      };
+      const hPx = stubH * s;
+      line(o.t.talon, fam.title, Math.max(7, fu * s * 0.042), hPx * 0.42, ink);
+      line(o.t.negocio, fam.body, Math.max(6, fu * s * 0.028), hPx * 0.64, sub);
+      line([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), fam.body, Math.max(6, fu * s * 0.03), hPx * 0.86, ink);
+    };
+
+    // Una tarjeta completa: sombra, papel, diseño, talón, exhibidor y guías
+    const drawCard = (x0: number, y0: number, s: number, o: Face, back: string | null) => {
+      const wPx = o.w * s;
+      const hPx = o.h * s;
+      const r = o.round ? ROUND * s : 0;
+      const shape = new Path2D();
+      shape.roundRect(x0, y0, wPx, hPx, r);
+
+      ctx.save();
+      ctx.shadowColor = "rgba(18,26,36,0.4)";
+      ctx.shadowBlur = 22;
+      ctx.shadowOffsetY = 10;
+      ctx.fillStyle = o.stock.edge;
+      ctx.fill(shape);
+      ctx.restore();
+
+      ctx.save();
+      ctx.clip(shape);
+      drawFace(ctx, x0, y0, s, o, back);
+      ctx.restore();
+      if (o.stub) drawStub(ctx, x0, y0, s, o, !back);
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(11,12,14,0.26)";
+      ctx.stroke(shape);
+
+      // Lo que tapa el exhibidor cuando las tarjetas van una delante de otra
+      if (rackZone) {
+        const vis = Math.min(VISIBLE, o.h);
+        ctx.save();
+        ctx.clip(shape);
+        ctx.fillStyle = "rgba(14,20,28,0.55)";
+        ctx.fillRect(x0, y0 + vis * s, wPx, hPx - vis * s);
+        ctx.restore();
+        ctx.save();
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = "#FFCA09";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x0, y0 + vis * s);
+        ctx.lineTo(x0 + wPx, y0 + vis * s);
+        ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = "#FFCA09";
+        ctx.font = `600 11px "Instrument Sans", system-ui, sans-serif`;
+        // El rótulo va en la zona oscura: encima se pelearía con el texto impreso
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText(`${cfg.copy.rackLbl} · ${fmtIn(vis)} in`, x0 + 7, y0 + vis * s + 5);
+      }
+
+      if (guides) {
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = "#ED1B24";
+        ctx.beginPath();
+        ctx.roundRect(x0 - BLEED * s, y0 - BLEED * s, wPx + BLEED * 2 * s, hPx + BLEED * 2 * s, r ? r + BLEED * s : 0);
+        ctx.stroke();
+        ctx.strokeStyle = "#0094DA";
+        ctx.beginPath();
+        ctx.roundRect(x0 + SAFE * s, y0 + SAFE * s, wPx - SAFE * 2 * s, hPx - SAFE * 2 * s, r ? Math.max(0, r - SAFE * s) : 0);
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+
+    const face = (mini: boolean, tpl?: string): Face => ({
+      ...dims(),
+      round: val("esquinas") === "redondas",
+      stock: stock(),
+      accent: accent().hex,
+      type: val("tipografia"),
+      tpl: tpl ?? val("plantilla"),
+      bg: val("fondo"),
+      photo: val("imagen") === "foto",
+      stub: stub(),
+      foil: val("acabado") === "oro" ? "oro" : val("acabado") === "plata" ? "plata" : "ninguno",
+      gloss: val("acabado") === "barniz",
+      t: texts(),
+      mini,
+    });
+
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const o = face(false);
+      const { w, h } = o;
+      const two = twoSided();
+      // Qué caras se dibujan: con una cara, solo el frente
+      const faces: Array<string | null> = !two ? [null] : view === "frente" ? [null] : view === "reverso" ? [val("reverso")] : [null, val("reverso")];
+      const n = faces.length;
+      const gap = w * 0.3;
+      const pad = guides ? 0.3 : 0.06;
+      const top = tools.offsetHeight + 24;
+      const fit = (cols: number) => {
+        const tw = w * cols + gap * (cols - 1);
+        const keep = top + 54 + (approx.offsetParent ? 34 : 0);
+        return Math.min((cw - 44) / (tw + pad * 2), (ch - keep) / (h + pad * 2));
+      };
+      const s = fit(n);
+      const groupW = w * n + gap * (n - 1);
+      const x0 = (cw - groupW * s) / 2;
+      const y0 = Math.max(top, 18 + (ch - h * s - 54) / 2);
+      const at = (i: number) => x0 + i * (w + gap) * s;
+
+      faces.forEach((back, i) => drawCard(at(i), y0, s, o, back));
+
+      // Rótulo de cada cara, debajo
+      if (n > 1 || view !== "ambas") {
+        ctx.fillStyle = "rgba(11,12,14,0.6)";
+        ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "alphabetic";
+        faces.forEach((back, i) => ctx.fillText(back ? cfg.copy.backLbl : cfg.copy.front, at(i) + (w * s) / 2, y0 + h * s + 16));
+      }
+
+      // Cota del ancho, debajo de la tarjeta
+      const gy = y0 + h * s + (n > 1 || view !== "ambas" ? 32 : 20);
+      const tick = 5;
+      ctx.strokeStyle = "rgba(11,12,14,0.5)";
+      ctx.fillStyle = "rgba(11,12,14,0.66)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x0, gy);
+      ctx.lineTo(x0 + w * s, gy);
+      ctx.moveTo(x0, gy - tick);
+      ctx.lineTo(x0, gy + tick);
+      ctx.moveTo(x0 + w * s, gy - tick);
+      ctx.lineTo(x0 + w * s, gy + tick);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.font = `500 12px "Instrument Sans", system-ui, sans-serif`;
+      const txt = `${fmtIn(w)} × ${fmtIn(h)} in · ${cfg.thicks[val("grosor")]}`;
+      const half = ctx.measureText(txt).width / 2;
+      ctx.fillText(txt, Math.min(Math.max(x0 + (w * s) / 2, half + 8), cw - half - 8), gy + 7);
+
+      canvas.setAttribute(
+        "aria-label",
+        `${cfg.copy.preview}: ${fmtIn(w)} × ${fmtIn(h)} in · ${stock().name} · ${cfg.tpls[o.tpl]} · ${accent().name}${o.t.titular ? ` · "${o.t.titular}"` : ""}`
+      );
+    };
+
+    // Miniaturas de los diseños, con el mismo dibujo que la vista previa
+    const renderTpls = () => {
+      const ids = Object.keys(cfg.tpls);
+      form.querySelectorAll<HTMLCanvasElement>(".rc__tpl canvas").forEach((cv, i) => {
+        const c2 = cv.getContext("2d")!;
+        const o: Face = { ...face(true, ids[i] ?? ids[0]), w: 4, h: 9, stub: false };
+        c2.setTransform(1, 0, 0, 1, 0, 0);
+        c2.clearRect(0, 0, cv.width, cv.height);
+        const s = Math.min((cv.width - 12) / o.w, (cv.height - 12) / o.h);
+        const x = (cv.width - o.w * s) / 2;
+        const y = (cv.height - o.h * s) / 2;
+        c2.save();
+        c2.beginPath();
+        c2.rect(x, y, o.w * s, o.h * s);
+        c2.clip();
+        drawFace(c2, x, y, s, o, null);
+        c2.restore();
+        c2.lineWidth = 1;
+        c2.strokeStyle = "rgba(11,12,14,0.2)";
+        c2.strokeRect(x, y, o.w * s, o.h * s);
+      });
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const { w, h } = dims();
+      const t = texts();
+      const words = [t.titular, t.sub, t.oferta, t.d1, t.d2, t.d3].filter(Boolean).map((x) => `"${x}"`).join(" / ");
+      const out = [
+        `${k.summary}:`,
+        `• ${k.sFormat}: ${cfg.shapes[val("formato")]} ${fmtIn(w)} × ${fmtIn(h)} in`,
+        `• ${k.sCorners}: ${cfg.corners[val("esquinas")]}`,
+        `• ${k.sPaper}: ${stock().name}`,
+        `• ${k.sThick}: ${cfg.thicks[val("grosor")]}`,
+        `• ${k.sSides}: ${cfg.sides[val("caras")]}`,
+        `• ${k.sFinish}: ${cfg.finishes[val("acabado")]}`,
+        `• ${k.sStub}: ${stub() ? `${k.yes} · "${t.talon}"` : k.no}`,
+        `• ${k.sDesign}: ${cfg.tpls[val("plantilla")]}`,
+        `• ${k.sBg}: ${cfg.bgs[val("fondo")]}`,
+        `• ${k.sType}: ${cfg.types[val("tipografia")]}`,
+        `• ${k.sAccent}: ${accent().name}`,
+      ];
+      if (hasPhoto()) out.push(`• ${k.sImage}: ${cfg.images[val("imagen")]}`);
+      out.push(`• ${k.sWords}: ${words}`, `• ${k.sBiz}: ${[t.negocio, t.tel, t.web, t.direccion].filter(Boolean).join(" / ")}`);
+      if (twoSided()) out.push(`• ${k.sBack}: ${cfg.backs[val("reverso")]}`);
+      out.push(`• ${k.sQty}: ${qty()}`, `• ${k.sLink}: ${shareUrl()}`);
+      return out.join("\n");
+    };
+
+    const syncUI = () => {
+      const { w, h } = dims();
+      imageSeg.querySelectorAll("input").forEach((i) => (i.disabled = !hasPhoto()));
+      imageSeg.toggleAttribute("data-off", !hasPhoto());
+      backSeg.querySelectorAll("input").forEach((i) => (i.disabled = !twoSided()));
+      backSeg.toggleAttribute("data-off", !twoSided());
+      backHelp.hidden = twoSided();
+      stubField.hidden = !stub();
+      thickHelp.textContent = cfg.thickHelp[val("grosor")] ?? "";
+      accentName.textContent = accent().name;
+      sizeOut.textContent = `${fmtIn(w)} × ${fmtIn(h)} in`;
+      approx.textContent = guides ? cfg.copy.guidesOn : rackZone ? cfg.copy.rackOn : cfg.copy.approx;
+      guidesBtn.setAttribute("aria-pressed", String(guides));
+      rackBtn.setAttribute("aria-pressed", String(rackZone));
+      viewBtn.textContent = cfg.views[view];
+      viewBtn.hidden = !twoSided();
+      const q = qty();
+      root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.qty) === q)));
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+    const render = () => {
+      syncUI();
+      draw();
+      renderTpls();
+      update();
+    };
+
+    // ---------- Eventos ----------
+    const onEdit = (e: Event) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      render();
+    };
+    form.addEventListener("change", onEdit);
+    form.addEventListener("input", onEdit);
+    root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) =>
+      b.addEventListener("click", () => {
+        qtyEl.value = b.dataset.qty!;
+        touched = true;
+        render();
+      })
+    );
+    guidesBtn.addEventListener("click", () => {
+      guides = !guides;
+      syncUI();
+      draw();
+    });
+    rackBtn.addEventListener("click", () => {
+      rackZone = !rackZone;
+      syncUI();
+      draw();
+    });
+    viewBtn.addEventListener("click", () => {
+      view = VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length];
+      syncUI();
+      draw();
+    });
+
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    Promise.all(
+      [`800 40px "Saira"`, `700 40px "Playfair Display"`, `400 40px "Michroma"`, `500 40px "Instrument Sans"`].map((f) =>
+        document.fonts.load(f).catch(() => [])
+      )
+    ).then(() => render());
+    render();
+  }
+</script>

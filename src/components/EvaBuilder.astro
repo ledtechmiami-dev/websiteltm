@@ -1,0 +1,952 @@
+---
+// Constructor de pisos de EVA foam para botes (idea tomada de los kits de Marine Mat):
+// el cliente marca las áreas del bote, elige diseño, colores de las dos capas, textura
+// y grabado, lo ve en un diagrama del bote y envía el diseño directo al correo.
+// No muestra precios: el precio llega con la cotización, después de medir el bote.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Colores de lámina EVA. PENDIENTE: confirmar con los que maneja el taller.
+const COLORS = [
+  { id: "negro", hex: "#1F2023", es: "Negro", en: "Black" },
+  { id: "grafito", hex: "#474C53", es: "Grafito", en: "Graphite" },
+  { id: "gris", hex: "#8B9198", es: "Gris", en: "Gray" },
+  { id: "gris-claro", hex: "#BEC3C8", es: "Gris claro", en: "Light gray" },
+  { id: "blanco", hex: "#F1F1EC", es: "Blanco", en: "White" },
+  { id: "arena", hex: "#D9C8A7", es: "Arena", en: "Sand" },
+  { id: "camel", hex: "#C29A69", es: "Camel", en: "Camel" },
+  { id: "teca", hex: "#9C6B40", es: "Teca", en: "Teak" },
+  { id: "cafe", hex: "#4F3828", es: "Café oscuro", en: "Dark brown" },
+  { id: "marino", hex: "#1F3A5C", es: "Azul marino", en: "Navy" },
+  { id: "azul", hex: "#1F6FB5", es: "Azul océano", en: "Ocean blue" },
+  { id: "hielo", hex: "#9FCFE6", es: "Azul hielo", en: "Ice blue" },
+  { id: "turquesa", hex: "#1C9EA3", es: "Turquesa", en: "Teal" },
+  { id: "espuma", hex: "#93D2B8", es: "Verde espuma", en: "Seafoam" },
+  { id: "rojo", hex: "#C3302D", es: "Rojo", en: "Red" },
+  { id: "naranja", hex: "#E5772E", es: "Naranja", en: "Orange" },
+  { id: "amarillo", hex: "#EEC232", es: "Amarillo", en: "Yellow" },
+];
+const DEFAULT_ZONES = ["plataforma", "popa", "timon", "proa"];
+
+const COPY = {
+  es: {
+    title: "Diseña el piso de tu bote",
+    lead: "Marca las áreas que quieres cubrir, elige el diseño, los colores y la textura, y mira cómo queda. Envíanos el diseño y te respondemos con el precio. Antes de cortar hacemos la plantilla de tu bote para que cada pieza calce exacta.",
+    boat: "Tu bote",
+    boatType: "Tipo de bote",
+    boats: { consola: "Consola central", bahia: "Bay boat", ponton: "Pontón", bowrider: "Bowrider", skiff: "Skiff / flats", otro: "Otro" },
+    model: "Marca y modelo (opcional)",
+    modelPh: "Ej. Boston Whaler 230 Vantage 2017",
+    length: "Eslora en pies",
+    lengthPh: "Ej. 23",
+    marina: "¿Dónde está el bote? (opcional)",
+    marinaPh: "Marina o ciudad, ej. Haulover",
+    zonesTitle: "Áreas a cubrir",
+    zones: { plataforma: "Plataforma de baño", popa: "Piso de popa", timon: "Timón y pasillos", proa: "Proa", nevera: "Tapa de la nevera", bordas: "Bordas" },
+    zonesHelp: "También puedes tocar las áreas en el diagrama.",
+    zonesNone: "Marca al menos un área para cubrir.",
+    design: "Diseño",
+    designs: { teca: "Teca", diamante: "Diamantes", hexagono: "Hexágonos", borde: "Solo borde", liso: "Liso" },
+    top: "Color de arriba",
+    bottom: "Color de abajo",
+    bottomHelp: "Es la capa que se ve en las ranuras del diseño.",
+    bottomOff: "El diseño liso es de un solo color: elige otro diseño para usar dos colores.",
+    texture: "Textura",
+    textures: { cepillada: "Cepillada", lisa: "Lisa" },
+    engrave: "Grabado (opcional)",
+    engraveText: "Nombre del bote o texto",
+    engravePh: "Ej. SEA BREEZE",
+    engraveWhere: "Dónde va el grabado",
+    logo: "¿Quieres tu logo?",
+    logoCta: "Mándanoslo por WhatsApp",
+    logoWa: "Hola, quiero un piso de EVA foam para mi bote con mi logo. Les envío el archivo.",
+    measure: "¿Cómo tomamos las medidas?",
+    measures: { visita: "Vengan a medir el bote", viejo: "Tengo el piso viejo", nose: "Aún no sé" },
+    measureHelp: "Antes de cortar hacemos la plantilla de tu bote.",
+    install: "Instalación",
+    installs: { nosotros: "Instalado por ustedes", material: "Solo el material" },
+    view: "Vista",
+    views: { bote: "Bote", detalle: "Detalle" },
+    approx: "Diagrama de referencia · tu bote se mide en persona",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h. Depende del tamaño del bote y de las áreas.",
+    cta: "Cotizar este piso",
+    wa: "Enviar por WhatsApp",
+    notesPh: "Para cuándo lo necesitas, si hay que quitar un piso viejo, si nos vas a mandar fotos…",
+    summary: "Diseño del constructor de pisos EVA",
+    sBoat: "Bote",
+    sWhere: "Dónde está",
+    sAreas: "Áreas",
+    sDesign: "Diseño",
+    sColors: "Colores",
+    sTop: "arriba",
+    sBottom: "abajo",
+    sOne: "un solo color",
+    sTexture: "Textura",
+    sEngrave: "Grabado",
+    sMeasure: "Medidas",
+    sInstall: "Instalación",
+    sLink: "Ver el diseño",
+    none: "ninguna",
+    waIntro: "Hola, me interesa este piso de EVA foam para mi bote:",
+    preview: "Vista previa del piso",
+    layerTop: "Capa de arriba",
+    layerBottom: "Capa de abajo",
+    layerOne: "Una capa",
+  },
+  en: {
+    title: "Design your boat's deck",
+    lead: "Pick the areas you want covered, choose the pattern, colors and texture, and see how it looks. Send us the design and we'll reply with the price. Before cutting, we template your boat so every piece fits exactly.",
+    boat: "Your boat",
+    boatType: "Boat type",
+    boats: { consola: "Center console", bahia: "Bay boat", ponton: "Pontoon", bowrider: "Bowrider", skiff: "Skiff / flats", otro: "Other" },
+    model: "Make and model (optional)",
+    modelPh: "E.g. Boston Whaler 230 Vantage 2017",
+    length: "Length in feet",
+    lengthPh: "E.g. 23",
+    marina: "Where is the boat? (optional)",
+    marinaPh: "Marina or city, e.g. Haulover",
+    zonesTitle: "Areas to cover",
+    zones: { plataforma: "Swim platform", popa: "Cockpit floor", timon: "Helm and walkways", proa: "Bow", nevera: "Cooler top", bordas: "Gunwales" },
+    zonesHelp: "You can also tap the areas on the diagram.",
+    zonesNone: "Pick at least one area to cover.",
+    design: "Pattern",
+    designs: { teca: "Teak", diamante: "Diamonds", hexagono: "Hexagons", borde: "Border only", liso: "Solid" },
+    top: "Top color",
+    bottom: "Bottom color",
+    bottomHelp: "It's the layer that shows through the pattern's grooves.",
+    bottomOff: "The solid pattern is a single color: pick another pattern to use two colors.",
+    texture: "Texture",
+    textures: { cepillada: "Brushed", lisa: "Smooth" },
+    engrave: "Engraving (optional)",
+    engraveText: "Boat name or text",
+    engravePh: "E.g. SEA BREEZE",
+    engraveWhere: "Where the engraving goes",
+    logo: "Want your logo?",
+    logoCta: "Send it to us on WhatsApp",
+    logoWa: "Hi, I'd like EVA foam decking for my boat with my logo. I'll send you the file.",
+    measure: "How do we take the measurements?",
+    measures: { visita: "Come measure the boat", viejo: "I have the old decking", nose: "Not sure yet" },
+    measureHelp: "Before cutting, we make a template of your boat.",
+    install: "Installation",
+    installs: { nosotros: "You install it", material: "Material only" },
+    view: "View",
+    views: { bote: "Boat", detalle: "Close-up" },
+    approx: "Reference diagram · your boat is measured in person",
+    price: "Price: we send it with your quote, in under 24 hours. It depends on the boat's size and the areas.",
+    cta: "Quote this deck",
+    wa: "Send on WhatsApp",
+    notesPh: "When you need it, whether old decking has to come off, whether you'll send photos…",
+    summary: "EVA deck builder design",
+    sBoat: "Boat",
+    sWhere: "Where it is",
+    sAreas: "Areas",
+    sDesign: "Pattern",
+    sColors: "Colors",
+    sTop: "top",
+    sBottom: "bottom",
+    sOne: "single color",
+    sTexture: "Texture",
+    sEngrave: "Engraving",
+    sMeasure: "Measurements",
+    sInstall: "Installation",
+    sLink: "See the design",
+    none: "none",
+    waIntro: "Hi, I'm interested in this EVA foam decking for my boat:",
+    preview: "Deck preview",
+    layerTop: "Top layer",
+    layerBottom: "Bottom layer",
+    layerOne: "Single layer",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  colors: COLORS.map((col) => ({ id: col.id, hex: col.hex, name: col[lang] })),
+  zones: c.zones,
+  designs: c.designs,
+  textures: c.textures,
+  boats: c.boats,
+  measures: c.measures,
+  installs: c.installs,
+  views: c.views,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    bottomHelp: c.bottomHelp,
+    bottomOff: c.bottomOff,
+    summary: c.summary,
+    sBoat: c.sBoat,
+    sWhere: c.sWhere,
+    sAreas: c.sAreas,
+    sDesign: c.sDesign,
+    sColors: c.sColors,
+    sTop: c.sTop,
+    sBottom: c.sBottom,
+    sOne: c.sOne,
+    sTexture: c.sTexture,
+    sEngrave: c.sEngrave,
+    sMeasure: c.sMeasure,
+    sInstall: c.sInstall,
+    sLink: c.sLink,
+    none: c.none,
+    waIntro: c.waIntro,
+    preview: c.preview,
+    layerTop: c.layerTop,
+    layerBottom: c.layerBottom,
+    layerOne: c.layerOne,
+  },
+};
+const colorName = (id: string) => COLORS.find((col) => col.id === id)![lang];
+const waLogo = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.logoWa)}`;
+const seg = (name: string, options: Record<string, string>) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: i === 0 }));
+---
+<section class="section" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb eb" data-deck data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage" data-view="bote">
+        <canvas class="nb__canvas eb__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-view-toggle>
+            {c.view}: <b data-view-name>{c.views.bote}</b>
+          </button>
+        </div>
+        <p class="nb__approx">{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.boat}</legend>
+          <div class="nb__seg nb__seg--wrap eb__seg3" role="radiogroup" aria-label={c.boatType}>
+            {seg("bote", c.boats).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <div class="eb__row">
+            <div class="field">
+              <label for="eb-modelo">{c.model}</label>
+              <input id="eb-modelo" type="text" name="modelo" maxlength="80" autocomplete="off" placeholder={c.modelPh} />
+            </div>
+            <div class="field">
+              <label for="eb-eslora">{c.length}</label>
+              <input id="eb-eslora" type="number" name="eslora" min="8" max="150" step="1" inputmode="numeric" placeholder={c.lengthPh} />
+            </div>
+          </div>
+          <div class="field">
+            <label for="eb-marina">{c.marina}</label>
+            <input id="eb-marina" type="text" name="marina" maxlength="80" autocomplete="off" placeholder={c.marinaPh} />
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group" aria-describedby="eb-zonas-help eb-zonas-err">
+          <legend class="nb__label">{c.zonesTitle}</legend>
+          <div class="eb__zones">
+            {Object.entries(c.zones).map(([id, label], i) => (
+              <label class="eb__zone">
+                <input type="checkbox" name="zona" value={id} checked={DEFAULT_ZONES.includes(id)} />
+                <b aria-hidden="true">{i + 1}</b><span>{label}</span>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help" id="eb-zonas-help">{c.zonesHelp}</p>
+          <p class="field__error" id="eb-zonas-err" data-zones-err hidden>{c.zonesNone}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.design}</legend>
+          <div class="eb__pats">
+            {Object.entries(c.designs).map(([id, label], i) => (
+              <label class="eb__pat">
+                <input type="radio" name="diseno" value={id} checked={i === 0} />
+                <canvas data-pat={id} aria-hidden="true"></canvas>
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.top} <span class="eb__picked" data-picked="arriba">· {colorName("teca")}</span></legend>
+          <div class="eb__sws">
+            {COLORS.map((col) => (
+              <label class="eb__sw" title={col[lang]}>
+                <input type="radio" name="arriba" value={col.id} checked={col.id === "teca"} />
+                <i style={`--c:${col.hex}`} aria-hidden="true"></i>
+                <span class="sr-only">{col[lang]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group" data-bottom>
+          <legend class="nb__label">{c.bottom} <span class="eb__picked" data-picked="abajo">· {colorName("negro")}</span></legend>
+          <p class="nb__help">{c.bottomHelp}</p>
+          <div class="eb__sws">
+            {COLORS.map((col) => (
+              <label class="eb__sw" title={col[lang]}>
+                <input type="radio" name="abajo" value={col.id} checked={col.id === "negro"} />
+                <i style={`--c:${col.hex}`} aria-hidden="true"></i>
+                <span class="sr-only">{col[lang]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.texture}</legend>
+          <div class="nb__seg">
+            {seg("textura", c.textures).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.engrave}</legend>
+          <div class="field">
+            <label for="eb-grabado">{c.engraveText}</label>
+            <input id="eb-grabado" type="text" name="grabado" maxlength="24" autocomplete="off" placeholder={c.engravePh} />
+          </div>
+          <div class="nb__seg" role="radiogroup" aria-label={c.engraveWhere}>
+            {seg("pos", { plataforma: c.zones.plataforma, popa: c.zones.popa }).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.logo} <a class="eb__link" href={waLogo} target="_blank" rel="noopener">{c.logoCta}</a></p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.measure}</legend>
+          <div class="nb__seg nb__seg--wrap eb__seg3">
+            {seg("medidas", c.measures).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.measureHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.install}</legend>
+          <div class="nb__seg">
+            {seg("instal", c.installs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="eb" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Color = { id: string; hex: string; name: string };
+  type Cfg = {
+    colors: Color[];
+    zones: Record<string, string>;
+    designs: Record<string, string>;
+    textures: Record<string, string>;
+    boats: Record<string, string>;
+    measures: Record<string, string>;
+    installs: Record<string, string>;
+    views: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+  type Look = { design: string; top: string; bot: string; brushed: boolean };
+  type Piece = { path: Path2D; deck: boolean; box: number[] };
+  type Zone = Piece & { id: string; at: [number, number] };
+
+  // ---------- Diagrama: bote de consola central visto desde arriba, proa a la derecha ----------
+  // Unidades del diagrama: la cubierta mide 1000 de largo.
+  const G = 2.4; // ranura que deja ver la capa de abajo
+  const M = 9; // borde liso de cada pieza antes de la ranura
+
+  const rr = (x: number, y: number, w: number, h: number, r: number) => {
+    const p = new Path2D();
+    p.roundRect(x, y, w, h, r);
+    return p;
+  };
+  const rect = (x: number, y: number, w: number, h: number) => {
+    const p = new Path2D();
+    p.rect(x, y, w, h);
+    return p;
+  };
+  const join = (...ps: Path2D[]) => {
+    const p = new Path2D();
+    ps.forEach((q) => p.addPath(q));
+    return p;
+  };
+
+  const HULL = new Path2D("M0 -170 H560 C800 -170 940 -100 1000 0 C940 100 800 170 560 170 H0 Z");
+  const DECK = new Path2D("M18 -150 H560 C780 -150 915 -88 972 0 C915 88 780 150 560 150 H18 Z");
+  const PLATFORM = rr(-84, -146, 80, 292, 16);
+  const CONSOLE = rr(470, -78, 120, 156, 14);
+  const POST = rr(355, -60, 50, 120, 12);
+  const COOLER = rr(630, -52, 78, 104, 12);
+
+  // Mismo orden que las casillas del panel: el número de cada área coincide
+  const ZONES: Zone[] = [
+    { id: "plataforma", path: rr(-78, -138, 66, 276, 12), deck: false, box: [-78, -138, -12, 138], at: [-45, -116] },
+    { id: "popa", path: rect(10, -160, 340, 320), deck: true, box: [10, -160, 350, 160], at: [46, -118] },
+    { id: "timon", path: join(rect(350, -160, 260, 320), CONSOLE, POST), deck: true, box: [350, -160, 610, 160], at: [530, -114] },
+    { id: "proa", path: join(rect(610, -160, 400, 320), COOLER), deck: true, box: [610, -160, 1000, 160], at: [820, 0] },
+    { id: "nevera", path: rr(637, -45, 64, 90, 9), deck: false, box: [637, -45, 701, 45], at: [669, 0] },
+    { id: "bordas", path: join(HULL, DECK), deck: false, box: [0, -170, 1000, 170], at: [290, -160] },
+  ];
+  const HIT_ORDER = ["nevera", "plataforma", "popa", "timon", "proa", "bordas"];
+
+  // ---------- Colores ----------
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const shade = (hex: string, t: number) => {
+    const to = t < 0 ? 0 : 255;
+    const a = Math.abs(t);
+    const [r, g, b] = rgb(hex).map((v) => Math.round(v + (to - v) * a));
+    return `rgb(${r},${g},${b})`;
+  };
+
+  // Textura cepillada: rayas finas a lo largo, se repite sin cortes
+  const tex = document.createElement("canvas");
+  tex.width = tex.height = 96;
+  {
+    const t = tex.getContext("2d")!;
+    let seed = 11;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 160; i++) {
+      const y = Math.floor(rnd() * 96) + 0.5;
+      const x = rnd() * 96;
+      const len = 10 + rnd() * 44;
+      t.strokeStyle = i % 2 ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.13)";
+      t.beginPath();
+      t.moveTo(x, y);
+      t.lineTo(x + len, y);
+      t.moveTo(x - 96, y);
+      t.lineTo(x + len - 96, y);
+      t.stroke();
+    }
+  }
+
+  // Ranuras del diseño dentro de la caja [x0, y0, x1, y1]
+  const grooves = (c: CanvasRenderingContext2D, d: string, x0: number, y0: number, x1: number, y1: number) => {
+    if (d === "teca") {
+      for (let y = Math.floor(y0 / 14) * 14; y <= y1; y += 14) {
+        c.moveTo(x0, y);
+        c.lineTo(x1, y);
+      }
+    } else if (d === "diamante") {
+      const S = 30;
+      for (let t = Math.floor((x0 - y1) / S) * S; t <= x1 - y0; t += S) {
+        c.moveTo(y0 + t, y0);
+        c.lineTo(y1 + t, y1);
+      }
+      for (let t = Math.floor((x0 + y0) / S) * S; t <= x1 + y1; t += S) {
+        c.moveTo(t - y0, y0);
+        c.lineTo(t - y1, y1);
+      }
+    } else if (d === "hexagono") {
+      const r = 13;
+      const h = Math.sqrt(3) * r;
+      for (let col = Math.floor(x0 / (1.5 * r)) - 1; col * 1.5 * r <= x1 + r; col++) {
+        const cx = col * 1.5 * r;
+        const off = col % 2 ? h / 2 : 0;
+        for (let cy = Math.floor(y0 / h) * h + off - h; cy <= y1 + h; cy += h) {
+          for (let i = 0; i <= 6; i++) {
+            const a = (Math.PI / 3) * i;
+            const px = cx + r * Math.cos(a);
+            const py = cy + r * Math.sin(a);
+            if (i) c.lineTo(px, py);
+            else c.moveTo(px, py);
+          }
+        }
+      }
+    }
+  };
+
+  // Una pieza de EVA: capa de arriba, ranuras con la capa de abajo, borde liso y textura.
+  // k = píxeles por unidad del diagrama (para que la textura quede siempre del mismo tamaño).
+  const foam = (c: CanvasRenderingContext2D, p: Piece, l: Look, k: number, opts: { tex?: number; border?: boolean } = {}) => {
+    const [x0, y0, x1, y1] = p.box;
+    const edges = () => {
+      c.stroke(p.path);
+      if (p.deck) c.stroke(DECK);
+    };
+    c.save();
+    if (p.deck) c.clip(DECK);
+    c.clip(p.path, "evenodd");
+    c.fillStyle = l.top;
+    c.fillRect(x0, y0, x1 - x0, y1 - y0);
+    c.lineJoin = "round";
+    if (l.design !== "liso") {
+      c.strokeStyle = l.bot;
+      c.lineWidth = G;
+      c.beginPath();
+      grooves(c, l.design, x0, y0, x1, y1);
+      c.stroke();
+      if (opts.border !== false) {
+        c.lineWidth = 2 * (M + G);
+        edges();
+        c.strokeStyle = l.top;
+        c.lineWidth = 2 * M;
+        edges();
+      }
+    }
+    if (l.brushed) {
+      const pat = c.createPattern(tex, "repeat")!;
+      pat.setTransform(new DOMMatrix().scale(1 / k));
+      c.globalAlpha = opts.tex ?? 0.6;
+      c.fillStyle = pat;
+      c.fillRect(x0, y0, x1 - x0, y1 - y0);
+      c.globalAlpha = 1;
+    }
+    c.strokeStyle = "rgba(0,0,0,0.28)";
+    c.lineWidth = 3 / k;
+    edges();
+    c.restore();
+  };
+
+  // Grabado: placa lisa con ranura alrededor y el texto en el color de abajo
+  const engrave = (c: CanvasRenderingContext2D, words: string, l: Look, x: number, y: number, rot: number, room: number, max: number) => {
+    c.save();
+    c.translate(x, y);
+    c.rotate(rot);
+    c.font = `800 100px "Saira", system-ui, sans-serif`;
+    const size = Math.min(max, (room / Math.max(c.measureText(words).width, 1)) * 100);
+    c.font = `800 ${size}px "Saira", system-ui, sans-serif`;
+    const w = c.measureText(words).width;
+    if (l.design !== "liso") {
+      const pw = w + size * 1.3;
+      const ph = size * 1.6;
+      c.fillStyle = l.top;
+      c.fill(rr(-pw / 2, -ph / 2, pw, ph, size * 0.3));
+      c.strokeStyle = l.bot;
+      c.lineWidth = G;
+      c.stroke(rr(-pw / 2 + 5, -ph / 2 + 5, pw - 10, ph - 10, size * 0.22));
+    }
+    c.fillStyle = l.bot;
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText(words, 0, size * 0.06);
+    c.restore();
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-deck]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const stage = root.querySelector<HTMLElement>(".nb__stage")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const viewBtn = root.querySelector<HTMLButtonElement>("[data-view-toggle]")!;
+    const viewName = root.querySelector<HTMLElement>("[data-view-name]")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const zonesErr = form.querySelector<HTMLElement>("[data-zones-err]")!;
+    const bottomBox = form.querySelector<HTMLFieldSetElement>("[data-bottom]")!;
+    const bottomHelp = bottomBox.querySelector<HTMLElement>(".nb__help")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+    const tiles = [...form.querySelectorAll<HTMLCanvasElement>("canvas[data-pat]")];
+    const zoneInputs = [...form.querySelectorAll<HTMLInputElement>("input[name='zona']")];
+    const hit = document.createElement("canvas").getContext("2d")!;
+
+    let view = "bote";
+    let at = { s: 1, ox: 0, oy: 0 }; // dónde quedó el diagrama en la vista previa
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const zones = () => zoneInputs.filter((i) => i.checked).map((i) => i.value);
+    const color = (id: string) => cfg.colors.find((col) => col.id === id) ?? cfg.colors[0];
+    const length = () => {
+      const n = Number(text("eslora"));
+      return n >= 8 && n <= 150 ? Math.round(n) : 0;
+    };
+    const look = (): Look => {
+      const design = val("diseno");
+      const top = color(val("arriba")).hex;
+      return { design, top, bot: design === "liso" ? shade(top, -0.34) : color(val("abajo")).hex, brushed: val("textura") === "cepillada" };
+    };
+    const colorsText = () => {
+      const k = cfg.copy;
+      const top = color(val("arriba")).name;
+      return val("diseno") === "liso" ? `${top} (${k.sOne})` : `${k.sTop} ${top}, ${k.sBottom} ${color(val("abajo")).name}`;
+    };
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const setText = (name: string, v: string | null, max: number) => {
+      if (v) (form.elements.namedItem(name) as HTMLInputElement).value = v.slice(0, max);
+    };
+    const params = new URLSearchParams(location.search);
+    if (params.has("zonas")) {
+      const zs = params.get("zonas")!.split(",");
+      zoneInputs.forEach((i) => (i.checked = zs.includes(i.value)));
+      ["bote", "diseno", "arriba", "abajo", "textura", "pos", "medidas", "instal"].forEach((n) => setRadio(n, params.get(n)));
+      setText("modelo", params.get("modelo"), 80);
+      setText("eslora", params.get("eslora"), 3);
+      setText("grabado", params.get("grabado"), 24);
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams({
+        bote: val("bote"),
+        zonas: zones().join(","),
+        diseno: val("diseno"),
+        arriba: val("arriba"),
+        abajo: val("abajo"),
+        textura: val("textura"),
+        medidas: val("medidas"),
+        instal: val("instal"),
+      });
+      if (text("modelo")) p.set("modelo", text("modelo"));
+      if (length()) p.set("eslora", String(length()));
+      if (text("grabado")) {
+        p.set("grabado", text("grabado"));
+        p.set("pos", val("pos"));
+      }
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Dibujo ----------
+    const fit = (cv: HTMLCanvasElement) => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = cv.clientWidth;
+      const ch = cv.clientHeight;
+      if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) {
+        cv.width = Math.round(cw * dpr);
+        cv.height = Math.round(ch * dpr);
+      }
+      return { dpr, cw, ch };
+    };
+
+    const drawBoat = (l: Look, dpr: number, cw: number, ch: number) => {
+      const s = Math.min((cw - 40) / 1110, (ch - 100) / 360);
+      const ox = cw / 2 - 458 * s;
+      const oy = ch / 2 + 8;
+      const px = 1 / s; // un píxel en unidades del diagrama
+      const on = new Set(zones());
+      at = { s, ox, oy };
+      ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * ox, dpr * oy);
+
+      // Casco y plataforma sobre el agua
+      ctx.save();
+      ctx.shadowColor = "rgba(2, 22, 36, 0.5)";
+      ctx.shadowBlur = 24 * dpr;
+      ctx.shadowOffsetY = 10 * dpr;
+      ctx.fillStyle = "#F7F8F9";
+      ctx.fill(HULL);
+      ctx.fill(PLATFORM);
+      ctx.restore();
+      ctx.fillStyle = "#DCE1E6";
+      ctx.fill(DECK);
+      ctx.lineWidth = 1.2 * px;
+      ctx.strokeStyle = "rgba(11, 12, 14, 0.22)";
+      ctx.stroke(HULL);
+      ctx.stroke(DECK);
+      ctx.stroke(PLATFORM);
+
+      // Áreas marcadas con EVA; las demás, solo con su contorno punteado
+      const piece = (z: Zone) => {
+        if (on.has(z.id)) {
+          foam(ctx, z, l, s);
+          return;
+        }
+        if (z.id === "bordas") return;
+        ctx.save();
+        if (z.deck) ctx.clip(DECK);
+        ctx.setLineDash([7, 6]);
+        ctx.lineWidth = 1.4 * px;
+        ctx.strokeStyle = "rgba(11, 12, 14, 0.34)";
+        ctx.stroke(z.path);
+        ctx.restore();
+      };
+      ZONES.filter((z) => z.id !== "nevera").forEach(piece);
+
+      // Consola, asiento del timón y nevera (fibra de vidrio)
+      const fiber = (p: Path2D, fill = "#FBFCFD") => {
+        ctx.save();
+        ctx.shadowColor = "rgba(11, 12, 14, 0.3)";
+        ctx.shadowBlur = 8 * dpr;
+        ctx.shadowOffsetY = 3 * dpr;
+        ctx.fillStyle = fill;
+        ctx.fill(p);
+        ctx.restore();
+        ctx.lineWidth = 1.2 * px;
+        ctx.strokeStyle = "rgba(11, 12, 14, 0.24)";
+        ctx.stroke(p);
+      };
+      fiber(CONSOLE);
+      ctx.fillStyle = "rgba(24, 52, 74, 0.75)";
+      ctx.fill(rr(572, -66, 14, 132, 6)); // parabrisas
+      ctx.beginPath();
+      ctx.arc(494, -24, 15, 0, Math.PI * 2);
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#2B3036";
+      ctx.stroke(); // timón
+      fiber(POST);
+      ctx.fillStyle = "#3B4047";
+      ctx.fill(rr(362, -50, 36, 100, 8)); // cojín del asiento
+      fiber(COOLER);
+      piece(ZONES.find((z) => z.id === "nevera")!);
+
+      const words = text("grabado");
+      const pos = val("pos");
+      if (words && on.has(pos)) {
+        if (pos === "plataforma") engrave(ctx, words, l, -45, 8, -Math.PI / 2, 170, 30);
+        else engrave(ctx, words, l, 190, 0, 0, 230, 44);
+      }
+
+      // Números de las áreas, iguales a los del panel
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const r = Math.max(8, Math.min(11, 19 * s));
+      ctx.font = `700 ${Math.round(r + 1)}px "Instrument Sans", system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ZONES.forEach((z, i) => {
+        const x = ox + z.at[0] * s;
+        const y = oy + z.at[1] * s;
+        const sel = on.has(z.id);
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = sel ? "#0B0C0E" : "rgba(255, 255, 255, 0.94)";
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = sel ? "#FFFFFF" : "rgba(11, 12, 14, 0.4)";
+        ctx.stroke();
+        ctx.fillStyle = sel ? "#FFFFFF" : "#3B4047";
+        ctx.fillText(String(i + 1), x, y + 0.5);
+      });
+    };
+
+    // Detalle: una muestra grande de la lámina con su canto, donde se ven las dos capas
+    const drawDetail = (l: Look, dpr: number, cw: number, ch: number) => {
+      const k = 2.4;
+      const w = Math.min(cw - 64, 560);
+      const h = Math.max(60, Math.min(ch - 160, 280));
+      const x = (cw - w) / 2;
+      const y = (ch - h) / 2 - 18;
+      const one = l.design === "liso";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.save();
+      ctx.shadowColor = "rgba(11, 12, 14, 0.28)";
+      ctx.shadowBlur = 22 * dpr;
+      ctx.shadowOffsetY = 10 * dpr;
+      ctx.fillStyle = shade(one ? l.top : l.bot, -0.2);
+      ctx.fill(rr(x, y, w, h + 18, 10));
+      ctx.restore();
+      ctx.fillStyle = shade(l.top, -0.24);
+      ctx.fill(rr(x, y, w, h + 9, 10));
+
+      ctx.setTransform(dpr * k, 0, 0, dpr * k, dpr * x, dpr * y);
+      const W = w / k;
+      const H = h / k;
+      foam(ctx, { path: rr(0, 0, W, H, 10 / k), deck: false, box: [0, 0, W, H] }, l, k, { tex: 1 });
+      const words = text("grabado");
+      if (words) engrave(ctx, words, l, W / 2, H / 2, 0, W * 0.6, 26);
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = `600 13px "Instrument Sans", system-ui, sans-serif`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      const tag = (tx: number, ty: number, fill: string, label: string) => {
+        ctx.beginPath();
+        ctx.arc(tx + 7, ty, 7, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(11, 12, 14, 0.25)";
+        ctx.stroke();
+        ctx.fillStyle = "#2B3036";
+        ctx.fillText(label, tx + 20, ty);
+      };
+      const k2 = cfg.copy;
+      const ly = y + h + 40;
+      const topName = color(val("arriba")).name;
+      if (one) tag(x, ly, l.top, `${k2.layerOne} · ${topName}`);
+      else {
+        const stack = w < 420;
+        tag(x, ly, l.top, `${k2.layerTop} · ${topName}`);
+        tag(stack ? x : x + w / 2, stack ? ly + 22 : ly, l.bot, `${k2.layerBottom} · ${color(val("abajo")).name}`);
+      }
+    };
+
+    const draw = () => {
+      const { dpr, cw, ch } = fit(canvas);
+      if (!cw || !ch) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+      const l = look();
+      if (view === "bote") drawBoat(l, dpr, cw, ch);
+      else drawDetail(l, dpr, cw, ch);
+      const names = zones().map((z) => cfg.zones[z]).join(", ");
+      canvas.setAttribute("aria-label", `${cfg.copy.preview}: ${names || cfg.copy.none} · ${cfg.designs[l.design]} · ${colorsText()}`);
+    };
+
+    // Muestras de cada diseño con los colores elegidos
+    const drawTiles = () => {
+      const l = look();
+      const k = 1.1;
+      tiles.forEach((cv) => {
+        const { dpr, cw, ch } = fit(cv);
+        if (!cw || !ch) return;
+        const c = cv.getContext("2d")!;
+        c.setTransform(dpr * k, 0, 0, dpr * k, 0, 0);
+        const W = cw / k;
+        const H = ch / k;
+        const d = cv.dataset.pat!;
+        const tl = { ...l, design: d, bot: d === "liso" ? shade(l.top, -0.34) : color(val("abajo")).hex };
+        foam(c, { path: rect(0, 0, W, H), deck: false, box: [0, 0, W, H] }, tl, k, { tex: 0.8, border: d === "borde" });
+      });
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const boat = [cfg.boats[val("bote")], text("modelo"), length() ? `${length()} ft` : ""].filter(Boolean).join(" — ");
+      const words = text("grabado");
+      return [
+        `${k.summary}:`,
+        `• ${k.sBoat}: ${boat}`,
+        text("marina") && `• ${k.sWhere}: ${text("marina")}`,
+        `• ${k.sAreas}: ${zones().map((z) => cfg.zones[z]).join(", ") || k.none}`,
+        `• ${k.sDesign}: ${cfg.designs[val("diseno")]}`,
+        `• ${k.sColors}: ${colorsText()}`,
+        `• ${k.sTexture}: ${cfg.textures[val("textura")]}`,
+        words && `• ${k.sEngrave}: "${words}" (${cfg.zones[val("pos")]})`,
+        `• ${k.sMeasure}: ${cfg.measures[val("medidas")]}`,
+        `• ${k.sInstall}: ${cfg.installs[val("instal")]}`,
+        `• ${k.sLink}: ${shareUrl()}`,
+      ].filter(Boolean).join("\n");
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+
+    // Con el diseño liso no hay capa de abajo
+    const syncBottom = () => {
+      const one = val("diseno") === "liso";
+      bottomBox.disabled = one;
+      bottomHelp.textContent = one ? cfg.copy.bottomOff : cfg.copy.bottomHelp;
+      form.querySelectorAll<HTMLElement>("[data-picked]").forEach((el) => {
+        el.textContent = `· ${color(val(el.dataset.picked!)).name}`;
+      });
+    };
+    const render = () => {
+      syncBottom();
+      draw();
+      drawTiles();
+      update();
+    };
+
+    // Si escribe un grabado, el área donde va queda marcada
+    const ensureEngraveZone = () => {
+      if (!text("grabado")) return;
+      const input = zoneInputs.find((i) => i.value === val("pos"));
+      if (input && !input.checked) input.checked = true;
+      zonesErr.hidden = true;
+    };
+
+    // ---------- Eventos ----------
+    form.addEventListener("change", (e) => {
+      const el = e.target as HTMLInputElement;
+      if (contactBox.contains(el)) return;
+      touched = true;
+      if (el.name === "zona" && zones().length) zonesErr.hidden = true;
+      if (el.name === "pos") ensureEngraveZone();
+      render();
+    });
+    form.addEventListener("input", (e) => {
+      const el = e.target as HTMLInputElement;
+      if (contactBox.contains(el)) return;
+      touched = true;
+      if (el.name === "grabado") {
+        ensureEngraveZone();
+        draw();
+      }
+      update();
+    });
+
+    viewBtn.addEventListener("click", () => {
+      view = view === "bote" ? "detalle" : "bote";
+      stage.dataset.view = view;
+      viewName.textContent = cfg.views[view];
+      draw();
+    });
+
+    // Tocar un área en el diagrama la marca o desmarca
+    const zoneAt = (e: MouseEvent) => {
+      if (view !== "bote") return null;
+      const r = canvas.getBoundingClientRect();
+      const x = (e.clientX - r.left - at.ox) / at.s;
+      const y = (e.clientY - r.top - at.oy) / at.s;
+      for (const id of HIT_ORDER) {
+        const z = ZONES.find((zone) => zone.id === id)!;
+        if (hit.isPointInPath(z.path, x, y, "evenodd") && (!z.deck || hit.isPointInPath(DECK, x, y))) return z;
+      }
+      return null;
+    };
+    canvas.addEventListener("click", (e) => {
+      const z = zoneAt(e);
+      if (!z) return;
+      const input = zoneInputs.find((i) => i.value === z.id)!;
+      input.checked = !input.checked;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    canvas.addEventListener("mousemove", (e) => {
+      canvas.style.cursor = zoneAt(e) ? "pointer" : "";
+    });
+
+    wireQuote(form, {
+      formValue: cfg.formValue,
+      lang: cfg.lang,
+      summary,
+      zona: () => text("marina"),
+      invalidAt: () => {
+        if (zones().length) return null;
+        zonesErr.hidden = false;
+        return zoneInputs[0];
+      },
+    });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    new ResizeObserver(() => drawTiles()).observe(form.querySelector(".eb__pats")!);
+    document.fonts.load(`800 40px "Saira"`).catch(() => {}).then(() => draw());
+    render();
+  }
+</script>

@@ -1,0 +1,79 @@
+---
+import Layout from "../layouts/Layout.astro";
+import PageHero from "../components/PageHero.astro";
+import PhotoSlot from "../components/PhotoSlot.astro";
+import type { Lang } from "../data/site";
+import { LINES } from "../data/catalog";
+import { WORK } from "../data/work";
+import { PAGES, type Bi } from "../data/content";
+import { ROUTES } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = UI[lang];
+const tr = (b: Bi) => b[lang] || b.es;
+const page = PAGES.projects;
+
+const c = {
+  title: tr(page.head.title),
+  h1: tr(page.head.h1),
+  lead: tr(page.head.lead),
+  ctaTitle: tr(page.ctaTitle),
+  ctaText: tr(page.ctaText),
+  ...{ es: { all: "Todos", filter: "Filtrar por línea" }, en: { all: "All", filter: "Filter by line" } }[lang],
+};
+---
+<Layout lang={lang} page="projects" title={c.title} description={c.lead} alternates={ROUTES.projects}>
+  <PageHero
+    lang={lang}
+    title={c.h1}
+    lead={c.lead}
+    crumbs={[{ label: t.nav.home, href: ROUTES.home[lang] }, { label: t.nav.projects }]}
+    mosaic={["graficos", "letreros", "fabricacion", "marino"]}
+  />
+
+  <section class="section" data-filter-root>
+    <div class="container">
+      <div class="filters" role="group" aria-label={c.filter}>
+        <button type="button" data-filter="all" aria-pressed="true">{c.all}</button>
+        {LINES.map((l) => (
+          <button type="button" data-filter={l.key} aria-pressed="false">
+            <span class="chip" style={`--c:${l.color}`}></span>{l[lang].name}
+          </button>
+        ))}
+      </div>
+      <ul class="gallery">
+        {WORK.map((w) => (
+          <li data-line={w.line}>
+            <PhotoSlot lang={lang} line={w.line} src={w.src} alt={w[lang].alt} caption={w[lang].caption} class="slot--ratio" />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--flush">
+    <div class="container">
+      <div class="cta">
+        <h2>{c.ctaTitle}</h2>
+        <p>{c.ctaText}</p>
+        <a class="btn" href={ROUTES.quote[lang]}>{t.requestQuote}</a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-filter-root]").forEach((root) => {
+    const buttons = root.querySelectorAll<HTMLButtonElement>("[data-filter]");
+    const items = root.querySelectorAll<HTMLElement>("[data-line]");
+    buttons.forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const f = btn.dataset.filter;
+        buttons.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+        items.forEach((it) => { it.hidden = f !== "all" && it.dataset.line !== f; });
+      })
+    );
+  });
+</script>

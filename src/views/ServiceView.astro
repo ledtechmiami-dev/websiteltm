@@ -1,0 +1,293 @@
+---
+import Layout from "../layouts/Layout.astro";
+import PageHero from "../components/PageHero.astro";
+import PhotoSlot from "../components/PhotoSlot.astro";
+import ServiceCard from "../components/ServiceCard.astro";
+import KelvinScale from "../components/KelvinScale.astro";
+import NeonBuilder from "../components/NeonBuilder.astro";
+import EvaBuilder from "../components/EvaBuilder.astro";
+import BeforeAfter from "../components/BeforeAfter.astro";
+import BoardBuilder from "../components/BoardBuilder.astro";
+import ChannelBuilder from "../components/ChannelBuilder.astro";
+import FenceBuilder from "../components/FenceBuilder.astro";
+import CardBuilder from "../components/CardBuilder.astro";
+import FlyerBuilder from "../components/FlyerBuilder.astro";
+import BrochureBuilder from "../components/BrochureBuilder.astro";
+import FolderBuilder from "../components/FolderBuilder.astro";
+import RackBuilder from "../components/RackBuilder.astro";
+import MagnetBuilder from "../components/MagnetBuilder.astro";
+import HangerBuilder from "../components/HangerBuilder.astro";
+import TicketBuilder from "../components/TicketBuilder.astro";
+import MenuBuilder from "../components/MenuBuilder.astro";
+import PlacematBuilder from "../components/PlacematBuilder.astro";
+import TentBuilder from "../components/TentBuilder.astro";
+import LabelBuilder from "../components/LabelBuilder.astro";
+import PrintCatalog from "../components/PrintCatalog.astro";
+import QuoteSection from "../components/QuoteSection.astro";
+import type { Lang } from "../data/site";
+import { SITE, waLink } from "../data/site";
+import { lineOf, lineUrl, topServicesOf, childrenOf, parentOf, serviceUrl, formValue, type Service } from "../data/catalog";
+import { ROUTES } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props {
+  lang: Lang;
+  service: Service;
+}
+
+const { lang, service } = Astro.props;
+const s = service[lang];
+const line = lineOf(service);
+const l = line[lang];
+const t = UI[lang];
+// Un servicio que cuelga de otro (los impresos de Marketing Digital) enseña a sus
+// hermanos; los demás, los otros servicios principales de su línea
+const parent = parentOf(service);
+const related = parent
+  ? childrenOf(parent).filter((x) => x.key !== service.key)
+  : topServicesOf(line).filter((x) => x.key !== service.key);
+const waText = `${t.waService} ${s.name}.`;
+// Neón, channel letters, pisos EVA, tablas de cortar, cercas y material impreso
+// de marketing (tarjetas, volantes, folletos, carpetas, tarjetas de exhibidor,
+// imanes, colgantes de puerta, boletos, menús, manteles individuales y
+// exhibidores de mesa y etiquetas) tienen constructor propio
+const BUILDERS: Record<
+  string,
+  | "neon" | "canal" | "eva" | "tabla" | "cerca" | "tarjeta" | "volante"
+  | "folleto" | "carpeta" | "exhibidor" | "iman" | "colgante" | "boleto" | "menu"
+  | "mantel" | "carpa" | "etiqueta"
+> = {
+  "letreros-neon": "neon",
+  "channel-letters": "canal",
+  "pisos-eva-botes": "eva",
+  "tablas-de-cortar": "tabla",
+  "cercas-aluminio": "cerca",
+  "tarjetas-presentacion": "tarjeta",
+  volantes: "volante",
+  folletos: "folleto",
+  "carpetas-presentacion": "carpeta",
+  "tarjetas-exhibidor": "exhibidor",
+  imanes: "iman",
+  "colgantes-puerta": "colgante",
+  boletos: "boleto",
+  menus: "menu",
+  "manteles-individuales": "mantel",
+  "exhibidores-mesa": "carpa",
+  etiquetas: "etiqueta",
+};
+const builder = BUILDERS[service.key] ?? null;
+// Servicios que muestran su gama de productos en vez de un constructor
+const CATALOGS: Record<string, "impresion"> = { "marketing-digital": "impresion" };
+const catalog = CATALOGS[service.key] ?? null;
+// Servicios con comparador antes / después en la foto del encabezado
+const BEFORE_AFTER: Record<string, "cubierta" | "cerca"> = {
+  "pisos-eva-botes": "cubierta",
+  "cercas-aluminio": "cerca",
+};
+const beforeAfter = BEFORE_AFTER[service.key] ?? null;
+
+const COPY = {
+  es: {
+    h1: `${s.name} en Miami`,
+    includes: "Qué incluye",
+    uses: "Ideal para",
+    temp: "Qué temperatura usar",
+    more: "Más servicios de esta línea",
+    moreIn: "Más de",
+    seeGroup: "Ver",
+    quote: `Cotiza: ${s.name}`,
+    design: "Diseña tu letrero",
+    designDeck: "Diseña tu piso",
+    designBoard: "Diseña tu tabla",
+    designFence: "Diseña tu cerca",
+    designCard: "Diseña tus tarjetas",
+    designFlyer: "Diseña tus volantes",
+    designBrochure: "Diseña tu folleto",
+    designFolder: "Diseña tu carpeta",
+    designRack: "Diseña tu tarjeta",
+    designMagnet: "Diseña tu imán",
+    designHanger: "Diseña tu colgante",
+    designTicket: "Diseña tus boletos",
+    designMenu: "Diseña tu menú",
+    designPlacemat: "Diseña tu mantel",
+    designTent: "Diseña tu exhibidor",
+    designLabel: "Diseña tus etiquetas",
+    seeRange: "Ver qué imprimimos",
+  },
+  en: {
+    h1: `${s.name} in Miami`,
+    includes: "What's included",
+    uses: "Great for",
+    temp: "Which color temperature",
+    more: "More in this line",
+    moreIn: "More in",
+    seeGroup: "See",
+    quote: `Get a quote: ${s.name}`,
+    design: "Design your sign",
+    designDeck: "Design your deck",
+    designBoard: "Design your board",
+    designFence: "Design your fence",
+    designCard: "Design your cards",
+    designFlyer: "Design your flyers",
+    designBrochure: "Design your brochure",
+    designFolder: "Design your folder",
+    designRack: "Design your card",
+    designMagnet: "Design your magnet",
+    designHanger: "Design your hanger",
+    designTicket: "Design your tickets",
+    designMenu: "Design your menu",
+    designPlacemat: "Design your placemat",
+    designTent: "Design your display",
+    designLabel: "Design your labels",
+    seeRange: "See what we print",
+  },
+};
+const c = COPY[lang];
+// Botón del encabezado: cada constructor llama a lo suyo
+const DESIGN_CTA: Record<string, string> = {
+  eva: c.designDeck,
+  tabla: c.designBoard,
+  cerca: c.designFence,
+  tarjeta: c.designCard,
+  volante: c.designFlyer,
+  folleto: c.designBrochure,
+  carpeta: c.designFolder,
+  exhibidor: c.designRack,
+  iman: c.designMagnet,
+  colgante: c.designHanger,
+  boleto: c.designTicket,
+  menu: c.designMenu,
+  mantel: c.designPlacemat,
+  carpa: c.designTent,
+  etiqueta: c.designLabel,
+};
+const cols = related.length >= 4 ? 3 : related.length === 1 ? 1 : related.length;
+// Las migas pasan por el servicio que lo agrupa, igual que el menú
+const crumbs = [
+  { label: t.nav.home, href: ROUTES.home[lang] },
+  { label: t.nav.services, href: ROUTES.services[lang] },
+  { label: l.name, href: lineUrl(line, lang) },
+  ...(parent ? [{ label: parent[lang].name, href: serviceUrl(parent, lang) }] : []),
+  { label: s.name },
+];
+
+const schema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Service",
+      name: s.name,
+      description: s.intro,
+      serviceType: s.name,
+      areaServed: "Miami-Dade and Broward, FL",
+      provider: { "@type": "LocalBusiness", name: SITE.name, telephone: "+1-305-877-0384", url: SITE.url },
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: t.nav.home, item: new URL(ROUTES.home[lang], SITE.url).href },
+        { "@type": "ListItem", position: 2, name: t.nav.services, item: new URL(ROUTES.services[lang], SITE.url).href },
+        { "@type": "ListItem", position: 3, name: l.name, item: new URL(lineUrl(line, lang), SITE.url).href },
+        ...(parent
+          ? [{ "@type": "ListItem", position: 4, name: parent[lang].name, item: new URL(serviceUrl(parent, lang), SITE.url).href }]
+          : []),
+        { "@type": "ListItem", position: parent ? 5 : 4, name: s.name, item: new URL(serviceUrl(service, lang), SITE.url).href },
+      ],
+    },
+  ],
+};
+---
+<Layout
+  lang={lang}
+  page="services"
+  title={`${c.h1} | LED Tech Miami`}
+  description={s.intro}
+  alternates={{ es: serviceUrl(service, "es"), en: serviceUrl(service, "en") }}
+  schema={schema}
+>
+  <PageHero
+    lang={lang}
+    line={line}
+    title={c.h1}
+    lead={s.intro}
+    crumbs={crumbs}
+  >
+    <div class="hero-actions">
+      {catalog
+        ? <a class="btn" href="#materiales">{c.seeRange}</a>
+        : builder
+          ? <a class="btn" href="#disena">{DESIGN_CTA[builder] ?? c.design}</a>
+          : <a class="btn" href="#cotizar">{t.requestQuote}</a>}
+      <a class="wa-link" href={waLink(waText)} target="_blank" rel="noopener">
+        <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>WhatsApp {SITE.phone}
+      </a>
+    </div>
+    {beforeAfter
+      ? <BeforeAfter slot="art" lang={lang} art={beforeAfter} />
+      : <PhotoSlot slot="art" lang={lang} line={line.key} />}
+  </PageHero>
+
+  <section class="section">
+    <div class="container detail" style={`--svc:${line.color}`}>
+      <div class="panel">
+        <h2 class="panel__title">{c.includes}</h2>
+        <ul class="ticks">
+          {s.includes.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+      <div class="panel">
+        <h2 class="panel__title">{c.uses}</h2>
+        <ul class="tags">
+          {s.uses.map((u) => <li>{u}</li>)}
+        </ul>
+        {service.kelvin && (
+          <>
+            <h2 class="panel__title panel__title--gap">{c.temp}</h2>
+            <KelvinScale from={service.kelvin.from} to={service.kelvin.to} label={service.kelvin.label} rgb={service.kelvin.rgb} />
+            {s.note && <p class="svc-note">{s.note}</p>}
+          </>
+        )}
+        {/* Sin escala de temperatura, la nota va suelta al pie del recuadro */}
+        {!service.kelvin && s.note && <p class="svc-note">{s.note}</p>}
+      </div>
+    </div>
+  </section>
+
+  {builder === "neon" && <NeonBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "canal" && <ChannelBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "eva" && <EvaBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "tabla" && <BoardBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "cerca" && <FenceBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "tarjeta" && <CardBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "volante" && <FlyerBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "folleto" && <BrochureBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "carpeta" && <FolderBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "exhibidor" && <RackBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "iman" && <MagnetBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "colgante" && <HangerBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "boleto" && <TicketBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "menu" && <MenuBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "mantel" && <PlacematBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "carpa" && <TentBuilder lang={lang} formValue={formValue(service)} />}
+  {builder === "etiqueta" && <LabelBuilder lang={lang} formValue={formValue(service)} />}
+  {catalog === "impresion" && <PrintCatalog lang={lang} />}
+
+  {related.length > 0 && (
+    <section class="section section--flush">
+      <div class="container">
+        <div class="sec-head">
+          <div><h2>{parent ? `${c.moreIn} ${parent[lang].name}` : c.more}</h2></div>
+          <a class="more" href={parent ? serviceUrl(parent, lang) : lineUrl(line, lang)}>
+            {parent ? `${c.seeGroup}: ${parent[lang].name}` : `${t.seeLine}: ${l.name}`}
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
+          </a>
+        </div>
+        <ul class="svc-grid" style={`--cols:${cols}`}>
+          {related.map((r) => <ServiceCard lang={lang} service={r} />)}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  <QuoteSection lang={lang} preset={formValue(service)} heading={c.quote} waText={waText} />
+</Layout>

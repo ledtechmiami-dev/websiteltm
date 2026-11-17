@@ -1,0 +1,23 @@
+{
+  "nombre": "Lámina de EVA foam",
+  "nameEn": "EVA foam sheet",
+  "slugEn": "eva-foam-sheet",
+  "categoria": "marino",
+  "orden": 1,
+  "precio": null,
+  "variantes": [],
+  "short": {
+    "es": "Lámina de EVA foam para pisos de botes y proyectos propios.",
+    "en": "EVA foam sheet for boat decks and DIY projects."
+  },
+  "descripcion": {
+    "es": "Lámina entera de EVA foam, sin cortar. Por su tamaño, solo se recoge en el taller o se entrega en Miami.",
+    "en": "Full, uncut EVA foam sheet. Because of its size, it's pickup or local delivery in Miami only."
+  },
+  "specs": { "es": [], "en": [] },
+  "imagenes": [],
+  "soloLocal": true,
+  "agotado": false,
+  "ejemplo": true,
+  "publicado": true
+}

@@ -1,0 +1,57 @@
+---
+import type { Lang } from "../data/site";
+import { SITE, waLink, mapsLink } from "../data/site";
+import { LINES, lineUrl } from "../data/catalog";
+import { ROUTES, type PageKey } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = UI[lang];
+const company: PageKey[] = ["services", "shop", "projects", "about", "quote"];
+const year = new Date().getFullYear();
+---
+<footer class="site-footer">
+  <div class="container site-footer__grid">
+    <div class="site-footer__brand">
+      <img src="/pictures/logo-reverse.svg" alt="LED Tech Miami" width="140" height="88" loading="lazy" />
+      <p>{t.tagline}</p>
+      <a class="btn btn--small btn--yellow" href={ROUTES.quote[lang]}>{t.requestQuote}</a>
+    </div>
+
+    <nav aria-labelledby="f-lines">
+      <h2 class="site-footer__h" id="f-lines">{t.footerLines}</h2>
+      <ul class="site-footer__links">
+        {LINES.map((l) => <li><a href={lineUrl(l, lang)}>{l[lang].name}</a></li>)}
+      </ul>
+    </nav>
+
+    <nav aria-labelledby="f-company">
+      <h2 class="site-footer__h" id="f-company">{t.footerCompany}</h2>
+      <ul class="site-footer__links">
+        {company.map((key) => <li><a href={ROUTES[key][lang]}>{t.nav[key]}</a></li>)}
+      </ul>
+    </nav>
+
+    <div>
+      <h2 class="site-footer__h">{t.footerContact}</h2>
+      <ul class="site-footer__links">
+        <li><a href={waLink(t.waText)} target="_blank" rel="noopener">WhatsApp {SITE.phone}</a></li>
+        <li><a href={`tel:+${SITE.phoneIntl}`}>{t.call} {SITE.phone}</a></li>
+        <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+        <li><a href={mapsLink} target="_blank" rel="noopener">{SITE.address.full}</a></li>
+        <li class="site-footer__text">{SITE.hours[lang]}</li>
+      </ul>
+      <div class="site-footer__social">
+        {SITE.social.map((s) => (
+          <a class="circle" href={s.url} target="_blank" rel="noopener" aria-label={`${t.social} ${s.name}`}>
+            <svg aria-hidden="true"><use href={`#i-${s.icon}`}></use></svg>
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <p class="container site-footer__legal">© {year} LED Tech Miami. {t.rights}</p>
+  <div class="ledbar" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+</footer>

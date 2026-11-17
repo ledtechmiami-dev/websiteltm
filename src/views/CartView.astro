@@ -1,0 +1,396 @@
+---
+// Carrito: productos guardados en el navegador, forma de entrega, totales y pago con Stripe.
+// Si el pago en línea aún no está activo, el pedido se puede enviar por WhatsApp.
+import Layout from "../layouts/Layout.astro";
+import Pending from "../components/Pending.astro";
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import { lineByKey } from "../data/catalog";
+import { DELIVERY, PRODUCTS, canBuy, categoryOf, money, productUrl, unitPrice } from "../data/shop";
+import { ROUTES } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = UI[lang];
+
+const c = {
+  es: {
+    title: "Tu carrito",
+    empty: "Tu carrito está vacío.",
+    emptyCta: "Ir a la tienda",
+    keep: "Seguir comprando",
+    items: "Productos",
+    remove: "Quitar",
+    less: "Quitar uno de",
+    more: "Agregar uno de",
+    qtyOf: "Cantidad de",
+    each: "c/u",
+    unavailable: "Ya no está disponible. Quítalo para poder pagar.",
+    delivery: "Entrega",
+    free: "Gratis",
+    freeFrom: "gratis desde {x}",
+    cost: "costo",
+    address: "dirección del taller",
+    localOnly: "Tu carrito tiene productos que solo se recogen en el taller o se entregan en Miami.",
+    summary: "Resumen",
+    subtotal: "Subtotal",
+    shipping: "Entrega",
+    total: "Total",
+    tax: "Los impuestos, si aplican, se calculan en el pago.",
+    pay: "Pagar con tarjeta",
+    payNote: "Pago seguro con Stripe: tarjeta, Apple Pay o Google Pay.",
+    going: "Abriendo el pago…",
+    errNotConfigured: "El pago en línea todavía no está activo. Envíanos tu pedido por WhatsApp y te ayudamos.",
+    errUnavailable: "Algunos productos o precios cambiaron. Recarga la página e inténtalo de nuevo.",
+    errGeneric: "No se pudo abrir el pago. Inténtalo de nuevo o envíanos tu pedido por WhatsApp.",
+    wa: "Enviar el pedido por WhatsApp",
+    waIntro: "Hola, quiero hacer este pedido de la tienda:",
+    waDelivery: "Entrega",
+    waSubtotal: "Subtotal",
+  },
+  en: {
+    title: "Your cart",
+    empty: "Your cart is empty.",
+    emptyCta: "Go to the shop",
+    keep: "Keep shopping",
+    items: "Products",
+    remove: "Remove",
+    less: "Remove one",
+    more: "Add one",
+    qtyOf: "Quantity of",
+    each: "each",
+    unavailable: "No longer available. Remove it to check out.",
+    delivery: "Delivery",
+    free: "Free",
+    freeFrom: "free over {x}",
+    cost: "cost",
+    address: "shop address",
+    localOnly: "Your cart has products that are pickup or local delivery in Miami only.",
+    summary: "Summary",
+    subtotal: "Subtotal",
+    shipping: "Delivery",
+    total: "Total",
+    tax: "Taxes, if any, are calculated at checkout.",
+    pay: "Pay by card",
+    payNote: "Secure payment with Stripe: card, Apple Pay or Google Pay.",
+    going: "Opening checkout…",
+    errNotConfigured: "Online payment isn't active yet. Send us your order on WhatsApp and we'll help you.",
+    errUnavailable: "Some products or prices changed. Reload the page and try again.",
+    errGeneric: "We couldn't open checkout. Try again or send us your order on WhatsApp.",
+    wa: "Send the order on WhatsApp",
+    waIntro: "Hi, I'd like to place this order from your shop:",
+    waDelivery: "Delivery",
+    waSubtotal: "Subtotal",
+  },
+}[lang];
+
+const catalog = PRODUCTS.map((p) => ({
+  id: p.key,
+  name: p[lang].name,
+  url: productUrl(p, lang),
+  img: p.images[0] ?? "",
+  ground: lineByKey(categoryOf(p).line).ground,
+  price: p.example ? null : p.price,
+  variants: p.variants.map((v, i) => ({ name: v.name[lang], price: p.example ? null : unitPrice(p, i) })),
+  buyable: canBuy(p),
+  localOnly: p.localOnly,
+}));
+const delivery = DELIVERY.map((d) => ({ key: d.key, name: d.name[lang], price: d.price, freeFrom: d.freeFrom, ready: d.ready }));
+const cfg = {
+  lang,
+  phone: SITE.phoneIntl,
+  catalog,
+  delivery,
+  copy: {
+    remove: c.remove,
+    less: c.less,
+    more: c.more,
+    qtyOf: c.qtyOf,
+    each: c.each,
+    unavailable: c.unavailable,
+    going: c.going,
+    errNotConfigured: c.errNotConfigured,
+    errUnavailable: c.errUnavailable,
+    errGeneric: c.errGeneric,
+    waIntro: c.waIntro,
+    waDelivery: c.waDelivery,
+    waSubtotal: c.waSubtotal,
+    free: c.free,
+  },
+};
+---
+<Layout
+  lang={lang}
+  page="cart"
+  title={`${c.title} | LED Tech Miami`}
+  description={c.title}
+  alternates={ROUTES.cart}
+  noindex
+>
+  <section class="section section--top">
+    <div class="container" data-cart data-cfg={JSON.stringify(cfg)}>
+      <div class="sec-head">
+        <div>
+          <nav class="crumbs" aria-label={t.crumbs}>
+            <ol>
+              <li><a href={ROUTES.home[lang]}>{t.nav.home}</a></li>
+              <li><a href={ROUTES.shop[lang]}>{t.nav.shop}</a></li>
+              <li><span aria-current="page">{t.nav.cart}</span></li>
+            </ol>
+          </nav>
+          <h1 class="cart__h1">{c.title}</h1>
+        </div>
+        <a class="more" href={ROUTES.shop[lang]}>{c.keep}<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+      </div>
+
+      <div class="cta cta--plain" data-empty hidden>
+        <h2>{c.empty}</h2>
+        <a class="btn" href={ROUTES.shop[lang]}>{c.emptyCta}</a>
+      </div>
+
+      <div class="cart" data-full>
+        <div class="panel cart__list">
+          <h2 class="sr-only">{c.items}</h2>
+          <ul data-lines></ul>
+        </div>
+
+        <aside class="panel cart__sum" aria-labelledby="cart-sum">
+          <h2 class="panel__title" id="cart-sum">{c.summary}</h2>
+
+          <fieldset class="nb__group cart__ship">
+            <legend class="tb__sub">{c.delivery}</legend>
+            {DELIVERY.map((d) => (
+              <label class="ship-opt">
+                <input type="radio" name="entrega" value={d.key} disabled={!d.ready} data-ready={String(d.ready)} />
+                <span class="ship-opt__text">
+                  <b>{d.name[lang]}</b>
+                  <small>
+                    {d.key === "recogida"
+                      ? (SITE.address.full || <Pending lang={lang}>{c.address}</Pending>)
+                      : (d.note[lang] || d.note.es)}
+                  </small>
+                </span>
+                <span class="ship-opt__price">
+                  {d.price === null
+                    ? <Pending lang={lang}>{c.cost}</Pending>
+                    : d.price === 0
+                      ? c.free
+                      : <>{money(d.price, lang)}{d.freeFrom !== null && <small>{c.freeFrom.replace("{x}", money(d.freeFrom, lang))}</small>}</>}
+                </span>
+              </label>
+            ))}
+            <p class="nb__help" data-local-note hidden>{c.localOnly}</p>
+          </fieldset>
+
+          <dl class="cart__totals">
+            <div><dt>{c.subtotal}</dt><dd data-subtotal>—</dd></div>
+            <div><dt>{c.shipping}</dt><dd data-shipping>—</dd></div>
+            <div class="cart__grand"><dt>{c.total}</dt><dd data-total>—</dd></div>
+          </dl>
+          <p class="nb__help">{c.tax}</p>
+
+          <button type="button" class="btn btn--full" data-pay>{c.pay}</button>
+          <p class="nb__help cart__secure">{c.payNote}</p>
+          <p class="nb__status" data-status role="status"></p>
+          <a class="wa-link cart__wa" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </aside>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  import { MAX_QTY, onCartChange, readCart, removeLine, setQty, type CartLine } from "../scripts/cart";
+
+  type Item = {
+    id: string;
+    name: string;
+    url: string;
+    img: string;
+    ground: string;
+    price: number | null;
+    variants: { name: string; price: number | null }[];
+    buyable: boolean;
+    localOnly: boolean;
+  };
+  type Delivery = { key: string; name: string; price: number | null; freeFrom: number | null; ready: boolean };
+  type Cfg = { lang: string; phone: string; catalog: Item[]; delivery: Delivery[]; copy: Record<string, string> };
+  type Row = { line: CartLine; item?: Item; unit: number | null; ok: boolean; variant: string };
+
+  const root = document.querySelector<HTMLElement>("[data-cart]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const k = cfg.copy;
+    const byId = new Map(cfg.catalog.map((i) => [i.id, i]));
+    const fmt = new Intl.NumberFormat(cfg.lang === "es" ? "es-US" : "en-US", { style: "currency", currency: "USD" });
+    const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+    const list = $<HTMLUListElement>("[data-lines]");
+    const emptyBox = $("[data-empty]");
+    const full = $("[data-full]");
+    const radios = [...root.querySelectorAll<HTMLInputElement>("input[name='entrega']")];
+    const localNote = $("[data-local-note]");
+    const subtotalEl = $("[data-subtotal]");
+    const shippingEl = $("[data-shipping]");
+    const totalEl = $("[data-total]");
+    const payBtn = $<HTMLButtonElement>("[data-pay]");
+    const statusEl = $("[data-status]");
+    const waEl = $<HTMLAnchorElement>("[data-wa]");
+    let busy = false;
+
+    const el = <K extends keyof HTMLElementTagNameMap>(tag: K, props: Record<string, string> = {}, ...kids: (Node | string)[]) => {
+      const node = document.createElement(tag);
+      for (const [key, value] of Object.entries(props)) {
+        if (key === "text") node.textContent = value;
+        else node.setAttribute(key, value);
+      }
+      node.append(...kids);
+      return node;
+    };
+    const setStatus = (text: string, error = false) => {
+      statusEl.textContent = text;
+      statusEl.className = "nb__status" + (error ? " is-error" : "");
+    };
+
+    const rowsOf = (lines: CartLine[]): Row[] =>
+      lines.map((line) => {
+        const item = byId.get(line.id);
+        if (!item) return { line, unit: null, ok: false, variant: "" };
+        const hasV = item.variants.length > 0;
+        const v = hasV && line.v !== null ? item.variants[line.v] : undefined;
+        const unit = hasV ? (v?.price ?? null) : line.v === null ? item.price : null;
+        return { line, item, unit, ok: item.buyable && unit !== null, variant: v?.name ?? "" };
+      });
+
+    const costOf = (d: Delivery | undefined, subtotal: number) =>
+      !d || d.price === null ? null : d.freeFrom !== null && subtotal >= d.freeFrom ? 0 : d.price;
+
+    const render = () => {
+      const focusKey = (document.activeElement as HTMLElement | null)?.dataset?.focus;
+      const rows = rowsOf(readCart());
+      emptyBox.hidden = rows.length > 0;
+      full.hidden = rows.length === 0;
+
+      list.replaceChildren(
+        ...rows.map(({ line, item, unit, ok, variant }) => {
+          const key = `${line.id}:${line.v}`;
+          const name = item?.name ?? line.id;
+          const thumb = el("a", { class: "cart-line__img", href: item?.url ?? "#", tabindex: "-1", "aria-hidden": "true", style: `--ground:${item?.ground ?? "#E3E7EB"}` });
+          if (item?.img) thumb.append(el("img", { src: item.img, alt: "", loading: "lazy" }));
+          const info = el(
+            "div",
+            { class: "cart-line__info" },
+            item ? el("a", { class: "cart-line__name", href: item.url, text: name }) : el("span", { class: "cart-line__name", text: name })
+          );
+          if (variant) info.append(el("span", { class: "cart-line__opt", text: variant }));
+          if (ok) info.append(el("span", { class: "cart-line__opt", text: `${fmt.format(unit!)} ${k.each}` }));
+          else info.append(el("span", { class: "cart-line__warn", text: k.unavailable }));
+
+          const qty = el(
+            "div",
+            { class: "qty qty--sm" },
+            el("button", { type: "button", "data-act": "minus", "data-focus": `${key}:minus`, "aria-label": `${k.less} ${name}`, text: "−" }),
+            el("input", { type: "number", inputmode: "numeric", min: "1", max: String(MAX_QTY), value: String(line.q), "data-act": "qty", "data-focus": `${key}:qty`, "aria-label": `${k.qtyOf} ${name}` }),
+            el("button", { type: "button", "data-act": "plus", "data-focus": `${key}:plus`, "aria-label": `${k.more} ${name}`, text: "+" })
+          );
+          const li = el(
+            "li",
+            { class: "cart-line" + (ok ? "" : " is-off"), "data-id": line.id, "data-v": String(line.v) },
+            thumb,
+            info,
+            qty,
+            el("b", { class: "cart-line__total", text: ok ? fmt.format(unit! * line.q) : "—" }),
+            el("button", { type: "button", class: "cart-line__remove", "data-act": "remove", "data-focus": `${key}:remove`, text: k.remove })
+          );
+          return li;
+        })
+      );
+      if (focusKey) root.querySelector<HTMLElement>(`[data-focus="${CSS.escape(focusKey)}"]`)?.focus();
+
+      // Totales y entrega
+      const good = rows.filter((r) => r.ok);
+      const subtotal = good.reduce((sum, r) => sum + r.unit! * r.line.q, 0);
+      const localOnly = good.some((r) => r.item!.localOnly);
+      radios.forEach((r) => {
+        r.disabled = r.dataset.ready !== "true" || (r.value === "envio" && localOnly);
+        if (r.disabled) r.checked = false;
+      });
+      localNote.hidden = !localOnly || !radios.some((r) => r.value === "envio");
+      if (!radios.some((r) => r.checked)) {
+        const first = radios.find((r) => !r.disabled);
+        if (first) first.checked = true;
+      }
+      const chosen = cfg.delivery.find((d) => d.key === radios.find((r) => r.checked)?.value);
+      const ship = costOf(chosen, subtotal);
+      subtotalEl.textContent = fmt.format(subtotal);
+      shippingEl.textContent = ship === null ? "—" : ship === 0 ? k.free : fmt.format(ship);
+      totalEl.textContent = fmt.format(subtotal + (ship ?? 0));
+      payBtn.disabled = busy || !good.length || good.length !== rows.length || ship === null;
+
+      // Pedido por WhatsApp (sirve aunque el pago en línea no esté activo)
+      const text = [
+        k.waIntro,
+        "",
+        ...rows.map((r) => `• ${r.line.q} × ${r.item?.name ?? r.line.id}${r.variant ? ` (${r.variant})` : ""}`),
+        "",
+        chosen ? `${k.waDelivery}: ${chosen.name}` : "",
+        good.length ? `${k.waSubtotal}: ${fmt.format(subtotal)}` : "",
+      ].filter((x, i, a) => x || (a[i - 1] ?? "") !== "").join("\n");
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(text.trim())}`;
+    };
+
+    const lineOf = (target: HTMLElement) => {
+      const li = target.closest<HTMLElement>(".cart-line");
+      if (!li) return null;
+      return { id: li.dataset.id!, v: li.dataset.v === "null" ? null : Number(li.dataset.v) };
+    };
+    list.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-act]");
+      const at = btn && lineOf(btn);
+      if (!btn || !at) return;
+      const q = readCart().find((l) => l.id === at.id && l.v === at.v)?.q ?? 1;
+      if (btn.dataset.act === "remove") {
+        removeLine(at.id, at.v);
+        payBtn.focus({ preventScroll: true });
+      }
+      if (btn.dataset.act === "minus") setQty(at.id, at.v, Math.max(1, q - 1));
+      if (btn.dataset.act === "plus") setQty(at.id, at.v, q + 1);
+    });
+    list.addEventListener("change", (e) => {
+      const input = e.target as HTMLInputElement;
+      const at = input.dataset.act === "qty" && lineOf(input);
+      if (at) setQty(at.id, at.v, Math.max(1, Math.round(Number(input.value)) || 1));
+    });
+    radios.forEach((r) => r.addEventListener("change", render));
+
+    payBtn.addEventListener("click", async () => {
+      busy = true;
+      render();
+      setStatus(k.going);
+      try {
+        const res = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: readCart(), entrega: radios.find((r) => r.checked)?.value, lang: cfg.lang }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.url) {
+          location.href = data.url;
+          return;
+        }
+        setStatus(data.error === "not_configured" ? k.errNotConfigured : data.error === "unavailable" ? k.errUnavailable : k.errGeneric, true);
+      } catch {
+        setStatus(k.errGeneric, true);
+      }
+      busy = false;
+      render();
+    });
+
+    onCartChange(render);
+    render();
+  }
+</script>

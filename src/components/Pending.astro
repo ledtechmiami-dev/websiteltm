@@ -1,0 +1,10 @@
+---
+// Marca visible para contenido que falta entregar (licencia, fotos, reseñas…).
+// Buscar "<Pending" en el proyecto para ver todo lo pendiente.
+import type { Lang } from "../data/site";
+import { UI } from "../i18n/ui";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+---
+<mark class="pending">[{UI[lang].pending}: <slot />]</mark>

@@ -1,0 +1,687 @@
+---
+// Constructor de letreros de neón: el cliente escribe su frase, elige letra, color,
+// tamaño y base, ve una vista previa encendida y envía el diseño directo al correo.
+// No muestra precios: el precio llega con la cotización.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Las 5 letras con las que se fabrican los letreros de neón (lista del cliente, 2026-09-25).
+// name es el nombre que ve el cliente y llega en la cotización. css es la letra de la vista previa:
+// ninguna de las 5 está en Google Fonts (son de pago o solo para uso personal), así que por ahora
+// se ven con una parecida de Google Fonts.
+const FONTS = [
+  { id: "boston", name: "Boston Light", css: `Quicksand,sans-serif`, weight: 400, q: "Quicksand:wght@400" },
+  { id: "atteron", name: "Atteron", css: `"Playfair Display",serif`, weight: 400, q: "Playfair+Display:wght@400" },
+  { id: "ananda", name: "Ananda", css: `Satisfy,cursive`, weight: 400, q: "Satisfy" },
+  { id: "galantis", name: "Galantis", css: `"Great Vibes",cursive`, weight: 400, q: "Great+Vibes" },
+  { id: "blackjack", name: "BlackJack", css: `"Kaushan Script",cursive`, weight: 400, q: "Kaushan+Script" },
+];
+const fontsHref = `https://fonts.googleapis.com/css2?${FONTS.map((f) => `family=${f.q}`).join("&")}&display=swap`;
+
+const COLORS = [
+  { id: "calido", hex: "#FFD9A0", es: "Blanco cálido", en: "Warm white" },
+  { id: "frio", hex: "#EAF4FF", es: "Blanco frío", en: "Cool white" },
+  { id: "amarillo", hex: "#FFE14D", es: "Amarillo", en: "Yellow" },
+  { id: "naranja", hex: "#FF8A1F", es: "Naranja", en: "Orange" },
+  { id: "rojo", hex: "#FF2E2E", es: "Rojo", en: "Red" },
+  { id: "rosa", hex: "#FF86C2", es: "Rosa", en: "Pink" },
+  { id: "fucsia", hex: "#FF2DAA", es: "Fucsia", en: "Hot pink" },
+  { id: "morado", hex: "#B455FF", es: "Morado", en: "Purple" },
+  { id: "azul", hex: "#2F7DFF", es: "Azul", en: "Blue" },
+  { id: "hielo", hex: "#7FD8FF", es: "Azul hielo", en: "Ice blue" },
+  { id: "turquesa", hex: "#1FE3C4", es: "Turquesa", en: "Teal" },
+  { id: "verde", hex: "#3DF060", es: "Verde", en: "Green" },
+  { id: "rgb", hex: "", es: "RGB (cambia de color)", en: "RGB (color changing)" },
+];
+
+const SIZES = [
+  { w: 18, es: "Pequeño", en: "Small" },
+  { w: 30, es: "Mediano", en: "Medium" },
+  { w: 42, es: "Grande", en: "Large" },
+  { w: 60, es: "Extra grande", en: "Extra large" },
+];
+
+const COPY = {
+  es: {
+    title: "Diseña tu letrero de neón",
+    lead: "Escribe tu frase, elige la letra, el color y el tamaño, y mira cómo queda encendido. Cuando te guste, envíanos el diseño y te respondemos con el precio.",
+    defaultText: "Hola Miami",
+    text: "Tu frase",
+    textHelp: "Hasta 3 líneas. Pulsa Enter para cambiar de línea.",
+    font: "Letra",
+    color: "Color",
+    size: "Tamaño",
+    width: "Ancho total",
+    base: "Base de acrílico",
+    shape: "Forma",
+    shapes: { contorno: "Cortada al contorno", rect: "Rectangular" },
+    acrylic: "Acrílico",
+    acrylics: { transparente: "Transparente", negro: "Negro" },
+    use: "¿Dónde va?",
+    uses: { pared: "Pared interior", vidriera: "Vidriera", evento: "Evento", nose: "Aún no sé" },
+    lit: "Encendido",
+    wall: "Pared",
+    walls: { ladrillo: "Ladrillo", blanca: "Blanca" },
+    approx: "Vista aproximada · los colores reales varían",
+    minNote: "Para que las letras se lean bien, este texto necesita al menos {min} in de ancho.",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h.",
+    cta: "Cotizar este diseño",
+    wa: "Enviar por WhatsApp",
+    logo: "¿Es un logo y no una frase?",
+    logoCta: "Mándanoslo por WhatsApp",
+    logoWa: "Hola, quiero un letrero de neón con mi logo. Les envío el archivo.",
+    notesPh: "Para cuándo lo necesitas, si quieres varios colores, si necesitas instalación…",
+    summary: "Diseño del constructor de neón",
+    sText: "Texto",
+    sFont: "Letra",
+    sColor: "Color",
+    sSize: "Tamaño aprox.",
+    sBase: "Base",
+    sUse: "Dónde va",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesa este letrero de neón:",
+    preview: "Vista previa del letrero",
+  },
+  en: {
+    title: "Design your neon sign",
+    lead: "Type your phrase, pick the lettering, color and size, and see it lit up. When you like it, send us the design and we'll reply with the price.",
+    defaultText: "Hello Miami",
+    text: "Your phrase",
+    textHelp: "Up to 3 lines. Press Enter for a new line.",
+    font: "Lettering",
+    color: "Color",
+    size: "Size",
+    width: "Overall width",
+    base: "Acrylic backer",
+    shape: "Shape",
+    shapes: { contorno: "Cut to shape", rect: "Rectangle" },
+    acrylic: "Acrylic",
+    acrylics: { transparente: "Clear", negro: "Black" },
+    use: "Where does it go?",
+    uses: { pared: "Indoor wall", vidriera: "Shop window", evento: "Event", nose: "Not sure yet" },
+    lit: "Lit",
+    wall: "Wall",
+    walls: { ladrillo: "Brick", blanca: "White" },
+    approx: "Approximate preview · real colors vary",
+    minNote: "For the letters to read well, this text needs at least {min} in of width.",
+    price: "Price: we send it with your quote, in under 24 hours.",
+    cta: "Quote this design",
+    wa: "Send on WhatsApp",
+    logo: "Is it a logo rather than a phrase?",
+    logoCta: "Send it to us on WhatsApp",
+    logoWa: "Hi, I'd like a neon sign with my logo. I'll send you the file.",
+    notesPh: "When you need it, whether you want several colors, whether you need installation…",
+    summary: "Neon builder design",
+    sText: "Text",
+    sFont: "Lettering",
+    sColor: "Color",
+    sSize: "Approx. size",
+    sBase: "Backer",
+    sUse: "Where it goes",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in this neon sign:",
+    preview: "Sign preview",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  fonts: FONTS.map(({ id, name, css, weight }) => ({ id, name, css, weight })),
+  colors: COLORS.map((col) => ({ id: col.id, hex: col.hex, name: col[lang] })),
+  shapes: c.shapes,
+  acrylics: c.acrylics,
+  uses: c.uses,
+  walls: c.walls,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    minNote: c.minNote,
+    summary: c.summary,
+    sText: c.sText,
+    sFont: c.sFont,
+    sColor: c.sColor,
+    sSize: c.sSize,
+    sBase: c.sBase,
+    sUse: c.sUse,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+    preview: c.preview,
+  },
+};
+const waLogo = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.logoWa)}`;
+---
+<link rel="stylesheet" href={fontsHref} />
+
+<section class="section" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb" data-neon data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage" data-wall="ladrillo">
+        <canvas class="nb__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-lit aria-pressed="true">
+            <span class="nb__dot" aria-hidden="true"></span>{c.lit}
+          </button>
+          <button type="button" class="nb__tool" data-wall-toggle>
+            {c.wall}: <b data-wall-name>{c.walls.ladrillo}</b>
+          </button>
+        </div>
+        <p class="nb__approx">{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <div class="nb__group">
+          <label class="nb__label" for="nb-text">{c.text}</label>
+          <textarea id="nb-text" name="text" rows="2" maxlength="90" spellcheck="false" aria-describedby="nb-text-help">{c.defaultText}</textarea>
+          <p class="nb__help" id="nb-text-help">{c.textHelp}</p>
+        </div>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.font}</legend>
+          <div class="nb__fonts">
+            {FONTS.map((f, i) => (
+              <label class="nb__font">
+                <input type="radio" name="font" value={f.id} checked={i === 0} />
+                <span style={`font-family:${f.css};font-weight:${f.weight}`}>{f.name}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.color}</legend>
+          <div class="nb__colors">
+            {COLORS.map((col) => (
+              <label class="nb__color">
+                <input type="radio" name="color" value={col.id} checked={col.id === "fucsia"} />
+                <i class={col.id === "rgb" ? "is-rgb" : undefined} style={col.hex ? `--c:${col.hex}` : undefined} aria-hidden="true"></i>
+                <span>{col[lang]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.size}</legend>
+          <div class="nb__sizes">
+            {SIZES.map((s) => (
+              <button type="button" class="nb__pill" data-size={s.w}>{s[lang]} <small>{s.w} in</small></button>
+            ))}
+          </div>
+          <div class="nb__range">
+            <label for="nb-width">{c.width}</label>
+            <input id="nb-width" type="range" name="width" min="12" max="96" step="1" value="30" aria-describedby="nb-dims" />
+            <output id="nb-dims" class="nb__dims" for="nb-width">30 × 12 in</output>
+          </div>
+          <p class="nb__help nb__min" data-min-note hidden></p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.base}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.shape}>
+            {Object.entries(c.shapes).map(([id, label], i) => (
+              <label><input type="radio" name="shape" value={id} checked={i === 0} /><span>{label}</span></label>
+            ))}
+          </div>
+          <div class="nb__seg" role="radiogroup" aria-label={c.acrylic}>
+            {Object.entries(c.acrylics).map(([id, label], i) => (
+              <label><input type="radio" name="acrylic" value={id} checked={i === 0} /><span>{label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.use}</legend>
+          <div class="nb__seg nb__seg--wrap">
+            {Object.entries(c.uses).map(([id, label], i) => (
+              <label><input type="radio" name="use" value={id} checked={i === 0} /><span>{label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="nb" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+          <p class="nb__logo">{c.logo} <a href={waLogo} target="_blank" rel="noopener">{c.logoCta}</a></p>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Font = { id: string; name: string; css: string; weight: number };
+  type Color = { id: string; hex: string; name: string };
+  type Cfg = {
+    fonts: Font[];
+    colors: Color[];
+    shapes: Record<string, string>;
+    acrylics: Record<string, string>;
+    uses: Record<string, string>;
+    walls: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+
+  const PAD_IN = 1.5; // margen de acrílico alrededor del neón, por lado
+  const MIN_EM_IN = 3.5; // tamaño mínimo de letra (em) para que se lea y se pueda doblar el neón
+  const MAX_W = 96;
+  const CM = 2.54;
+
+  const root = document.querySelector<HTMLElement>("[data-neon]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const stage = root.querySelector<HTMLElement>(".nb__stage")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const textEl = form.querySelector<HTMLTextAreaElement>("textarea[name='text']")!;
+    const widthEl = form.querySelector<HTMLInputElement>("input[name='width']")!;
+    const dimsEl = form.querySelector<HTMLOutputElement>(".nb__dims")!;
+    const minNote = form.querySelector<HTMLElement>("[data-min-note]")!;
+    const litBtn = root.querySelector<HTMLButtonElement>("[data-lit]")!;
+    const wallBtn = root.querySelector<HTMLButtonElement>("[data-wall-toggle]")!;
+    const wallName = root.querySelector<HTMLElement>("[data-wall-name]")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const statusEl = form.querySelector<HTMLElement>(".nb__status")!;
+    const motionOK = document.documentElement.classList.contains("js-motion");
+
+    let lit = true;
+    let wall = "ladrillo";
+    let dims = { w: 30, h: 12 };
+    let minW = 12;
+    let visible = true;
+    let raf = 0;
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList | HTMLInputElement).value;
+    const font = () => cfg.fonts.find((f) => f.id === val("font")) ?? cfg.fonts[0];
+    const color = () => cfg.colors.find((c) => c.id === val("color")) ?? cfg.colors[0];
+    const lines = () => {
+      const ls = textEl.value.replace(/\r/g, "").split("\n").slice(0, 3).map((l) => l.trim());
+      while (ls.length > 1 && !ls[ls.length - 1]) ls.pop();
+      return ls.some(Boolean) ? ls : ["Neon"];
+    };
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const params = new URLSearchParams(location.search);
+    if (params.get("neon")) {
+      textEl.value = params.get("neon")!.slice(0, 90);
+      setRadio("font", params.get("letra"));
+      setRadio("color", params.get("color"));
+      setRadio("shape", params.get("base"));
+      setRadio("acrylic", params.get("acrilico"));
+      setRadio("use", params.get("uso"));
+      const w = Number(params.get("ancho"));
+      if (w >= 12 && w <= MAX_W) widthEl.value = String(Math.round(w));
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams({
+        neon: lines().join("\n"),
+        letra: val("font"),
+        color: val("color"),
+        ancho: widthEl.value,
+        base: val("shape"),
+        acrilico: val("acrylic"),
+        uso: val("use"),
+      });
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Medidas ----------
+    type Metrics = { ls: { text: string; left: number; right: number; asc: number; desc: number }[]; inkW: number; inkH: number; top: number; lh: number };
+    const measure = (f: Font): Metrics => {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.font = `${f.weight} 100px ${f.css}`;
+      const lh = 118;
+      let inkW = 1, top = Infinity, bottom = -Infinity;
+      const ls = lines().map((text, i) => {
+        const m = ctx.measureText(text || " ");
+        const d = { text, left: m.actualBoundingBoxLeft, right: m.actualBoundingBoxRight, asc: m.actualBoundingBoxAscent, desc: m.actualBoundingBoxDescent };
+        if (text) {
+          inkW = Math.max(inkW, d.left + d.right);
+          top = Math.min(top, i * lh - d.asc);
+          bottom = Math.max(bottom, i * lh + d.desc);
+        }
+        return d;
+      });
+      ctx.restore();
+      return { ls, inkW, inkH: Math.max(bottom - top, 1), top, lh };
+    };
+
+    // ---------- Colores ----------
+    const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    const mix = (hex: string, to: number[], t: number) => {
+      const [r, g, b] = rgb(hex);
+      return `rgb(${Math.round(r + (to[0] - r) * t)},${Math.round(g + (to[1] - g) * t)},${Math.round(b + (to[2] - b) * t)})`;
+    };
+    const alpha = (hex: string, a: number) => `rgba(${rgb(hex).join(",")},${a})`;
+    const hsl = (h: number) => {
+      const c = document.createElement("canvas").getContext("2d")!;
+      c.fillStyle = `hsl(${h % 360} 100% 58%)`;
+      return c.fillStyle as string; // siempre #rrggbb
+    };
+
+    // ---------- Dibujo ----------
+    // Capa auxiliar: se pinta opaca y se pasa a la vista previa con la transparencia elegida
+    const off = document.createElement("canvas");
+    const octx = off.getContext("2d")!;
+    const layer = (dpr: number, paint: (c: CanvasRenderingContext2D) => void, a: number, before?: () => void) => {
+      if (off.width !== canvas.width || off.height !== canvas.height) {
+        off.width = canvas.width;
+        off.height = canvas.height;
+      }
+      octx.setTransform(1, 0, 0, 1, 0, 0);
+      octx.globalCompositeOperation = "source-over";
+      octx.clearRect(0, 0, off.width, off.height);
+      octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      octx.font = ctx.font;
+      octx.textBaseline = "alphabetic";
+      octx.textAlign = "left";
+      octx.lineJoin = "round";
+      paint(octx);
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      before?.();
+      ctx.globalAlpha = a;
+      ctx.drawImage(off, 0, 0);
+      ctx.restore();
+    };
+
+    let fontReady = "";
+    const draw = (time = 0) => {
+      const f = font();
+      const col = color();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const m = measure(f);
+      // Ancho mínimo según el texto, y alto a partir de la proporción real de las letras
+      minW = Math.min(MAX_W, Math.max(12, Math.ceil((m.inkW / 100) * MIN_EM_IN + PAD_IN * 2)));
+      widthEl.min = String(minW);
+      let w = Number(widthEl.value);
+      if (w < minW) { w = minW; widthEl.value = String(w); }
+      minNote.hidden = minW <= 12;
+      minNote.textContent = cfg.copy.minNote.replace("{min}", String(minW));
+      const neonW = w - PAD_IN * 2;
+      const inPerUnit = neonW / m.inkW;
+      const h = Math.round(m.inkH * inPerUnit + PAD_IN * 2);
+      dims = { w, h };
+      dimsEl.value = `${w} × ${h} in · ${Math.round(w * CM)} × ${Math.round(h * CM)} cm`;
+
+      // Escala para que el letrero y sus cotas quepan en la vista previa
+      const padU = PAD_IN / inPerUnit;
+      const s = Math.min((cw * 0.74) / (m.inkW + padU * 2), (ch * 0.56) / (m.inkH + padU * 2));
+      const px = 100 * s;
+      const cx = cw / 2 + 12;
+      const cy = ch / 2 + 4;
+      const inkTop = cy - (m.inkH * s) / 2;
+      const pad = padU * s;
+      const board = { x: cx - (m.inkW * s) / 2 - pad, y: inkTop - pad, w: m.inkW * s + pad * 2, h: m.inkH * s + pad * 2 };
+
+      ctx.font = `${f.weight} ${px}px ${f.css}`;
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "left";
+      const eachLine = (fn: (text: string, x: number, y: number) => void) =>
+        m.ls.forEach((l, i) => {
+          if (!l.text) return;
+          const x = cx - ((l.right - l.left) / 2) * s;
+          const y = inkTop + (i * m.lh - m.top) * s;
+          fn(l.text, x, y);
+        });
+
+      const isRgb = col.id === "rgb";
+      const hue = isRgb ? (time / 30) % 360 : 0;
+      const main = isRgb ? hsl(hue) : col.hex;
+      const light = wall === "blanca";
+
+      // Resplandor sobre la pared
+      if (lit) {
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(board.w, board.h) * 0.85);
+        g.addColorStop(0, alpha(main, light ? 0.16 : 0.28));
+        g.addColorStop(1, alpha(main, 0));
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, cw, ch);
+      }
+
+      // Base de acrílico: cuerpo y canto van en capas aparte para que la
+      // transparencia sea pareja (los trazos de cada letra no se suman)
+      const clear = val("acrylic") === "transparente";
+      const body = clear ? { c: "#FFFFFF", a: light ? 0.45 : 0.06 } : { c: "#101114", a: 1 };
+      const edge = clear ? { c: light ? "#0B0C0E" : "#FFFFFF", a: light ? 0.2 : 0.34 } : { c: light ? "#000000" : "#FFFFFF", a: light ? 0.5 : 0.14 };
+      const shadow = () => {
+        ctx.shadowColor = light ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.4)";
+        ctx.shadowBlur = 14 * dpr;
+        ctx.shadowOffsetY = 6 * dpr;
+      };
+      if (val("shape") === "rect") {
+        const r = Math.min(pad * 0.6, 18);
+        ctx.save();
+        shadow();
+        ctx.beginPath();
+        ctx.roundRect(board.x, board.y, board.w, board.h, r);
+        ctx.fillStyle = alpha(body.c, body.a);
+        ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = alpha(edge.c, edge.a);
+        ctx.stroke();
+        ctx.restore();
+      } else {
+        const outline = (c: CanvasRenderingContext2D, width: number) => {
+          c.lineWidth = width;
+          eachLine((t, x, y) => { c.strokeText(t, x, y); c.fillText(t, x, y); });
+        };
+        layer(dpr, (c) => {
+          c.fillStyle = c.strokeStyle = body.c;
+          outline(c, pad * 2);
+        }, body.a, shadow);
+        layer(dpr, (c) => {
+          c.fillStyle = c.strokeStyle = edge.c;
+          outline(c, pad * 2 + 3);
+          c.globalCompositeOperation = "destination-out";
+          outline(c, pad * 2);
+        }, edge.a);
+      }
+
+      // Tubo de neón
+      ctx.save();
+      if (lit) {
+        const paint = isRgb
+          ? (() => {
+              const g = ctx.createLinearGradient(board.x, 0, board.x + board.w, 0);
+              for (let i = 0; i <= 4; i++) g.addColorStop(i / 4, hsl(hue + i * 70));
+              return g;
+            })()
+          : main;
+        ctx.shadowColor = main;
+        ctx.fillStyle = paint;
+        ctx.shadowBlur = px * 0.55 * dpr;
+        eachLine((t, x, y) => ctx.fillText(t, x, y));
+        ctx.shadowBlur = px * 0.2 * dpr;
+        eachLine((t, x, y) => ctx.fillText(t, x, y));
+        ctx.shadowBlur = px * 0.05 * dpr;
+        ctx.fillStyle = isRgb ? paint : mix(main, [255, 255, 255], 0.55);
+        eachLine((t, x, y) => ctx.fillText(t, x, y));
+      } else {
+        ctx.shadowColor = light ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.6)";
+        ctx.shadowBlur = 4 * dpr;
+        ctx.shadowOffsetY = 2 * dpr;
+        ctx.fillStyle = isRgb ? "#ECECEC" : mix(main, [236, 236, 236], 0.72);
+        eachLine((t, x, y) => ctx.fillText(t, x, y));
+      }
+      ctx.restore();
+
+      // Cotas
+      const ink = light ? "rgba(11,12,14,0.72)" : "rgba(255,255,255,0.78)";
+      ctx.save();
+      ctx.strokeStyle = ink;
+      ctx.fillStyle = ink;
+      ctx.lineWidth = 1;
+      ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+      const gy = Math.min(board.y + board.h + 18, ch - 30);
+      const gx = Math.max(board.x - 18, 64);
+      const tick = 5;
+      ctx.beginPath();
+      ctx.moveTo(board.x, gy); ctx.lineTo(board.x + board.w, gy);
+      ctx.moveTo(board.x, gy - tick); ctx.lineTo(board.x, gy + tick);
+      ctx.moveTo(board.x + board.w, gy - tick); ctx.lineTo(board.x + board.w, gy + tick);
+      ctx.moveTo(gx, board.y); ctx.lineTo(gx, board.y + board.h);
+      ctx.moveTo(gx - tick, board.y); ctx.lineTo(gx + tick, board.y);
+      ctx.moveTo(gx - tick, board.y + board.h); ctx.lineTo(gx + tick, board.y + board.h);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(`${w} in`, board.x + board.w / 2, gy + 7);
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`${h} in`, gx - 9, board.y + board.h / 2);
+      ctx.restore();
+
+      canvas.setAttribute("aria-label", `${cfg.copy.preview}: "${lines().join(" / ")}" · ${f.name} · ${col.name} · ${w} × ${h} in`);
+    };
+
+    // La letra se descarga la primera vez que se elige; se dibuja cuando está lista
+    const render = async () => {
+      const f = font();
+      const key = `${f.weight} 100px ${f.css}`;
+      if (fontReady !== key) {
+        try { await document.fonts.load(key, lines().join(" ")); } catch {}
+        fontReady = key;
+      }
+      draw(performance.now());
+      update();
+      loop();
+    };
+
+    // RGB: el color va cambiando mientras el letrero está a la vista
+    const loop = () => {
+      cancelAnimationFrame(raf);
+      if (!(motionOK && lit && visible && color().id === "rgb")) return;
+      const tick = (t: number) => { draw(t); raf = requestAnimationFrame(tick); };
+      raf = requestAnimationFrame(tick);
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const f = font();
+      const k = cfg.copy;
+      const base = `${cfg.acrylics[val("acrylic")]}, ${cfg.shapes[val("shape")].toLowerCase()}`;
+      return [
+        `${k.summary}:`,
+        `• ${k.sText}: ${lines().join(" / ")}`,
+        `• ${k.sFont}: ${f.name}`,
+        `• ${k.sColor}: ${color().name}`,
+        `• ${k.sSize}: ${dims.w} × ${dims.h} in (${Math.round(dims.w * CM)} × ${Math.round(dims.h * CM)} cm)`,
+        `• ${k.sBase}: ${base}`,
+        `• ${k.sUse}: ${cfg.uses[val("use")]}`,
+        `• ${k.sLink}: ${shareUrl()}`,
+      ].join("\n");
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      root.querySelectorAll<HTMLButtonElement>("[data-size]").forEach((b) => {
+        b.setAttribute("aria-pressed", String(Number(b.dataset.size) === dims.w));
+        b.disabled = Number(b.dataset.size) < minW;
+      });
+      syncUrl();
+    };
+
+    // ---------- Eventos ----------
+    textEl.addEventListener("input", () => {
+      const ls = textEl.value.split("\n");
+      if (ls.length > 3) textEl.value = ls.slice(0, 3).join("\n");
+      statusEl.textContent = "";
+      render();
+    });
+    form.addEventListener("change", (e) => {
+      const el = e.target as HTMLElement;
+      if (el !== textEl && !el.closest(".nb__contact")) render();
+    });
+    widthEl.addEventListener("input", () => { draw(performance.now()); update(); });
+    root.querySelectorAll<HTMLButtonElement>("[data-size]").forEach((b) =>
+      b.addEventListener("click", () => {
+        widthEl.value = b.dataset.size!;
+        draw(performance.now());
+        update();
+      })
+    );
+
+    litBtn.addEventListener("click", () => {
+      const on = !lit;
+      litBtn.setAttribute("aria-pressed", String(on));
+      if (on && motionOK) {
+        // Parpadeo corto al encender, como un neón real
+        [60, 140, 90, 200].reduce((delay, d, i) => {
+          setTimeout(() => { lit = i % 2 === 0; draw(performance.now()); }, delay);
+          return delay + d;
+        }, 0);
+        setTimeout(() => { lit = true; draw(performance.now()); loop(); }, 520);
+      } else {
+        lit = on;
+        draw(performance.now());
+        loop();
+      }
+    });
+
+    wallBtn.addEventListener("click", () => {
+      wall = wall === "ladrillo" ? "blanca" : "ladrillo";
+      stage.dataset.wall = wall;
+      wallName.textContent = cfg.walls[wall];
+      draw(performance.now());
+    });
+
+    // Tocar la vista previa lleva a escribir la frase
+    canvas.addEventListener("click", () => textEl.focus());
+
+    // ---------- Envío directo al correo (y a la agenda) ----------
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw(performance.now())).observe(canvas);
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; loop(); }).observe(stage);
+    document.fonts.ready.then(() => draw(performance.now()));
+    render();
+  }
+</script>

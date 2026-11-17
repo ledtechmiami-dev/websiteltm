@@ -1,0 +1,896 @@
+---
+// Constructor de tablas de cortar (idea tomada de las tablas personalizadas de Etsy):
+// el cliente elige material, forma, medidas, grosor, canal para jugo, agarraderas y un
+// diseño de grabado con sus textos, lo ve en la vista previa y envía el diseño directo al correo.
+// No muestra precios: el precio llega con la cotización.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Materiales del taller (confirmado el 2026-09-15: arce, nogal, acacia y HDPE; sin cerezo).
+// strips: cuánto contrastan las tiras encoladas (la acacia tiene tiras claras y oscuras marcadas).
+const MATERIALS = [
+  { id: "arce", es: "Arce", en: "Maple", base: "#E2C394", dark: "#C9A26E", grain: "rgba(140, 92, 42, 0.2)", ink: "rgba(74, 44, 20, 0.9)", strips: 0.06 },
+  { id: "nogal", es: "Nogal", en: "Walnut", base: "#6E4C34", dark: "#553725", grain: "rgba(24, 14, 8, 0.3)", ink: "rgba(18, 11, 7, 0.9)", strips: 0.06 },
+  { id: "acacia", es: "Acacia", en: "Acacia", base: "#A56B3A", dark: "#6F4221", grain: "rgba(58, 28, 10, 0.3)", ink: "rgba(34, 17, 7, 0.9)", strips: 0.14 },
+  { id: "hdpe", es: "Polietileno marino (HDPE)", en: "Marine polyethylene (HDPE)", base: "#F3F3EF", dark: "#D9D9D3", grain: "", ink: "rgba(96, 102, 110, 0.85)", strips: 0 },
+];
+// Medidas rápidas: ancho × largo en pulgadas
+const SIZES = [
+  { w: 8, l: 10 },
+  { w: 9, l: 12 },
+  { w: 11, l: 14 },
+  { w: 12, l: 18 },
+];
+
+const COPY = {
+  es: {
+    title: "Diseña tu tabla de cortar",
+    lead: "Elige el material, la forma y el tamaño, escribe tu grabado y mira cómo queda. Envíanos el diseño y te respondemos con el precio. Hacemos una sola tabla o un pedido grande.",
+    material: "Material",
+    shape: "Forma",
+    shapes: { rect: "Rectangular", arco: "Arqueada", mango: "Con mango", redonda: "Redonda" },
+    size: "Tamaño",
+    length: "Largo",
+    diameter: "Diámetro",
+    width: "Ancho",
+    details: "Detalles",
+    thick: "Grosor",
+    thicks: { delgada: "3/4 in", media: "1 in", gruesa: "1-1/4 in" },
+    groove: "Canal para jugo",
+    grooves: { no: "Sin canal", si: "Con canal" },
+    grooveHelp: "Una ranura alrededor que recoge el jugo de la carne o la fruta.",
+    handles: "Agarraderas",
+    handleOpts: { no: "Sin agarraderas", si: "Con agarraderas" },
+    handlesNote: "La tabla con mango ya trae su agarradera.",
+    engrave: "Grabado",
+    templates: { monograma: "Monograma", nombres: "Nombres", clasico: "Clásico", logo: "Logo", ninguno: "Sin grabado" },
+    main: "Nombre o apellido",
+    mainPh: "Ej. Rodríguez",
+    defaultMain: "Rodríguez",
+    second: "Segunda línea (opcional)",
+    secondPh: "Ej. Miami, FL",
+    defaultSecond: "Miami, FL",
+    date: "Año o fecha",
+    datePh: "Ej. 2026",
+    defaultDate: "2026",
+    logo: "¿Es tu logo?",
+    logoCta: "Mándanoslo por WhatsApp",
+    logoWa: "Hola, quiero una tabla de cortar con mi logo grabado. Les envío el archivo.",
+    logoBox: "TU LOGO",
+    order: "Tu pedido",
+    qty: "Cantidad",
+    qtyHelp: "Para regalos de empresa o eventos, pon cuántas necesitas.",
+    use: "¿Para qué es?",
+    uses: { cocina: "Cocina", bote: "Bote de pesca", parrilla: "Parrilla", corporativo: "Regalo corporativo" },
+    bg: "Fondo",
+    bgs: { clara: "Claro", oscura: "Oscuro" },
+    approx: "Vista aproximada · la veta de cada tabla es única",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h. Depende del material, el tamaño y la cantidad.",
+    cta: "Cotizar esta tabla",
+    wa: "Enviar por WhatsApp",
+    notesPh: "Para cuándo la necesitas, si es un regalo, si quieres varias con nombres distintos…",
+    summary: "Diseño del constructor de tablas de cortar",
+    sMaterial: "Material",
+    sShape: "Forma",
+    sSize: "Medidas",
+    sThick: "grosor",
+    sGroove: "Canal para jugo",
+    sHandles: "Agarraderas",
+    sEngrave: "Grabado",
+    sQty: "Cantidad",
+    sUse: "Uso",
+    sLink: "Ver el diseño",
+    yes: "Sí",
+    no: "No",
+    waIntro: "Hola, me interesa esta tabla de cortar:",
+    preview: "Vista previa de la tabla",
+  },
+  en: {
+    title: "Design your cutting board",
+    lead: "Pick the material, shape and size, type your engraving and see how it looks. Send us the design and we'll reply with the price. We make a single board or a large order.",
+    material: "Material",
+    shape: "Shape",
+    shapes: { rect: "Rectangle", arco: "Arched", mango: "With handle", redonda: "Round" },
+    size: "Size",
+    length: "Length",
+    diameter: "Diameter",
+    width: "Width",
+    details: "Details",
+    thick: "Thickness",
+    thicks: { delgada: "3/4 in", media: "1 in", gruesa: "1-1/4 in" },
+    groove: "Juice groove",
+    grooves: { no: "No groove", si: "With groove" },
+    grooveHelp: "A channel around the edge that catches juice from meat or fruit.",
+    handles: "Handles",
+    handleOpts: { no: "No handles", si: "With handles" },
+    handlesNote: "The board with a handle already has its grip.",
+    engrave: "Engraving",
+    templates: { monograma: "Monogram", nombres: "Names", clasico: "Classic", logo: "Logo", ninguno: "No engraving" },
+    main: "Name or last name",
+    mainPh: "E.g. Rodriguez",
+    defaultMain: "Rodriguez",
+    second: "Second line (optional)",
+    secondPh: "E.g. Miami, FL",
+    defaultSecond: "Miami, FL",
+    date: "Year or date",
+    datePh: "E.g. 2026",
+    defaultDate: "2026",
+    logo: "Is it your logo?",
+    logoCta: "Send it to us on WhatsApp",
+    logoWa: "Hi, I'd like a cutting board with my logo engraved. I'll send you the file.",
+    logoBox: "YOUR LOGO",
+    order: "Your order",
+    qty: "Quantity",
+    qtyHelp: "For company gifts or events, enter how many you need.",
+    use: "What is it for?",
+    uses: { cocina: "Kitchen", bote: "Fishing boat", parrilla: "Grill", corporativo: "Corporate gift" },
+    bg: "Background",
+    bgs: { clara: "Light", oscura: "Dark" },
+    approx: "Approximate preview · every board's grain is unique",
+    price: "Price: we send it with your quote, in under 24 hours. It depends on the material, size and quantity.",
+    cta: "Quote this board",
+    wa: "Send on WhatsApp",
+    notesPh: "When you need it, whether it's a gift, whether you want several with different names…",
+    summary: "Cutting board builder design",
+    sMaterial: "Material",
+    sShape: "Shape",
+    sSize: "Size",
+    sThick: "thickness",
+    sGroove: "Juice groove",
+    sHandles: "Handles",
+    sEngrave: "Engraving",
+    sQty: "Quantity",
+    sUse: "Use",
+    sLink: "See the design",
+    yes: "Yes",
+    no: "No",
+    waIntro: "Hi, I'm interested in this cutting board:",
+    preview: "Board preview",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  materials: MATERIALS.map((m) => ({ id: m.id, base: m.base, dark: m.dark, grain: m.grain, ink: m.ink, strips: m.strips, name: m[lang] })),
+  shapes: c.shapes,
+  thicks: c.thicks,
+  templates: c.templates,
+  uses: c.uses,
+  bgs: c.bgs,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    length: c.length,
+    diameter: c.diameter,
+    handlesNote: c.handlesNote,
+    logoBox: c.logoBox,
+    summary: c.summary,
+    sMaterial: c.sMaterial,
+    sShape: c.sShape,
+    sSize: c.sSize,
+    sThick: c.sThick,
+    sGroove: c.sGroove,
+    sHandles: c.sHandles,
+    sEngrave: c.sEngrave,
+    sQty: c.sQty,
+    sUse: c.sUse,
+    sLink: c.sLink,
+    yes: c.yes,
+    no: c.no,
+    waIntro: c.waIntro,
+    preview: c.preview,
+  },
+};
+const waLogo = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.logoWa)}`;
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+const swatch = (m: (typeof MATERIALS)[number]) =>
+  `--c:linear-gradient(105deg, ${m.base} 0 28%, ${m.dark} 42%, ${m.base} 58%, ${m.dark} 84%, ${m.base})`;
+---
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@700&display=swap" />
+
+<section class="section" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb tb" data-board data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage" data-bg="clara">
+        <canvas class="nb__canvas tb__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-bg-toggle>
+            {c.bg}: <b data-bg-name>{c.bgs.clara}</b>
+          </button>
+        </div>
+        <p class="nb__approx">{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.material}</legend>
+          <div class="tb__mats">
+            {MATERIALS.map((m) => (
+              <label class="tb__mat">
+                <input type="radio" name="material" value={m.id} checked={m.id === "nogal"} />
+                <i style={swatch(m)} aria-hidden="true"></i>
+                <span>{m[lang]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.shape}</legend>
+          <div class="nb__seg nb__seg--wrap">
+            {seg("forma", c.shapes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.size}</legend>
+          <div class="nb__sizes">
+            {SIZES.map((s) => (
+              <button type="button" class="nb__pill" data-size={`${s.l}x${s.w}`}>{s.w} × {s.l} <small>in</small></button>
+            ))}
+          </div>
+          <div class="nb__range">
+            <label for="tb-largo" data-length-label>{c.length}</label>
+            <output class="nb__dims" for="tb-largo" data-length-out>12 in · 30 cm</output>
+            <input id="tb-largo" type="range" name="largo" min="8" max="30" step="1" value="12" />
+          </div>
+          <div class="nb__range" data-width-range>
+            <label for="tb-ancho">{c.width}</label>
+            <output class="nb__dims" for="tb-ancho" data-width-out>9 in · 23 cm</output>
+            <input id="tb-ancho" type="range" name="ancho" min="6" max="20" step="1" value="9" />
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.details}</legend>
+          <p class="tb__sub">{c.thick}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.thick}>
+            {seg("grosor", c.thicks).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.groove}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.groove} aria-describedby="tb-groove-help">
+            {seg("canal", c.grooves).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="tb-groove-help">{c.grooveHelp}</p>
+          <p class="tb__sub">{c.handles}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.handles} data-handles>
+            {seg("agarraderas", c.handleOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-handles-note hidden>{c.handlesNote}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.engrave}</legend>
+          <div class="nb__seg nb__seg--wrap eb__seg3">
+            {seg("plantilla", c.templates).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <fieldset class="tb__words" data-words>
+            <div class="field">
+              <label for="tb-principal">{c.main}</label>
+              <input id="tb-principal" type="text" name="principal" maxlength="24" autocomplete="off" placeholder={c.mainPh} value={c.defaultMain} />
+            </div>
+            <div class="tb__row">
+              <div class="field">
+                <label for="tb-segunda">{c.second}</label>
+                <input id="tb-segunda" type="text" name="segunda" maxlength="30" autocomplete="off" placeholder={c.secondPh} value={c.defaultSecond} />
+              </div>
+              <div class="field">
+                <label for="tb-fecha">{c.date}</label>
+                <input id="tb-fecha" type="text" name="fecha" maxlength="12" autocomplete="off" placeholder={c.datePh} value={c.defaultDate} />
+              </div>
+            </div>
+          </fieldset>
+          <p class="nb__help">{c.logo} <a class="eb__link" href={waLogo} target="_blank" rel="noopener">{c.logoCta}</a></p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="tb__row">
+            <div class="field">
+              <label for="tb-cantidad">{c.qty}</label>
+              <input id="tb-cantidad" type="number" name="cantidad" min="1" max="9999" step="1" value="1" inputmode="numeric" aria-describedby="tb-qty-help" />
+            </div>
+          </div>
+          <p class="nb__help" id="tb-qty-help">{c.qtyHelp}</p>
+          <p class="tb__sub">{c.use}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.use}>
+            {seg("uso", c.uses).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="tb" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Mat = { id: string; name: string; base: string; dark: string; grain: string; ink: string; strips: number };
+  type Cfg = {
+    materials: Mat[];
+    shapes: Record<string, string>;
+    thicks: Record<string, string>;
+    templates: Record<string, string>;
+    uses: Record<string, string>;
+    bgs: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+  type Box = { x: number; y: number; w: number; h: number };
+  type Geo = { path: Path2D; groove: Path2D | null; area: Box; foot: number };
+
+  const CM = 2.54;
+  const HANDLE = 4.4; // largo del mango, en pulgadas
+
+  // ---------- Forma de la tabla (en pulgadas; origen arriba a la izquierda) ----------
+  const geometry = (shape: string, L: number, W: number, handles: boolean, groove: boolean): Geo => {
+    const path = new Path2D();
+    const r = Math.min(0.7, W * 0.08);
+    let grooveP: Path2D | null = null;
+    let area: Box;
+    let foot = L;
+    const slot = (x: number, cy: number, h: number) => path.roundRect(x, cy - h / 2, 0.8, h, 0.4);
+
+    if (shape === "redonda") {
+      const R = L / 2;
+      path.arc(R, R, R, 0, Math.PI * 2);
+      if (handles) {
+        const h = Math.min(3.2, R * 0.9);
+        slot(1.5, R, h);
+        slot(L - 2.3, R, h);
+      }
+      if (groove) {
+        grooveP = new Path2D();
+        grooveP.arc(R, R, R - (handles ? 2.6 : 0.75), 0, Math.PI * 2);
+      }
+      const inner = R - (groove ? (handles ? 2.9 : 1.2) : handles ? 2.5 : 0.9);
+      area = { x: R - inner * 0.72, y: R - inner * 0.62, w: inner * 1.44, h: inner * 1.24 };
+    } else if (shape === "arco") {
+      const a = Math.min(1.6, W * 0.15);
+      path.moveTo(0, a);
+      path.quadraticCurveTo(L / 2, -a, L, a);
+      path.lineTo(L, W - r);
+      path.arcTo(L, W, L - r, W, r);
+      path.lineTo(r, W);
+      path.arcTo(0, W, 0, W - r, r);
+      path.closePath();
+      const cy = (a + W) / 2;
+      if (handles) {
+        slot(0.9, cy, Math.min(3.2, W * 0.45));
+        slot(L - 1.7, cy, Math.min(3.2, W * 0.45));
+      }
+      if (groove) {
+        const g = handles ? 2.15 : 0.7;
+        const gy = 0.7;
+        const gr = 0.5;
+        grooveP = new Path2D();
+        grooveP.moveTo(g, a + gy);
+        grooveP.quadraticCurveTo(L / 2, -a + gy * 2, L - g, a + gy);
+        grooveP.lineTo(L - g, W - gy - gr);
+        grooveP.arcTo(L - g, W - gy, L - g - gr, W - gy, gr);
+        grooveP.lineTo(g + gr, W - gy);
+        grooveP.arcTo(g, W - gy, g, W - gy - gr, gr);
+        grooveP.closePath();
+      }
+      const xm = (handles ? 2.3 : 0.9) + (groove ? 0.6 : 0) + L * 0.03;
+      const top = a + (groove ? 1.3 : 0.9);
+      const bottom = groove ? 1.3 : 0.9;
+      area = { x: xm, y: top, w: L - 2 * xm, h: W - top - bottom };
+    } else {
+      if (shape === "mango") {
+        const hw = Math.min(1.7, W * 0.3);
+        const cy = W / 2;
+        const end = L + HANDLE - hw / 2;
+        path.moveTo(r, 0);
+        path.lineTo(L - r, 0);
+        path.arcTo(L, 0, L, r, r);
+        path.lineTo(L, cy - hw / 2);
+        path.lineTo(end, cy - hw / 2);
+        path.arc(end, cy, hw / 2, -Math.PI / 2, Math.PI / 2);
+        path.lineTo(L, cy + hw / 2);
+        path.lineTo(L, W - r);
+        path.arcTo(L, W, L - r, W, r);
+        path.lineTo(r, W);
+        path.arcTo(0, W, 0, W - r, r);
+        path.lineTo(0, r);
+        path.arcTo(0, 0, r, 0, r);
+        path.closePath();
+        path.moveTo(end + 0.32, cy);
+        path.arc(end, cy, 0.32, 0, Math.PI * 2); // agujero para colgar
+        foot = L + HANDLE;
+      } else {
+        path.roundRect(0, 0, L, W, r);
+        if (handles) {
+          slot(0.9, W / 2, Math.min(3.2, W * 0.5));
+          slot(L - 1.7, W / 2, Math.min(3.2, W * 0.5));
+        }
+      }
+      if (groove) {
+        const g = handles ? 2.15 : 0.7;
+        grooveP = new Path2D();
+        grooveP.roundRect(g, 0.7, L - 2 * g, W - 1.4, 0.5);
+      }
+      const xm = (handles ? 2.3 : 0.9) + (groove ? 0.6 : 0) + L * 0.03;
+      const ym = (groove ? 1.3 : 0.9) + W * 0.04;
+      area = { x: xm, y: ym, w: L - 2 * xm, h: W - 2 * ym };
+    }
+    return { path, groove: grooveP, area, foot };
+  };
+
+  // ---------- Colores ----------
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const shade = (hex: string, t: number) => {
+    const to = t < 0 ? 0 : 255;
+    const a = Math.abs(t);
+    const [r, g, b] = rgb(hex).map((v) => Math.round(v + (to - v) * a));
+    return `rgb(${r},${g},${b})`;
+  };
+  // Azar con semilla: la veta no cambia cada vez que se redibuja
+  const rng = (seed: number) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  const SERIF = (px: number) => `700 ${px}px "Playfair Display", Georgia, serif`;
+  const SCRIPT = (px: number) => `400 ${px}px "Great Vibes", "Brush Script MT", cursive`;
+  const SANS = (px: number) => `700 ${px}px "Saira", system-ui, sans-serif`;
+
+  const root = document.querySelector<HTMLElement>("[data-board]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const stage = root.querySelector<HTMLElement>(".nb__stage")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const off = document.createElement("canvas");
+    const octx = off.getContext("2d")!;
+    const lenEl = form.querySelector<HTMLInputElement>("input[name='largo']")!;
+    const widEl = form.querySelector<HTMLInputElement>("input[name='ancho']")!;
+    const lenOut = form.querySelector<HTMLOutputElement>("[data-length-out]")!;
+    const widOut = form.querySelector<HTMLOutputElement>("[data-width-out]")!;
+    const lenLabel = form.querySelector<HTMLElement>("[data-length-label]")!;
+    const widRange = form.querySelector<HTMLElement>("[data-width-range]")!;
+    const handlesSeg = form.querySelector<HTMLElement>("[data-handles]")!;
+    const handlesNote = form.querySelector<HTMLElement>("[data-handles-note]")!;
+    const words = form.querySelector<HTMLFieldSetElement>("[data-words]")!;
+    const bgBtn = root.querySelector<HTMLButtonElement>("[data-bg-toggle]")!;
+    const bgName = root.querySelector<HTMLElement>("[data-bg-name]")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    let bg = "clara";
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const mat = () => cfg.materials.find((m) => m.id === val("material")) ?? cfg.materials[0];
+    const dims = () => {
+      const L = Number(lenEl.value);
+      const round = val("forma") === "redonda";
+      return { L, W: round ? L : Number(widEl.value), round };
+    };
+    const qty = () => Math.max(1, Math.min(9999, Math.round(Number(text("cantidad")) || 1)));
+    const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const setText = (name: string, v: string | null, max: number) => {
+      if (v !== null) (form.elements.namedItem(name) as HTMLInputElement).value = v.slice(0, max);
+    };
+    const params = new URLSearchParams(location.search);
+    if (params.has("forma")) {
+      ["material", "forma", "grosor", "canal", "agarraderas", "plantilla", "uso"].forEach((n) => setRadio(n, params.get(n)));
+      const L = Number(params.get("largo"));
+      const W = Number(params.get("ancho"));
+      if (L >= 8 && L <= 30) lenEl.value = String(Math.round(L));
+      if (W >= 6 && W <= 20) widEl.value = String(Math.round(W));
+      setText("principal", params.get("texto"), 24);
+      setText("segunda", params.get("linea2"), 30);
+      setText("fecha", params.get("fecha"), 12);
+      setText("cantidad", params.get("cantidad"), 4);
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams({
+        material: val("material"),
+        forma: val("forma"),
+        largo: lenEl.value,
+        ancho: widEl.value,
+        grosor: val("grosor"),
+        canal: val("canal"),
+        agarraderas: val("agarraderas"),
+        plantilla: val("plantilla"),
+        texto: text("principal"),
+        linea2: text("segunda"),
+        fecha: text("fecha"),
+        cantidad: String(qty()),
+        uso: val("uso"),
+      });
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Dibujo ----------
+    // Madera: tiras encoladas con tonos un poco distintos y vetas a lo largo
+    const grain = (m: Mat, foot: number, W: number) => {
+      const r = rng(m.id.charCodeAt(0) * 97 + m.id.length * 13);
+      if (!m.grain) {
+        for (let i = 0; i < foot * W * 3; i++) {
+          ctx.fillStyle = r() > 0.5 ? "rgba(0,0,0,0.035)" : "rgba(255,255,255,0.55)";
+          ctx.fillRect(r() * foot, r() * W, 0.05, 0.05);
+        }
+        return;
+      }
+      for (let y = -0.2; y < W; ) {
+        const h = 1.3 + r() * 1.3;
+        ctx.fillStyle = r() > 0.5 ? `rgba(255,255,255,${0.04 + r() * m.strips})` : `rgba(0,0,0,${0.04 + r() * m.strips})`;
+        ctx.fillRect(-1, y, foot + 2, h);
+        ctx.fillStyle = "rgba(0,0,0,0.06)";
+        ctx.fillRect(-1, y + h - 0.02, foot + 2, 0.03);
+        y += h;
+      }
+      ctx.strokeStyle = m.grain;
+      for (let i = 0; i < W * 7; i++) {
+        const y0 = r() * W;
+        const amp = 0.04 + r() * 0.22;
+        const freq = 0.3 + r() * 0.6;
+        const ph = r() * 6.28;
+        ctx.lineWidth = 0.015 + r() * 0.045;
+        ctx.beginPath();
+        for (let x = -0.5; x <= foot + 0.5; x += 0.4) {
+          const yy = y0 + Math.sin(x * freq + ph) * amp + Math.sin(x * 0.13 + ph * 2) * amp * 1.6;
+          if (x === -0.5) ctx.moveTo(x, yy);
+          else ctx.lineTo(x, yy);
+        }
+        ctx.stroke();
+      }
+    };
+
+    // Grabado en píxeles dentro del área A, con el color del material
+    const engrave = (c: CanvasRenderingContext2D, t: string, A: Box, ink: string) => {
+      const main = text("principal");
+      const second = text("segunda");
+      const date = text("fecha");
+      const foot = [second, date].filter(Boolean).join("  ·  ");
+      const cx = A.x + A.w / 2;
+      c.fillStyle = c.strokeStyle = ink;
+      c.textAlign = "center";
+      const fit = (txt: string, font: (px: number) => string, maxW: number, maxH: number) => {
+        c.font = font(100);
+        const w = c.measureText(txt).width || 1;
+        const size = Math.max(4, Math.min(maxH, (maxW / w) * 100));
+        c.font = font(size);
+        return size;
+      };
+      const put = (txt: string, font: (px: number) => string, maxW: number, maxH: number, y: number) => {
+        if (!txt) return 0;
+        const size = fit(txt, font, maxW, maxH);
+        c.textBaseline = "middle";
+        c.fillText(txt, cx, y);
+        return size;
+      };
+      const rule = (x0: number, x1: number, y: number) => {
+        c.lineWidth = Math.max(1, A.h * 0.008);
+        c.beginPath();
+        c.moveTo(x0, y);
+        c.lineTo(x1, y);
+        c.stroke();
+      };
+
+      if (t === "monograma") {
+        const initial = (main.match(/\p{L}/u)?.[0] ?? "A").toLocaleUpperCase();
+        const bigH = A.h * (foot ? 0.76 : 0.95);
+        c.textBaseline = "alphabetic"; // las medidas de la letra dependen de la línea base
+        let fs = fit(initial, SERIF, A.w * 0.7, bigH / 0.72);
+        let m = c.measureText(initial);
+        // Si la letra de esta fuente es más alta que el espacio, se achica para que quepa
+        const tall = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
+        if (tall > bigH) {
+          fs *= bigH / tall;
+          c.font = SERIF(fs);
+          m = c.measureText(initial);
+        }
+        c.textBaseline = "alphabetic";
+        const gy = A.y + (bigH - (m.actualBoundingBoxAscent + m.actualBoundingBoxDescent)) / 2 + m.actualBoundingBoxAscent;
+        c.fillText(initial, cx, gy);
+        if (main) {
+          // El nombre cruza la inicial con un hueco alrededor
+          const ny = A.y + bigH * 0.56;
+          const size = fit(main, SCRIPT, A.w * 0.96, bigH * 0.42);
+          c.textBaseline = "middle";
+          c.globalCompositeOperation = "destination-out";
+          c.lineWidth = size * 0.16;
+          c.lineJoin = "round";
+          c.strokeText(main, cx, ny);
+          c.globalCompositeOperation = "source-over";
+          c.fillText(main, cx, ny);
+        }
+        if (foot) put(foot.toLocaleUpperCase(), SANS, A.w * 0.8, A.h * 0.11, A.y + A.h * 0.9);
+      } else if (t === "nombres") {
+        const w = A.w * 0.34;
+        const oy = A.y + A.h * 0.1;
+        rule(cx - w / 2, cx - w * 0.1, oy);
+        rule(cx + w * 0.1, cx + w / 2, oy);
+        for (const rot of [-0.6, 0.6]) {
+          c.save();
+          c.translate(cx, oy);
+          c.rotate(rot);
+          c.beginPath();
+          c.ellipse(0, -w * 0.05, w * 0.024, w * 0.055, 0, 0, Math.PI * 2);
+          c.fill();
+          c.restore();
+        }
+        put(main, SCRIPT, A.w * 0.96, A.h * 0.46, A.y + A.h * 0.44);
+        rule(cx - A.w * 0.16, cx + A.w * 0.16, A.y + A.h * 0.69);
+        if (foot) put(foot.toLocaleUpperCase(), SANS, A.w * 0.7, A.h * 0.1, A.y + A.h * 0.85);
+      } else if (t === "clasico") {
+        put(main.toLocaleUpperCase(), SERIF, A.w * 0.94, A.h * 0.3, A.y + A.h * 0.36);
+        if (date) {
+          put(date, SANS, A.w * 0.3, A.h * 0.11, A.y + A.h * 0.64);
+          const tw = c.measureText(date).width;
+          const gap = A.h * 0.06;
+          rule(cx - tw / 2 - gap - A.w * 0.2, cx - tw / 2 - gap, A.y + A.h * 0.64);
+          rule(cx + tw / 2 + gap, cx + tw / 2 + gap + A.w * 0.2, A.y + A.h * 0.64);
+        }
+        if (second) put(second.toLocaleUpperCase(), SANS, A.w * 0.8, A.h * 0.1, A.y + A.h * 0.86);
+      } else if (t === "logo") {
+        const bh = A.h * (main ? 0.6 : 0.9);
+        const bw = Math.min(A.w * 0.7, bh * 1.6);
+        c.setLineDash([6, 5]);
+        c.lineWidth = 2;
+        c.beginPath();
+        c.roundRect(cx - bw / 2, A.y, bw, bh, 10);
+        c.stroke();
+        c.setLineDash([]);
+        put(cfg.copy.logoBox, SANS, bw * 0.6, bh * 0.2, A.y + bh / 2);
+        if (main) put(main.toLocaleUpperCase(), SANS, A.w * 0.8, A.h * 0.14, A.y + A.h * 0.82);
+      }
+    };
+
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const { L, W } = dims();
+      const shape = val("forma");
+      const handles = shape !== "mango" && val("agarraderas") === "si";
+      const groove = val("canal") === "si";
+      const m = mat();
+      const geo = geometry(shape, L, W, handles, groove);
+      const THICK: Record<string, number> = { delgada: 0.75, media: 1, gruesa: 1.25 };
+      const side = (THICK[val("grosor")] ?? 0.75) * 0.9; // canto visible, con un poco de perspectiva
+      const s = Math.min((cw - 130) / geo.foot, (ch - 150) / (W + side));
+      const ox = (cw - geo.foot * s) / 2 + 20;
+      const oy = (ch - (W + side) * s) / 2 - 4;
+
+      // Canto: capas desplazadas hacia abajo; por los huecos se ve la pared interior
+      ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * ox, dpr * oy);
+      const edge = shade(m.dark, -0.24);
+      ctx.save();
+      ctx.shadowColor = bg === "oscura" ? "rgba(0,0,0,0.6)" : "rgba(40,30,20,0.38)";
+      ctx.shadowBlur = 28 * dpr;
+      ctx.shadowOffsetY = 16 * dpr;
+      ctx.translate(0, side);
+      ctx.fillStyle = edge;
+      ctx.fill(geo.path, "evenodd");
+      ctx.restore();
+      for (let i = 5; i >= 1; i--) {
+        ctx.save();
+        ctx.translate(0, (side * i) / 6);
+        ctx.fillStyle = i > 2 ? edge : shade(m.dark, -0.12);
+        ctx.fill(geo.path, "evenodd");
+        ctx.restore();
+      }
+
+      // Cara de arriba
+      ctx.save();
+      ctx.clip(geo.path, "evenodd");
+      ctx.fillStyle = m.base;
+      ctx.fillRect(-1, -1, geo.foot + 2, W + 2);
+      grain(m, geo.foot, W);
+      if (geo.groove) {
+        ctx.lineWidth = 0.34;
+        ctx.strokeStyle = "rgba(0,0,0,0.26)";
+        ctx.stroke(geo.groove);
+        ctx.save();
+        ctx.translate(0.05, 0.06);
+        ctx.lineWidth = 0.1;
+        ctx.strokeStyle = "rgba(255,255,255,0.22)";
+        ctx.stroke(geo.groove);
+        ctx.restore();
+      }
+      ctx.lineWidth = 0.4;
+      ctx.strokeStyle = "rgba(255,255,255,0.2)";
+      ctx.stroke(geo.path);
+      ctx.restore();
+      ctx.lineWidth = 1.2 / s;
+      ctx.strokeStyle = "rgba(0,0,0,0.3)";
+      ctx.stroke(geo.path);
+
+      // Grabado en una capa aparte (para el hueco del monograma)
+      const t = val("plantilla");
+      if (t !== "ninguno") {
+        if (off.width !== canvas.width || off.height !== canvas.height) {
+          off.width = canvas.width;
+          off.height = canvas.height;
+        }
+        octx.setTransform(1, 0, 0, 1, 0, 0);
+        octx.clearRect(0, 0, off.width, off.height);
+        octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const A = { x: ox + geo.area.x * s, y: oy + geo.area.y * s, w: geo.area.w * s, h: geo.area.h * s };
+        engrave(octx, t, A, m.ink);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(off, 0, 0);
+      }
+
+      // Cotas
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const ink = bg === "oscura" ? "rgba(255,255,255,0.78)" : "rgba(11,12,14,0.72)";
+      const bx = ox;
+      const bw = geo.foot * s;
+      const by = oy;
+      const bh = W * s;
+      const gy = Math.min(by + (W + side) * s + 20, ch - 30);
+      const gx = Math.max(bx - 20, 64);
+      const tick = 5;
+      ctx.strokeStyle = ink;
+      ctx.fillStyle = ink;
+      ctx.lineWidth = 1;
+      ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+      ctx.beginPath();
+      ctx.moveTo(bx, gy); ctx.lineTo(bx + bw, gy);
+      ctx.moveTo(bx, gy - tick); ctx.lineTo(bx, gy + tick);
+      ctx.moveTo(bx + bw, gy - tick); ctx.lineTo(bx + bw, gy + tick);
+      ctx.moveTo(gx, by); ctx.lineTo(gx, by + bh);
+      ctx.moveTo(gx - tick, by); ctx.lineTo(gx + tick, by);
+      ctx.moveTo(gx - tick, by + bh); ctx.lineTo(gx + tick, by + bh);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(`${fmt(geo.foot)} in`, bx + bw / 2, gy + 7);
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`${fmt(W)} in`, gx - 9, by + bh / 2);
+
+      const size = shape === "redonda" ? `Ø ${L} in` : `${W} × ${L} in`;
+      canvas.setAttribute("aria-label", `${cfg.copy.preview}: ${m.name} · ${cfg.shapes[shape]} · ${size} · ${cfg.templates[t]}${t !== "ninguno" && text("principal") ? ` "${text("principal")}"` : ""}`);
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const { L, W, round } = dims();
+      const shape = val("forma");
+      const t = val("plantilla");
+      const size = round ? `Ø ${L} in (${Math.round(L * CM)} cm)` : `${W} × ${L} in (${Math.round(W * CM)} × ${Math.round(L * CM)} cm)`;
+      const lines = [text("principal"), text("segunda"), text("fecha")].filter(Boolean).map((w) => `"${w}"`).join(" / ");
+      const handles = shape === "mango" ? cfg.shapes.mango : val("agarraderas") === "si" ? k.yes : k.no;
+      return [
+        `${k.summary}:`,
+        `• ${k.sMaterial}: ${mat().name}`,
+        `• ${k.sShape}: ${cfg.shapes[shape]}`,
+        `• ${k.sSize}: ${size}, ${k.sThick} ${cfg.thicks[val("grosor")]}`,
+        `• ${k.sGroove}: ${val("canal") === "si" ? k.yes : k.no}`,
+        `• ${k.sHandles}: ${handles}`,
+        `• ${k.sEngrave}: ${cfg.templates[t]}${t !== "ninguno" && lines ? ` — ${lines}` : ""}`,
+        `• ${k.sQty}: ${qty()}`,
+        `• ${k.sUse}: ${cfg.uses[val("uso")]}`,
+        `• ${k.sLink}: ${shareUrl()}`,
+      ].join("\n");
+    };
+
+    const syncUI = () => {
+      const { L, W, round } = dims();
+      const mango = val("forma") === "mango";
+      lenLabel.textContent = round ? cfg.copy.diameter : cfg.copy.length;
+      lenOut.value = `${L} in · ${Math.round(L * CM)} cm`;
+      widOut.value = `${Number(widEl.value)} in · ${Math.round(Number(widEl.value) * CM)} cm`;
+      widEl.disabled = round;
+      widRange.toggleAttribute("data-off", round);
+      handlesSeg.querySelectorAll("input").forEach((i) => (i.disabled = mango));
+      handlesNote.hidden = !mango;
+      words.disabled = val("plantilla") === "ninguno";
+      root.querySelectorAll<HTMLButtonElement>("[data-size]").forEach((b) => {
+        const [l, w] = b.dataset.size!.split("x").map(Number);
+        b.setAttribute("aria-pressed", String(l === L && (round || w === W)));
+      });
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+    const render = () => {
+      syncUI();
+      draw();
+      update();
+    };
+
+    // ---------- Eventos ----------
+    form.addEventListener("change", (e) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      render();
+    });
+    form.addEventListener("input", (e) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      render();
+    });
+    root.querySelectorAll<HTMLButtonElement>("[data-size]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const [l, w] = b.dataset.size!.split("x");
+        lenEl.value = l;
+        widEl.value = w;
+        touched = true;
+        render();
+      })
+    );
+    bgBtn.addEventListener("click", () => {
+      bg = bg === "clara" ? "oscura" : "clara";
+      stage.dataset.bg = bg;
+      bgName.textContent = cfg.bgs[bg];
+      draw();
+    });
+
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    Promise.all(
+      [`400 40px "Great Vibes"`, `700 40px "Playfair Display"`, `700 40px "Saira"`].map((f) => document.fonts.load(f).catch(() => []))
+    ).then(() => draw());
+    render();
+  }
+</script>

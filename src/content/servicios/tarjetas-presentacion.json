@@ -1,0 +1,59 @@
+{
+  "nombre": "Tarjetas de presentación",
+  "linea": "graficos",
+  "orden": 7,
+  "padre": "marketing-digital",
+  "nameEn": "Business cards",
+  "slugEn": "business-cards",
+  "short": {
+    "es": "Tarjetas a todo color en papel mate, brillante, lino o kraft, con el diseño que armas aquí mismo.",
+    "en": "Full-color cards on matte, glossy, linen or kraft paper, with the design you build right here."
+  },
+  "intro": {
+    "es": "La tarjeta que dejas cuando te presentas. La diseñas aquí mismo: eliges formato, papel, grosor y acabado, escribes tus datos y ves el frente y el reverso antes de pedirla. Medida estándar de 3-1/2 × 2 in, cuadrada o delgada, con esquinas rectas o redondeadas.",
+    "en": "The card you hand over when you introduce yourself. You design it right here: pick the format, paper, thickness and finish, type your details and see the front and back before you order. Standard 3-1/2 × 2 in, square or slim, with square or rounded corners."
+  },
+  "includes": {
+    "es": [
+      "Formato estándar, cuadrado o delgado, con esquinas rectas o redondeadas",
+      "Papel mate, brillante, sin recubrir, lino, kraft reciclado o perlado",
+      "Grosor de 14, 16 o 32 pt, con la opción de canto pintado",
+      "Impresión por una cara o por las dos",
+      "Acabados: barniz por zonas y lámina dorada o plateada",
+      "Reverso de tarjeta de sellos o de citas"
+    ],
+    "en": [
+      "Standard, square or slim format, with square or rounded corners",
+      "Matte, glossy, uncoated, linen, recycled kraft or pearl paper",
+      "14, 16 or 32 pt thickness, with the option of a painted edge",
+      "Single- or double-sided printing",
+      "Finishes: spot gloss and gold or silver foil",
+      "Stamp-card or appointment-card backs"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Comerciantes",
+      "Bienes raíces",
+      "Salones y spas",
+      "Contratistas",
+      "Restaurantes",
+      "Ferias y eventos"
+    ],
+    "en": [
+      "Shop owners",
+      "Real estate",
+      "Salons and spas",
+      "Contractors",
+      "Restaurants",
+      "Trade shows and events"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

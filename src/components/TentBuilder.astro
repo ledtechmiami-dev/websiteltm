@@ -1,0 +1,1610 @@
+---
+// Constructor de exhibidores de mesa (idea tomada de los de Vistaprint: carpas
+// de mesa de 5 × 7 in en cartulina brillante o mate de 14 y 16 pt, que llegan
+// —aquí solo 14 pt: el taller no hiende y la de 16 se raja en el doblez—
+// planas y se paran solas con dos pestañas que se traban, desde 10; y mini
+// banners retráctiles de mesa de 8-1/2 × 12 y 11 × 17 in, en vinilo, con la
+// base armada y por una sola cara, desde 1; el banner viene armado de fábrica,
+// no se hace aquí). Lo propio de este producto es que
+// se arma: la carpa sale de una hoja con dos dobleces y el banner se enrolla
+// dentro de la base. El constructor enseña las dos cosas. No muestra precios de
+// imprenta: el precio de la impresión va en la cotización.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Cartulinas de la carpa. El vinilo del banner va aparte: no se elige.
+const STOCKS = [
+  { id: "brillante", es: "Brillante", en: "Glossy", base: "#FFFFFF", edge: "#E4E8EB", ink: "#14161A", sub: "#5A616B", tex: "brillo",
+    sw: "linear-gradient(118deg, #FFF 0 26%, #D8E2EA 44%, #FFF 62%, #EDF1F4)" },
+  { id: "mate", es: "Mate", en: "Matte", base: "#FFFFFF", edge: "#E7E8E6", ink: "#14161A", sub: "#5A616B", tex: "mate",
+    sw: "linear-gradient(135deg, #FFF 0 52%, #EFF0EE)" },
+];
+const VINYL = { id: "vinilo", es: "Vinilo", en: "Vinyl", base: "#FDFEFF", edge: "#D5DEE4", ink: "#12161A", sub: "#56606A", tex: "vinilo" };
+
+// La paleta LED del logo más neutros de imprenta
+const ACCENTS = [
+  { id: "azul", es: "Azul LED", en: "LED blue", hex: "#0094DA" },
+  { id: "amarillo", es: "Amarillo LED", en: "LED yellow", hex: "#FFCA09" },
+  { id: "verde", es: "Verde LED", en: "LED green", hex: "#99C941" },
+  { id: "rojo", es: "Rojo LED", en: "LED red", hex: "#ED1B24" },
+  { id: "vino", es: "Vino", en: "Wine", hex: "#7A1F2B" },
+  { id: "marino", es: "Azul marino", en: "Navy", hex: "#16304F" },
+  { id: "oliva", es: "Verde oliva", en: "Olive", hex: "#4F5B32" },
+  { id: "terracota", es: "Terracota", en: "Terracotta", hex: "#B4522E" },
+  { id: "negro", es: "Negro", en: "Black", hex: "#0B0C0E" },
+  { id: "pizarra", es: "Gris pizarra", en: "Slate grey", hex: "#59626D" },
+];
+
+const COPY = {
+  es: {
+    title: "Diseña tu exhibidor de mesa",
+    lead: "La carpa que se para sola en la mesa y el mini banner con su base. Elige cuál, arma el diseño y aprieta «Desplegado» para ver cómo sale de la máquina: la carpa es una sola hoja con dos dobleces y el banner se enrolla dentro de la base. Mándanos el diseño y te respondemos con el precio.",
+    kind: "Qué exhibidor",
+    kinds: { carpa: "Carpa de mesa", banner: "Mini banner" },
+    kindHelp: {
+      carpa: "La de toda la vida: llega plana y se para sola con dos pestañas que se traban por debajo. Se lee de los dos lados de la mesa.",
+      banner: "El retráctil chico: vinilo enrollado en una base de aluminio, se levanta y se guarda en diez segundos. Para el mostrador, la feria y el recibidor.",
+    },
+    format: "Medida",
+    sizes: {
+      chica: "4 × 6 in", clasica: "5 × 7 in",
+      mediano: "8-1/2 × 12 in", grande: "11 × 17 in",
+    },
+    sizeHelp: {
+      chica: "4 × 6 in. La chica: en una mesa puesta no estorba.",
+      clasica: "5 × 7 in. La clásica: se lee desde la mesa de al lado.",
+      mediano: "8-1/2 × 12 in. Cabe en el mostrador sin tapar al que atiende.",
+      grande: "11 × 17 in. Se lee de pie, a dos metros.",
+    },
+    paper: "Cartulina",
+    paperHelp: "La cara de fuera va brillante o mate, en cartulina de 14 pt; la de dentro queda sin estucar, que es la que no se ve.",
+    foldHelp: "Va en 14 pt porque la carpa se dobla sin hendir: en 16 pt el doblez se raja y se abre la tinta.",
+    vinylHelp: "El banner va en vinilo, con la base de aluminio y la vara. Viene armado de fábrica, no se hace aquí: pídelo con tiempo.",
+    print: "Impresión",
+    sides: "Caras",
+    sideOpts: { igual: "El mismo diseño por los dos lados", distinto: "Distinto en cada lado" },
+    sideHelp: {
+      igual: "Lo normal: el cliente lo lee igual se siente donde se siente.",
+      distinto: "Un lado para la promoción y el otro para el horario, el QR o la lista.",
+    },
+    bannerSides: "El retráctil se imprime por una sola cara: la otra queda enrollada dentro de la base.",
+    design: "Diseño",
+    tpls: { promo: "Promoción", lista: "La lista", qr: "Código QR", evento: "Evento", foto: "Con foto" },
+    tplHelp: {
+      promo: "El número grande primero: es lo único que se lee de lejos.",
+      lista: "Tres renglones con su precio, para los especiales de la mesa.",
+      qr: "El código en grande y una sola frase que diga qué pasa si lo escaneas.",
+      evento: "Para el recibidor, la feria o la mesa de regalos: nombre, qué es y cuándo.",
+      foto: "La foto arriba y el texto debajo, que es como se mira.",
+    },
+    qrBox: "TU CÓDIGO QR",
+    qrNote: "El código lo generamos nosotros con tu enlace: menú, mapa, WhatsApp o lo que quieras.",
+    type: "Tipografía",
+    types: { moderna: "Moderna", clasica: "Clásica", tecnica: "Técnica", sencilla: "Sencilla" },
+    accent: "Color de acento",
+    bg: "Fondo",
+    bgs: { papel: "Blanco", color: "Color de acento", oscuro: "Oscuro" },
+    image: "Imagen",
+    images: { foto: "Espacio para foto", color: "Bloque de color" },
+    imageHelp: "Déjanos el espacio marcado y",
+    imageCta: "mándanos la foto por WhatsApp",
+    imageWa: "Hola, quiero imprimir exhibidores de mesa. Les envío las fotos y el logo.",
+    photoBox: "TU FOTO",
+    words: "Lo que dice",
+    business: "Nombre del negocio",
+    businessPh: "Ej. Tu Restaurante",
+    defBusiness: "Tu Restaurante",
+    tag: "Lema o antetítulo",
+    tagPh: "Ej. De lunes a jueves",
+    defTag: "De lunes a jueves",
+    head: "Titular",
+    headPh: "Ej. 2 x 1",
+    defHead: "2 x 1",
+    detail: "Detalle",
+    detailPh: "Ej. En toda la cerveza de barril, de 4 a 7 de la tarde",
+    defDetail: "En toda la cerveza de barril, de 4 a 7 de la tarde",
+    item: "Renglón",
+    priceCol: "Precio",
+    items: ["Croquetas de jamón", "Ropa vieja con arroz", "Flan de la casa"],
+    prices: ["$6", "$16", "$5"],
+    cta: "Frase de acción",
+    ctaPh: "Ej. Escanea para ver el menú",
+    defCta: "Escanea para ver el menú",
+    biz: "Al pie",
+    phone: "Teléfono",
+    phonePh: "Ej. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Sitio web o red social",
+    webPh: "Ej. turestaurante.com",
+    defWeb: "turestaurante.com",
+    note: "Letra chica",
+    notePh: "Ej. No acumulable con otras ofertas",
+    defNote: "No acumulable con otras ofertas",
+    back: "Reverso",
+    backs: { datos: "Horario y datos", qr: "Código QR", lista: "La lista" },
+    backHelp: "El reverso solo se imprime si eliges distinto en cada lado.",
+    hours: "Abierto todos los días",
+    order: "Tu pedido",
+    qty: "Cantidad",
+    qtyHelp: {
+      carpa: "Una por mesa y algunas de repuesto: se manchan. Desde 10.",
+      banner: "Se compra de uno en uno: el banner viene con su base y se guarda enrollado.",
+    },
+    guides: "Guías de corte",
+    guidesOn: "Línea roja: sangrado, por donde pasa la cuchilla. Línea azul: zona segura, los textos no deben salir de ahí.",
+    flat: "Desplegado",
+    flatOff: "Armado",
+    flatOnCarpa: "Así sale de la máquina: una sola hoja con dos dobleces (la raya de puntos) y las dos pestañas de abajo, que se traban una con otra. Fíjate en que una de las dos caras va al revés en la hoja: al doblarla queda derecha.",
+    flatOnBanner: "Así va el archivo del banner: la franja de abajo se enrolla dentro de la base y no se ve nunca. Ahí no pongas el logo.",
+    foldLbl: "DOBLEZ",
+    tabLbl: "PESTAÑA",
+    upsideLbl: "Esta cara va al revés en la hoja",
+    hideLbl: "Esto se mete en la base",
+    views: { ambas: "Ver: los dos lados", frente: "Ver: solo el frente", reverso: "Ver: solo el reverso" },
+    viewHelp: "Cambiar la vista",
+    approx: "Vista aproximada · el color impreso varía un poco del de la pantalla",
+    front: "Frente",
+    backLbl: "Reverso",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h. Depende del tiraje, de la cartulina y del acabado.",
+    cta2: "Cotizar estos exhibidores",
+    wa: "Enviar por WhatsApp",
+    notesPh: "Para cuándo los necesitas, cuántas mesas tienes, si ya tienes el diseño hecho…",
+    summary: "Diseño del constructor de exhibidores de mesa",
+    sKind: "Exhibidor",
+    sFormat: "Medida",
+    sPaper: "Material",
+    sCaliper: "Calibre",
+    sSides: "Caras",
+    sDesign: "Diseño",
+    sType: "Tipografía",
+    sAccent: "Color de acento",
+    sBg: "Fondo",
+    sImage: "Imagen",
+    sName: "Negocio",
+    sHead: "Titular",
+    sList: "Lista",
+    sCta: "Frase",
+    sNote: "Letra chica",
+    sBiz: "Datos",
+    sBack: "Reverso",
+    sQty: "Cantidad",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesan estos exhibidores de mesa:",
+    preview: "Vista previa del exhibidor de mesa",
+  },
+  en: {
+    title: "Design your tabletop display",
+    lead: "The tent card that stands on its own and the mini banner with its base. Pick one, build the design and hit \"Flat\" to see how it comes off the press: the tent is a single sheet with two folds, and the banner rolls up inside the base. Send us the design and we'll reply with the price.",
+    kind: "Which display",
+    kinds: { carpa: "Tent card", banner: "Mini banner" },
+    kindHelp: {
+      carpa: "The classic: it ships flat and stands on its own with two tabs that interlock underneath. It reads from both sides of the table.",
+      banner: "The small retractable: vinyl rolled into an aluminum base, up and away in ten seconds. For the counter, the trade show and the lobby.",
+    },
+    format: "Size",
+    sizes: {
+      chica: "4 × 6 in", clasica: "5 × 7 in",
+      mediano: "8-1/2 × 12 in", grande: "11 × 17 in",
+    },
+    sizeHelp: {
+      chica: "4 × 6 in. The small one: it won't crowd a set table.",
+      clasica: "5 × 7 in. The classic: it reads from the next table over.",
+      mediano: "8-1/2 × 12 in. Fits on the counter without hiding whoever is serving.",
+      grande: "11 × 17 in. Reads standing up, from six feet away.",
+    },
+    paper: "Card stock",
+    paperHelp: "The outside is glossy or matte, on 14 pt card stock; the inside stays uncoated — it's the side nobody sees.",
+    foldHelp: "It comes in 14 pt because the tent is folded without scoring: at 16 pt the fold cracks and the ink splits open.",
+    vinylHelp: "The banner comes in vinyl, with the aluminum base and the pole. It arrives assembled from the supplier, not made here: order it with time to spare.",
+    print: "Printing",
+    sides: "Sides",
+    sideOpts: { igual: "Same design on both sides", distinto: "Different on each side" },
+    sideHelp: {
+      igual: "The usual: the customer reads the same thing wherever they sit.",
+      distinto: "One side for the promotion and the other for hours, the QR code or the list.",
+    },
+    bannerSides: "The retractable prints on one side only: the other stays rolled up inside the base.",
+    design: "Layout",
+    tpls: { promo: "Promotion", lista: "The list", qr: "QR code", evento: "Event", foto: "With photo" },
+    tplHelp: {
+      promo: "The big number first: it's the only thing that reads from a distance.",
+      lista: "Three lines with their prices, for the table specials.",
+      qr: "The code big and one single line saying what happens if you scan it.",
+      evento: "For the lobby, the trade show or the gift table: name, what it is and when.",
+      foto: "Photo on top and text underneath, which is how people look at it.",
+    },
+    qrBox: "YOUR QR CODE",
+    qrNote: "We generate the code with your link: menu, map, WhatsApp or whatever you want.",
+    type: "Typeface",
+    types: { moderna: "Modern", clasica: "Classic", tecnica: "Technical", sencilla: "Simple" },
+    accent: "Accent color",
+    bg: "Background",
+    bgs: { papel: "White", color: "Accent color", oscuro: "Dark" },
+    image: "Image",
+    images: { foto: "Space for a photo", color: "Color block" },
+    imageHelp: "We'll leave the space marked and you can",
+    imageCta: "send us the photo on WhatsApp",
+    imageWa: "Hi, I want to print tabletop displays. I'll send you the photos and the logo.",
+    photoBox: "YOUR PHOTO",
+    words: "What it says",
+    business: "Business name",
+    businessPh: "E.g. Your Restaurant",
+    defBusiness: "Your Restaurant",
+    tag: "Tagline or eyebrow",
+    tagPh: "E.g. Monday to Thursday",
+    defTag: "Monday to Thursday",
+    head: "Headline",
+    headPh: "E.g. 2 for 1",
+    defHead: "2 for 1",
+    detail: "Detail",
+    detailPh: "E.g. On all draft beer, 4 to 7 in the afternoon",
+    defDetail: "On all draft beer, 4 to 7 in the afternoon",
+    item: "Line",
+    priceCol: "Price",
+    items: ["Ham croquettes", "Ropa vieja with rice", "House flan"],
+    prices: ["$6", "$16", "$5"],
+    cta: "Call to action",
+    ctaPh: "E.g. Scan to see the menu",
+    defCta: "Scan to see the menu",
+    biz: "At the bottom",
+    phone: "Phone",
+    phonePh: "E.g. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Website or social handle",
+    webPh: "E.g. yourrestaurant.com",
+    defWeb: "yourrestaurant.com",
+    note: "Small print",
+    notePh: "E.g. Not valid with other offers",
+    defNote: "Not valid with other offers",
+    back: "Back",
+    backs: { datos: "Hours and details", qr: "QR code", lista: "The list" },
+    backHelp: "The back is only printed if you choose different on each side.",
+    hours: "Open every day",
+    order: "Your order",
+    qty: "Quantity",
+    qtyHelp: {
+      carpa: "One per table plus a few spares: they get stained. From 10 up.",
+      banner: "They're bought one at a time: the banner comes with its base and stores rolled up.",
+    },
+    guides: "Cut guides",
+    guidesOn: "Red line: the bleed, where the blade cuts. Blue line: the safe area, keep text inside it.",
+    flat: "Flat",
+    flatOff: "Assembled",
+    flatOnCarpa: "This is how it comes off the press: a single sheet with two folds (the dotted line) and the two tabs at the bottom that interlock. Note that one of the two faces sits upside down on the sheet: once folded it reads right.",
+    flatOnBanner: "This is how the banner file works: the bottom strip rolls up inside the base and is never seen. Don't put the logo there.",
+    foldLbl: "FOLD",
+    tabLbl: "TAB",
+    upsideLbl: "This face sits upside down on the sheet",
+    hideLbl: "This goes inside the base",
+    views: { ambas: "View: both sides", frente: "View: front only", reverso: "View: back only" },
+    viewHelp: "Change the view",
+    approx: "Approximate preview · printed color varies a little from the screen",
+    front: "Front",
+    backLbl: "Back",
+    price: "Price: we send it with your quote, in under 24 hours. It depends on the run, the stock and the finish.",
+    cta2: "Quote these displays",
+    wa: "Send on WhatsApp",
+    notesPh: "When you need them, how many tables you have, whether your design is already done…",
+    summary: "Tabletop display builder design",
+    sKind: "Display",
+    sFormat: "Size",
+    sPaper: "Material",
+    sCaliper: "Thickness",
+    sSides: "Sides",
+    sDesign: "Layout",
+    sType: "Typeface",
+    sAccent: "Accent color",
+    sBg: "Background",
+    sImage: "Image",
+    sName: "Business",
+    sHead: "Headline",
+    sList: "List",
+    sCta: "Line",
+    sNote: "Small print",
+    sBiz: "Details",
+    sBack: "Back",
+    sQty: "Quantity",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in these tabletop displays:",
+    preview: "Tabletop display preview",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  stocks: [...STOCKS, VINYL].map((s) => ({
+    id: s.id, base: s.base, edge: s.edge, ink: s.ink, sub: s.sub, tex: s.tex, name: s[lang],
+  })),
+  accents: ACCENTS.map((a) => ({ id: a.id, hex: a.hex, name: a[lang] })),
+  kinds: c.kinds,
+  kindHelp: c.kindHelp,
+  sizes: c.sizes,
+  sizeHelp: c.sizeHelp,
+  sides: c.sideOpts,
+  sideHelp: c.sideHelp,
+  tpls: c.tpls,
+  tplHelp: c.tplHelp,
+  types: c.types,
+  bgs: c.bgs,
+  images: c.images,
+  backs: c.backs,
+  views: c.views,
+  qtyHelp: c.qtyHelp,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    photoBox: c.photoBox,
+    qrBox: c.qrBox,
+    hours: c.hours,
+    foldLbl: c.foldLbl,
+    tabLbl: c.tabLbl,
+    upsideLbl: c.upsideLbl,
+    hideLbl: c.hideLbl,
+    front: c.front,
+    backLbl: c.backLbl,
+    approx: c.approx,
+    guidesOn: c.guidesOn,
+    flat: c.flat,
+    flatOff: c.flatOff,
+    flatOnCarpa: c.flatOnCarpa,
+    flatOnBanner: c.flatOnBanner,
+    paperHelp: c.paperHelp,
+    vinylHelp: c.vinylHelp,
+    foldHelp: c.foldHelp,
+    bannerSides: c.bannerSides,
+    summary: c.summary,
+    sKind: c.sKind,
+    sFormat: c.sFormat,
+    sPaper: c.sPaper,
+    sCaliper: c.sCaliper,
+    sSides: c.sSides,
+    sDesign: c.sDesign,
+    sType: c.sType,
+    sAccent: c.sAccent,
+    sBg: c.sBg,
+    sImage: c.sImage,
+    sName: c.sName,
+    sHead: c.sHead,
+    sList: c.sList,
+    sCta: c.sCta,
+    sNote: c.sNote,
+    sBiz: c.sBiz,
+    sBack: c.sBack,
+    sQty: c.sQty,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+    preview: c.preview,
+  },
+};
+const waPhoto = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.imageWa)}`;
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+const TPLS = Object.keys(c.tpls);
+const SIZES = Object.keys(c.sizes);
+---
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" />
+
+<section class="section section--flush" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb tt" data-carpa data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage">
+        <canvas class="nb__canvas tt__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-guides aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.guides}
+          </button>
+          <button type="button" class="nb__tool" data-flat aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.flat}
+          </button>
+          <button type="button" class="nb__tool tt__view" data-view title={c.viewHelp}>{c.views.ambas}</button>
+        </div>
+        <p class="nb__approx" data-approx>{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.kind}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.kind}>
+            {seg("tipo", c.kinds).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-kind-help>{c.kindHelp.carpa}</p>
+          <p class="tb__sub">{c.format}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.format} data-sizes>
+            {SIZES.map((id, i) => (
+              <label data-for={i < 2 ? "carpa" : "banner"}>
+                <input type="radio" name="formato" value={id} checked={i === 1} />
+                <span>{c.sizes[id as keyof typeof c.sizes]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help" data-size-help>{c.sizeHelp.clasica}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.paper}</legend>
+          <div class="tb__mats" data-mats>
+            {STOCKS.map((s) => (
+              <label class="tb__mat">
+                <input type="radio" name="papel" value={s.id} checked={s.id === "mate"} />
+                <i style={`--c:${s.sw}`} aria-hidden="true"></i>
+                <span>{s[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help" data-paper-help>{c.paperHelp}</p>
+          <p class="nb__help" data-fold-help>{c.foldHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.print}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.sides} data-caras>
+            {seg("caras", c.sideOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-side-help>{c.sideHelp.igual}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.design}</legend>
+          <div class="fb__pats tt__tpls" role="radiogroup" aria-label={c.design}>
+            {TPLS.map((id, i) => (
+              <label class="fb__pat tt__tpl">
+                <input type="radio" name="plantilla" value={id} checked={i === 0} />
+                <canvas width="120" height="168" aria-hidden="true"></canvas>
+                <span>{c.tpls[id as keyof typeof c.tpls]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help" data-tpl-help>{c.tplHelp.promo}</p>
+          <p class="tb__sub">{c.bg}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.bg}>
+            {seg("fondo", c.bgs, "color").map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.type}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.type}>
+            {seg("tipografia", c.types).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.accent} · <span class="eb__picked" data-accent-name>{ACCENTS[0][lang]}</span></p>
+          <div class="eb__sws" role="radiogroup" aria-label={c.accent}>
+            {ACCENTS.map((a, i) => (
+              <label class="eb__sw" title={a[lang]}>
+                <input type="radio" name="acento" value={a.id} checked={i === 0} />
+                <i style={`--c:${a.hex}`} aria-hidden="true"></i>
+                <span class="sr-only">{a[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.image}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.image} data-image>
+            {seg("imagen", c.images).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.imageHelp} <a class="eb__link" href={waPhoto} target="_blank" rel="noopener">{c.imageCta}</a>.</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.words}</legend>
+          <div class="tb__words">
+            <div class="form__row">
+              <div class="field">
+                <label for="tt-negocio">{c.business}</label>
+                <input id="tt-negocio" type="text" name="negocio" maxlength="26" autocomplete="off" placeholder={c.businessPh} value={c.defBusiness} />
+              </div>
+              <div class="field">
+                <label for="tt-lema">{c.tag}</label>
+                <input id="tt-lema" type="text" name="lema" maxlength="30" autocomplete="off" placeholder={c.tagPh} value={c.defTag} />
+              </div>
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="tt-titular">{c.head}</label>
+                <input id="tt-titular" type="text" name="titular" maxlength="18" autocomplete="off" placeholder={c.headPh} value={c.defHead} />
+              </div>
+              <div class="field">
+                <label for="tt-cta">{c.cta}</label>
+                <input id="tt-cta" type="text" name="frase" maxlength="30" autocomplete="off" placeholder={c.ctaPh} value={c.defCta} />
+              </div>
+            </div>
+            <div class="field">
+              <label for="tt-detalle">{c.detail}</label>
+              <input id="tt-detalle" type="text" name="detalle" maxlength="52" autocomplete="off" placeholder={c.detailPh} value={c.defDetail} />
+            </div>
+            <div class="tt__rows">
+              {[1, 2, 3].map((n) => (
+                <div class="tt__row">
+                  <div class="field">
+                    <input type="text" name={`renglon${n}`} maxlength="26" autocomplete="off" value={c.items[n - 1]} aria-label={`${c.item} ${n}`} />
+                  </div>
+                  <div class="field">
+                    <input type="text" name={`precio${n}`} maxlength="8" autocomplete="off" value={c.prices[n - 1]} aria-label={`${c.priceCol} ${n}`} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.biz}</legend>
+          <div class="tb__words">
+            <div class="form__row">
+              <div class="field">
+                <label for="tt-tel">{c.phone}</label>
+                <input id="tt-tel" type="text" name="tel" maxlength="24" autocomplete="off" placeholder={c.phonePh} value={c.defPhone} />
+              </div>
+              <div class="field">
+                <label for="tt-web">{c.web}</label>
+                <input id="tt-web" type="text" name="web" maxlength="30" autocomplete="off" placeholder={c.webPh} value={c.defWeb} />
+              </div>
+            </div>
+            <div class="field">
+              <label for="tt-nota">{c.note}</label>
+              <input id="tt-nota" type="text" name="nota" maxlength="46" autocomplete="off" placeholder={c.notePh} value={c.defNote} />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.back}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.back} data-back>
+            {seg("reverso", c.backs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-back-help>{c.backHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="nb__sizes" data-pills>
+            {[10, 25, 50, 100, 250].map((q) => (
+              <button type="button" class="nb__pill" data-qty={q}>{q}</button>
+            ))}
+          </div>
+          <div class="tb__row">
+            <div class="field">
+              <label for="tt-cantidad">{c.qty}</label>
+              <input id="tt-cantidad" type="number" name="cantidad" min="10" max="100000" step="5" value="50" inputmode="numeric" aria-describedby="tt-qty-help" />
+            </div>
+          </div>
+          <p class="nb__help" id="tt-qty-help" data-qty-help>{c.qtyHelp.carpa}</p>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="tt" cta={c.cta2} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Stock = { id: string; name: string; base: string; edge: string; ink: string; sub: string; tex: string };
+  type Accent = { id: string; name: string; hex: string };
+  type Cfg = {
+    stocks: Stock[];
+    accents: Accent[];
+    kinds: Record<string, string>;
+    kindHelp: Record<string, string>;
+    sizes: Record<string, string>;
+    sizeHelp: Record<string, string>;
+    sides: Record<string, string>;
+    sideHelp: Record<string, string>;
+    tpls: Record<string, string>;
+    tplHelp: Record<string, string>;
+    types: Record<string, string>;
+    bgs: Record<string, string>;
+    images: Record<string, string>;
+    backs: Record<string, string>;
+    views: Record<string, string>;
+    qtyHelp: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+  type Row = { item: string; price: string };
+  // Un panel ya resuelto desde el formulario
+  type Face = {
+    w: number; // pulgadas
+    h: number;
+    stock: Stock;
+    accent: string;
+    type: string;
+    tpl: string;
+    bg: string;
+    photo: boolean;
+    hide: number; // lo que se enrolla en la base del banner: ahí no se dibuja
+    t: Record<string, string>;
+    rows: Row[];
+    mini: boolean;
+  };
+
+  // Medidas de panel, en pulgadas, y a qué exhibidor pertenece cada una
+  const SIZES: Record<string, { w: number; h: number; kind: string }> = {
+    chica: { w: 4, h: 6, kind: "carpa" },
+    clasica: { w: 5, h: 7, kind: "carpa" },
+    mediano: { w: 8.5, h: 12, kind: "banner" },
+    grande: { w: 11, h: 17, kind: "banner" },
+  };
+  const DEF_SIZE: Record<string, string> = { carpa: "clasica", banner: "mediano" };
+  const FLAP = 1.25; // la pestaña de abajo de la carpa, la que se traba
+  const HIDE = 1; // lo que se enrolla dentro de la base del banner
+  const RAIL = 0.22; // el riel de arriba del banner
+  const BLEED = 0.125; // sangrado de imprenta
+  const SAFE = 0.25; // margen de seguridad hacia dentro
+  const QTYS: Record<string, number[]> = { carpa: [10, 25, 50, 100, 250], banner: [1, 2, 5, 10, 25] };
+  const MINQ: Record<string, number> = { carpa: 10, banner: 1 };
+
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  // Luminancia relativa: decide si sobre ese color el texto va blanco o negro
+  const lum = (hex: string) =>
+    rgb(hex)
+      .map((v) => v / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)))
+      .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const onColor = (hex: string) => (lum(hex) > 0.42 ? "#0B0C0E" : "#FFFFFF");
+  const mix = (hex: string, t: number) => {
+    const to = t < 0 ? 0 : 255;
+    const a = Math.abs(t);
+    const [r, g, b] = rgb(hex).map((v) => Math.round(v + (to - v) * a));
+    return `rgb(${r},${g},${b})`;
+  };
+  // Azar con semilla: ni la textura ni el código de muestra cambian al redibujar
+  const rng = (seed: number) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const seedOf = (s: string) => {
+    let n = 7;
+    for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) % 2147483647;
+    return n || 7;
+  };
+
+  // Medidas en pulgadas, escritas como en la imprenta: 8-1/2 in
+  const fmtIn = (v: number) => {
+    const whole = Math.floor(v);
+    const fr = +(v - whole).toFixed(3);
+    const frac: Record<string, string> = { "0.25": "-1/4", "0.5": "-1/2", "0.75": "-3/4" };
+    const f = frac[String(fr)];
+    if (f) return `${whole}${f}`;
+    return fr ? String(+v.toFixed(2)) : String(whole);
+  };
+
+  const FAMS: Record<string, { title: string; body: string; track: string }> = {
+    moderna: { title: '800 {px}px "Saira", "Arial Narrow", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    clasica: { title: '700 {px}px "Playfair Display", Georgia, serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    tecnica: { title: '400 {px}px "Michroma", "Eurostile", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.02em" },
+    sencilla: { title: '600 {px}px "Instrument Sans", system-ui, sans-serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+  };
+  const LABEL = (px: number) => `400 ${px}px "Michroma", "Eurostile", sans-serif`;
+  const setTrack = (c: CanvasRenderingContext2D, v: string) => {
+    (c as unknown as { letterSpacing: string }).letterSpacing = v;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-carpa]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const guidesBtn = root.querySelector<HTMLButtonElement>("[data-guides]")!;
+    const flatBtn = root.querySelector<HTMLButtonElement>("[data-flat]")!;
+    const viewBtn = root.querySelector<HTMLButtonElement>("[data-view]")!;
+    const tools = root.querySelector<HTMLElement>(".nb__tools")!;
+    const approx = root.querySelector<HTMLElement>("[data-approx]")!;
+    const kindHelp = form.querySelector<HTMLElement>("[data-kind-help]")!;
+    const sizesSeg = form.querySelector<HTMLElement>("[data-sizes]")!;
+    const sizeHelp = form.querySelector<HTMLElement>("[data-size-help]")!;
+    const mats = form.querySelector<HTMLElement>("[data-mats]")!;
+    const foldHelp = form.querySelector<HTMLElement>("[data-fold-help]")!;
+    const paperHelp = form.querySelector<HTMLElement>("[data-paper-help]")!;
+    const carasSeg = form.querySelector<HTMLElement>("[data-caras]")!;
+    const sideHelp = form.querySelector<HTMLElement>("[data-side-help]")!;
+    const tplHelp = form.querySelector<HTMLElement>("[data-tpl-help]")!;
+    const imageSeg = form.querySelector<HTMLElement>("[data-image]")!;
+    const backSeg = form.querySelector<HTMLElement>("[data-back]")!;
+    const backHelp = form.querySelector<HTMLElement>("[data-back-help]")!;
+    const accentName = form.querySelector<HTMLElement>("[data-accent-name]")!;
+    const qtyEl = form.querySelector<HTMLInputElement>("input[name='cantidad']")!;
+    const qtyHelp = form.querySelector<HTMLElement>("[data-qty-help]")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    let guides = false;
+    let flat = false; // desplegado
+    const VIEWS = ["ambas", "frente", "reverso"] as const;
+    let view: (typeof VIEWS)[number] = "ambas";
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+    let wasKind = "carpa"; // para cambiar la cantidad al cambiar de exhibidor
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const kind = () => val("tipo");
+    const isBanner = () => kind() === "banner";
+    // El banner va en vinilo; la carpa, en la cartulina que se elija
+    const stock = () =>
+      isBanner()
+        ? cfg.stocks.find((s) => s.id === "vinilo")!
+        : cfg.stocks.find((s) => s.id === val("papel")) ?? cfg.stocks[0];
+    const accent = () => cfg.accents.find((a) => a.id === val("acento")) ?? cfg.accents[0];
+    // El retráctil se imprime por una sola cara
+    const twoSided = () => !isBanner() && val("caras") === "distinto";
+    const hasPhoto = () => val("plantilla") === "foto";
+    const minQ = () => MINQ[kind()] ?? 10;
+    const qty = () => Math.max(minQ(), Math.min(100000, Math.round(Number(qtyEl.value) || minQ())));
+    const dims = () => {
+      const s = SIZES[val("formato")];
+      return s && s.kind === kind() ? s : SIZES[DEF_SIZE[kind()]];
+    };
+    const texts = () => ({
+      negocio: text("negocio"),
+      lema: text("lema"),
+      titular: text("titular"),
+      detalle: text("detalle"),
+      frase: text("frase"),
+      tel: text("tel"),
+      web: text("web"),
+      nota: text("nota"),
+    });
+    const rows = (): Row[] =>
+      [1, 2, 3].map((i) => ({ item: text(`renglon${i}`), price: text(`precio${i}`) })).filter((r) => r.item);
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const RADIOS = ["tipo", "formato", "papel", "caras", "plantilla", "fondo", "tipografia", "acento", "imagen", "reverso"];
+    const FIELDS: Array<[string, number]> = [
+      ["negocio", 26],
+      ["lema", 30],
+      ["titular", 18],
+      ["frase", 30],
+      ["detalle", 52],
+      ["renglon1", 26],
+      ["precio1", 8],
+      ["renglon2", 26],
+      ["precio2", 8],
+      ["renglon3", 26],
+      ["precio3", 8],
+      ["tel", 24],
+      ["web", 30],
+      ["nota", 46],
+    ];
+    const params = new URLSearchParams(location.search);
+    if (params.has("plantilla") && params.has("tipo")) {
+      RADIOS.forEach((n) => setRadio(n, params.get(n)));
+      FIELDS.forEach(([n, max]) => {
+        const v = params.get(n);
+        if (v !== null) (form.elements.namedItem(n) as HTMLInputElement).value = v.slice(0, max);
+      });
+      wasKind = kind();
+      const q = Number(params.get("cantidad"));
+      if (q >= 1 && q <= 100000) qtyEl.value = String(Math.round(q));
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams();
+      RADIOS.forEach((n) => p.set(n, val(n)));
+      FIELDS.forEach(([n]) => p.set(n, text(n)));
+      p.set("cantidad", String(qty()));
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Dibujo ----------
+    // La textura del material. El vinilo y el brillante levantan reflejo.
+    const paper = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, st: Stock) => {
+      c.fillStyle = st.base;
+      c.fillRect(x, y, w, h);
+      if (st.tex === "brillo" || st.tex === "vinilo") {
+        const g = c.createLinearGradient(x, y + h, x + w, y);
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.44, "rgba(255,255,255,0)");
+        g.addColorStop(0.5, "rgba(255,255,255,0.4)");
+        g.addColorStop(0.56, "rgba(255,255,255,0)");
+        g.addColorStop(1, st.tex === "vinilo" ? "rgba(150,190,215,0.18)" : "rgba(180,200,215,0.14)");
+        c.fillStyle = g;
+        c.fillRect(x, y, w, h);
+      }
+      const sh = c.createLinearGradient(x, y, x, y + h);
+      sh.addColorStop(0, "rgba(255,255,255,0.12)");
+      sh.addColorStop(0.5, "rgba(255,255,255,0)");
+      sh.addColorStop(1, "rgba(11,12,14,0.06)");
+      c.fillStyle = sh;
+      c.fillRect(x, y, w, h);
+    };
+
+    // Dibuja un panel del exhibidor
+    const drawFace = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Face, back: string | null) => {
+      const { w, h } = o;
+      const X = (v: number) => x0 + v * s;
+      const Y = (v: number) => y0 + v * s;
+      const P = (v: number) => v * s;
+      const st = o.stock;
+      const acc = o.accent;
+      const fu = w; // en un panel vertical manda el ancho
+      const m = 0.1 * w;
+      // El diseño vive en lo que se ve: en el banner, la franja de abajo se
+      // enrolla dentro de la base y no cuenta
+      const hh = h - o.hide;
+      const V = (k: number) => k * hh;
+
+      // ---- Fondo ----
+      paper(c, X(0), Y(0), P(w), P(h), st);
+      const dark = o.bg === "oscuro";
+      const colored = o.bg === "color";
+      if (dark || colored) {
+        c.fillStyle = dark ? "#14161A" : acc;
+        c.fillRect(X(0), Y(0), P(w), P(h));
+        c.save();
+        c.globalAlpha = 0.12;
+        c.globalCompositeOperation = "overlay";
+        paper(c, X(0), Y(0), P(w), P(h), st);
+        c.restore();
+      }
+      const ink = dark ? "#FFFFFF" : colored ? onColor(acc) : st.ink;
+      const sub = dark ? "#AEB5BD" : colored ? mix(onColor(acc), onColor(acc) === "#FFFFFF" ? -0.2 : 0.35) : st.sub;
+      const mark = colored ? ink : acc;
+      const rule = dark ? "rgba(255,255,255,0.28)" : colored ? "rgba(255,255,255,0.45)" : "rgba(11,12,14,0.2)";
+
+      const fam = () => FAMS[o.type] ?? FAMS.moderna;
+      const make = (kind2: "title" | "body" | "label", px: number) =>
+        kind2 === "label" ? LABEL(px) : fam()[kind2].replace("{px}", String(px));
+
+      // Un renglón de texto; en las miniaturas se sustituye por una barra
+      const put = (
+        txt: string,
+        kind2: "title" | "body" | "label",
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string,
+        align: CanvasTextAlign = "left",
+        upper = false
+      ) => {
+        if (!txt) return 0;
+        const px = Math.max(1, P(sizeIn));
+        const maxPx = P(maxIn);
+        const t = upper ? txt.toLocaleUpperCase() : txt;
+        setTrack(c, kind2 === "label" ? "0.1em" : fam().track);
+        c.font = make(kind2, px);
+        let wd = c.measureText(t).width;
+        if (wd > maxPx && wd > 0) {
+          c.font = make(kind2, px * (maxPx / wd));
+          wd = maxPx;
+        }
+        c.fillStyle = color;
+        c.textAlign = align;
+        c.textBaseline = "alphabetic";
+        if (o.mini) {
+          const bh = Math.max(1, px * 0.58);
+          const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+          c.fillRect(bx, Y(yIn) - bh, wd, bh);
+        } else {
+          c.fillText(t, X(xIn), Y(yIn));
+        }
+        setTrack(c, "0px");
+        return wd / s;
+      };
+      // Un texto largo repartido en dos renglones, que es lo que cabe
+      const wrap = (txt: string, sizeIn: number, xIn: number, yIn: number, maxIn: number, color: string, align: CanvasTextAlign = "center") => {
+        if (!txt) return;
+        const words = txt.split(" ");
+        setTrack(c, fam().track);
+        c.font = make("body", Math.max(1, P(sizeIn)));
+        const fits = (t: string) => c.measureText(t).width <= P(maxIn);
+        setTrack(c, "0px");
+        if (fits(txt)) {
+          put(txt, "body", sizeIn, xIn, yIn, maxIn, color, align);
+          return;
+        }
+        let cut = words.length - 1;
+        while (cut > 1 && !fits(words.slice(0, cut).join(" "))) cut--;
+        put(words.slice(0, cut).join(" "), "body", sizeIn, xIn, yIn, maxIn, color, align);
+        put(words.slice(cut).join(" "), "body", sizeIn, xIn, yIn + sizeIn * 1.3, maxIn, color, align);
+      };
+
+      // Un filete horizontal, de x1 a x2 a la altura y
+      const line = (x1: number, y: number, x2: number, color = rule, lw = 1) => {
+        c.strokeStyle = color;
+        c.lineWidth = Math.max(1, lw);
+        c.beginPath();
+        c.moveTo(X(x1), Y(y));
+        c.lineTo(X(x2), Y(y));
+        c.stroke();
+      };
+      // Hueco de la foto: rayado en diagonal con su rótulo, o un bloque de color
+      const image = (xIn: number, yIn: number, wIn: number, hIn: number) => {
+        const ix = X(xIn);
+        const iy = Y(yIn);
+        const iw = P(wIn);
+        const ih = P(hIn);
+        if (!o.photo) {
+          c.fillStyle = mark;
+          c.fillRect(ix, iy, iw, ih);
+          return;
+        }
+        c.save();
+        c.beginPath();
+        c.rect(ix, iy, iw, ih);
+        c.clip();
+        c.fillStyle = dark ? "#2A2E34" : colored ? mix(acc, onColor(acc) === "#FFFFFF" ? -0.18 : 0.2) : "#E4E7EA";
+        c.fillRect(ix, iy, iw, ih);
+        c.strokeStyle = dark ? "rgba(255,255,255,0.1)" : "rgba(11,12,14,0.09)";
+        c.lineWidth = Math.max(1, P(0.02));
+        const step = Math.max(6, P(0.3));
+        c.beginPath();
+        for (let i = -ih; i < iw; i += step) {
+          c.moveTo(ix + i, iy + ih);
+          c.lineTo(ix + i + ih, iy);
+        }
+        c.stroke();
+        c.restore();
+        if (!o.mini) {
+          const lbl = Math.min(hIn * 0.1, wIn * 0.08);
+          put(cfg.copy.photoBox, "label", lbl, xIn + wIn / 2, yIn + hIn / 2 + lbl * 0.4, wIn * 0.8, dark ? "#8D949C" : colored ? sub : "#8A9099", "center");
+        }
+      };
+
+      // El código de muestra. Va siempre sobre un recuadro claro: un QR sobre
+      // fondo oscuro o de color no lo lee ningún teléfono.
+      const qr = (cxIn: number, yIn: number, sizeIn: number) => {
+        const pad = sizeIn * 0.07;
+        c.fillStyle = "#FFFFFF";
+        c.fillRect(X(cxIn - sizeIn / 2 - pad), Y(yIn - pad), P(sizeIn + pad * 2), P(sizeIn + pad * 2));
+        const n = 21;
+        const cell = sizeIn / n;
+        const r = rng(seedOf(o.t.web || o.t.negocio || "ltm"));
+        const finder = (gx: number, gy: number) => gx < 7 && gy < 7 || gx > n - 8 && gy < 7 || gx < 7 && gy > n - 8;
+        c.fillStyle = "#0B0C0E";
+        for (let gy = 0; gy < n; gy++) {
+          for (let gx = 0; gx < n; gx++) {
+            if (finder(gx, gy)) continue;
+            if (r() > 0.54) c.fillRect(X(cxIn - sizeIn / 2 + gx * cell), Y(yIn + gy * cell), P(cell) + 0.5, P(cell) + 0.5);
+          }
+        }
+        // Los tres ojos de las esquinas
+        ([[0, 0], [n - 7, 0], [0, n - 7]] as Array<[number, number]>).forEach(([gx, gy]) => {
+          const bx = cxIn - sizeIn / 2 + gx * cell;
+          const by = yIn + gy * cell;
+          c.fillStyle = "#0B0C0E";
+          c.fillRect(X(bx), Y(by), P(cell * 7), P(cell * 7));
+          c.fillStyle = "#FFFFFF";
+          c.fillRect(X(bx + cell), Y(by + cell), P(cell * 5), P(cell * 5));
+          c.fillStyle = "#0B0C0E";
+          c.fillRect(X(bx + cell * 2), Y(by + cell * 2), P(cell * 3), P(cell * 3));
+        });
+        if (!o.mini) {
+          const lbl = sizeIn * 0.075;
+          put(cfg.copy.qrBox, "label", lbl, cxIn, yIn + sizeIn + pad + lbl * 1.9, sizeIn, sub, "center");
+        }
+      };
+
+      // El renglón de la lista: texto, precio y la fila de puntos que los une
+      const listRow = (row: Row, xIn: number, yIn: number, wIn: number, sizeIn: number) => {
+        const nameW = put(row.item, "body", sizeIn, xIn, yIn, wIn * 0.72, ink);
+        if (!row.price) return;
+        setTrack(c, fam().track);
+        c.font = make("body", Math.max(1, P(sizeIn)));
+        const priceW = c.measureText(row.price).width / s;
+        put(row.price, "body", sizeIn, xIn + wIn, yIn, wIn * 0.28, mark, "right");
+        setTrack(c, "0px");
+        if (o.mini) return;
+        const from = xIn + nameW + sizeIn * 0.4;
+        const to = xIn + wIn - priceW - sizeIn * 0.4;
+        if (to <= from) return;
+        c.save();
+        c.strokeStyle = rule;
+        c.lineWidth = 1;
+        c.setLineDash([1, Math.max(2, P(0.05))]);
+        c.lineCap = "round";
+        c.beginPath();
+        c.moveTo(X(from), Y(yIn - sizeIn * 0.12));
+        c.lineTo(X(to), Y(yIn - sizeIn * 0.12));
+        c.stroke();
+        c.restore();
+      };
+      const listBlock = (topIn: number, hIn: number) => {
+        const n = o.rows.length;
+        const step = hIn / Math.max(1, n + 0.5);
+        const size = Math.min(step * 0.46, w * 0.08);
+        o.rows.forEach((r, i) => listRow(r, m, topIn + step * (i + 1), w - m * 2, size));
+      };
+
+      const t = o.t;
+      const tpl = back ? (back === "qr" ? "qr" : back === "lista" ? "lista" : "datos") : o.tpl;
+
+      // ---- Reverso de datos ----
+      if (tpl === "datos") {
+        put(t.negocio, "title", 0.13 * fu, w / 2, V(0.2), w - m * 2, ink, "center");
+        if (t.lema) put(t.lema, "body", 0.05 * fu, w / 2, V(0.26), w - m * 2, sub, "center");
+        line(w / 2 - w * 0.14, V(0.32), w / 2 + w * 0.14, mark, Math.max(1, P(0.014)));
+        put(cfg.copy.hours, "label", 0.042 * fu, w / 2, V(0.42), w - m * 2, mark, "center");
+        put(t.tel, "title", 0.095 * fu, w / 2, V(0.55), w - m * 2, ink, "center");
+        put(t.web, "body", 0.048 * fu, w / 2, V(0.63), w - m * 2, sub, "center");
+        // El hueco de la imagen solo si el diseño elegido lleva foto
+        if (o.tpl === "foto") image(m, V(0.7), w - m * 2, hh * 0.14);
+        put(t.nota, "body", 0.036 * fu, w / 2, V(0.93), w - m * 2, sub, "center");
+        return;
+      }
+
+      // ---- Los diseños ----
+      if (tpl === "promo") {
+        put(t.lema, "label", 0.045 * fu, w / 2, V(0.14), w - m * 2, sub, "center", true);
+        line(w / 2 - w * 0.12, V(0.18), w / 2 + w * 0.12, mark, Math.max(1, P(0.014)));
+        put(t.titular, "title", 0.3 * fu, w / 2, V(0.44), w - m * 1.4, mark, "center");
+        wrap(t.detalle, 0.052 * fu, w / 2, V(0.56), w - m * 2, ink);
+        if (t.frase) {
+          c.fillStyle = mark;
+          c.fillRect(X(m), Y(V(0.74)), P(w - m * 2), P(hh * 0.09));
+          put(t.frase, "label", 0.04 * fu, w / 2, V(0.795), w - m * 3, colored ? acc : onColor(mark), "center");
+        }
+        put(t.negocio, "title", 0.065 * fu, w / 2, V(0.9), w - m * 2, ink, "center");
+        put(t.nota, "body", 0.032 * fu, w / 2, V(0.95), w - m * 2, sub, "center");
+      } else if (tpl === "lista") {
+        put(t.negocio, "title", 0.11 * fu, w / 2, V(0.15), w - m * 2, ink, "center");
+        put(t.lema, "label", 0.04 * fu, w / 2, V(0.21), w - m * 2, mark, "center", true);
+        line(m, V(0.26), w - m);
+        listBlock(V(0.27), hh * 0.48);
+        line(m, V(0.82), w - m);
+        wrap(t.detalle, 0.04 * fu, w / 2, V(0.88), w - m * 2, sub);
+        put([t.tel, t.web].filter(Boolean).join("  ·  "), "body", 0.04 * fu, w / 2, V(0.96), w - m * 2, ink, "center");
+      } else if (tpl === "qr") {
+        put(t.negocio, "title", 0.1 * fu, w / 2, V(0.14), w - m * 2, ink, "center");
+        if (t.lema) put(t.lema, "body", 0.042 * fu, w / 2, V(0.2), w - m * 2, sub, "center");
+        const q = Math.min(w * 0.56, hh * 0.4);
+        qr(w / 2, V(0.26), q);
+        put(t.frase, "title", 0.062 * fu, w / 2, V(0.82), w - m * 2, mark, "center");
+        put([t.tel, t.web].filter(Boolean).join("  ·  "), "body", 0.038 * fu, w / 2, V(0.93), w - m * 2, sub, "center");
+      } else if (tpl === "evento") {
+        c.fillStyle = mark;
+        c.fillRect(X(0), Y(0), P(w), P(hh * 0.035));
+        put(t.lema, "label", 0.045 * fu, w / 2, V(0.16), w - m * 2, sub, "center", true);
+        put(t.negocio, "title", 0.135 * fu, w / 2, V(0.33), w - m * 1.4, ink, "center");
+        line(w / 2 - w * 0.16, V(0.4), w / 2 + w * 0.16, mark, Math.max(1, P(0.016)));
+        wrap(t.detalle, 0.055 * fu, w / 2, V(0.5), w - m * 2, ink);
+        put(t.titular, "title", 0.16 * fu, w / 2, V(0.7), w - m * 2, mark, "center");
+        put(t.frase, "body", 0.042 * fu, w / 2, V(0.86), w - m * 2, sub, "center");
+        put([t.tel, t.web].filter(Boolean).join("  ·  "), "body", 0.038 * fu, w / 2, V(0.95), w - m * 2, ink, "center");
+      } else {
+        // foto: la imagen manda y el texto va debajo
+        image(0, 0, w, hh * 0.46);
+        put(t.lema, "label", 0.042 * fu, w / 2, V(0.56), w - m * 2, sub, "center", true);
+        put(t.negocio, "title", 0.1 * fu, w / 2, V(0.66), w - m * 2, ink, "center");
+        wrap(t.detalle, 0.045 * fu, w / 2, V(0.76), w - m * 2, sub);
+        put(t.frase, "title", 0.055 * fu, w / 2, V(0.9), w - m * 2, mark, "center");
+        put([t.tel, t.web].filter(Boolean).join("  ·  "), "body", 0.036 * fu, w / 2, V(0.96), w - m * 2, ink, "center");
+      }
+    };
+
+    // Un panel con su sombra, su material y, si toca, sus guías
+    const sheet = (x0: number, y0: number, s: number, o: Face, back: string | null, shadow = true) => {
+      const wPx = o.w * s;
+      const hPx = o.h * s;
+      if (shadow) {
+        ctx.save();
+        ctx.shadowColor = "rgba(18,26,36,0.4)";
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetY = 9;
+        ctx.fillStyle = o.stock.edge;
+        ctx.fillRect(x0, y0, wPx, hPx);
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0, y0, wPx, hPx);
+      ctx.clip();
+      drawFace(ctx, x0, y0, s, o, back);
+      ctx.restore();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(11,12,14,0.26)";
+      ctx.strokeRect(x0, y0, wPx, hPx);
+      if (guides) {
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = "#ED1B24";
+        ctx.strokeRect(x0 - BLEED * s, y0 - BLEED * s, wPx + BLEED * 2 * s, hPx + BLEED * 2 * s);
+        ctx.strokeStyle = "#0094DA";
+        ctx.strokeRect(x0 + SAFE * s, y0 + SAFE * s, wPx - SAFE * 2 * s, hPx - SAFE * 2 * s);
+        ctx.restore();
+      }
+    };
+
+    // Rótulo chico sobre una pastilla clara, para las cotas del desplegado
+    const tag = (txt: string, x: number, y: number, color = "#16304F") => {
+      ctx.font = `600 10px "Instrument Sans", system-ui, sans-serif`;
+      setTrack(ctx, "0.06em");
+      const lw = ctx.measureText(txt).width;
+      ctx.fillStyle = "rgba(255,255,255,0.94)";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x - lw / 2 - 6, y - 9, lw + 12, 18, 9);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(txt, x, y + 1);
+      setTrack(ctx, "0px");
+      ctx.textBaseline = "alphabetic";
+    };
+
+    // La carpa armada: el panel de frente y el de atrás, que se ve de canto
+    const drawTent = (x0: number, y0: number, s: number, o: Face, back: string | null) => {
+      const wPx = o.w * s;
+      const hPx = o.h * s;
+      const dx = wPx * 0.26; // lo que se va hacia atrás
+      const ty = hPx * 0.1; // y hacia arriba, porque está más lejos
+      // La sombra en la mesa
+      ctx.save();
+      ctx.fillStyle = "rgba(18,26,36,0.22)";
+      ctx.beginPath();
+      ctx.ellipse(x0 + wPx * 0.56, y0 + hPx + 4, wPx * 0.68, hPx * 0.045, 0, 0, Math.PI * 2);
+      ctx.filter = "blur(3px)";
+      ctx.fill();
+      ctx.restore();
+      // El canto del panel de atrás
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x0 + wPx, y0);
+      ctx.lineTo(x0 + wPx + dx, y0 - ty);
+      ctx.lineTo(x0 + wPx + dx, y0 + hPx - ty);
+      ctx.lineTo(x0 + wPx, y0 + hPx);
+      ctx.closePath();
+      ctx.fillStyle = mix(o.stock.edge, -0.12);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(11,12,14,0.26)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+      sheet(x0, y0, s, o, back);
+      // El doblez de arriba, que es donde se junta con el otro panel
+      ctx.strokeStyle = "rgba(255,255,255,0.5)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0 + 1);
+      ctx.lineTo(x0 + wPx, y0 + 1);
+      ctx.stroke();
+    };
+
+    // El mini banner armado: el vinilo, el riel de arriba, la vara y la base
+    const drawBanner = (x0: number, y0: number, s: number, o: Face) => {
+      const wPx = o.w * s;
+      const hPx = o.h * s;
+      const baseW = (o.w + 1.1) * s;
+      const baseH = 1.5 * s;
+      const bx = x0 + wPx / 2 - baseW / 2;
+      // La base se come la franja de abajo: por eso ahí no se dibuja nada
+      const by = y0 + hPx - HIDE * s;
+      // La sombra de la base en la mesa
+      ctx.save();
+      ctx.fillStyle = "rgba(18,26,36,0.24)";
+      ctx.beginPath();
+      ctx.ellipse(x0 + wPx / 2, by + baseH, baseW * 0.58, baseH * 0.3, 0, 0, Math.PI * 2);
+      ctx.filter = "blur(3px)";
+      ctx.fill();
+      ctx.restore();
+      // La vara, por detrás y a un lado
+      ctx.fillStyle = "#9AA4AE";
+      ctx.fillRect(x0 + wPx + Math.max(2, s * 0.05), y0 + s * 0.3, Math.max(2, s * 0.09), hPx - s * 0.3 + baseH * 0.3);
+      sheet(x0, y0, s, o, null);
+      // El riel de arriba
+      const rail = RAIL * s;
+      ctx.fillStyle = "#C3CBD3";
+      ctx.fillRect(x0 - rail * 0.3, y0 - rail, wPx + rail * 0.6, rail);
+      ctx.strokeStyle = "rgba(11,12,14,0.3)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x0 - rail * 0.3, y0 - rail, wPx + rail * 0.6, rail);
+      // La base de aluminio
+      const g = ctx.createLinearGradient(0, by, 0, by + baseH);
+      g.addColorStop(0, "#E6EAEE");
+      g.addColorStop(0.35, "#B9C2CA");
+      g.addColorStop(0.5, "#D8DEE4");
+      g.addColorStop(1, "#8E99A3");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, baseW, baseH, baseH * 0.3);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(11,12,14,0.32)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // La ranura por donde sale el vinilo
+      ctx.strokeStyle = "rgba(11,12,14,0.4)";
+      ctx.beginPath();
+      ctx.moveTo(x0, by + baseH * 0.18);
+      ctx.lineTo(x0 + wPx, by + baseH * 0.18);
+      ctx.stroke();
+    };
+
+    // ---------- El desplegado: cómo sale de la máquina ----------
+    const drawFlatTent = (x0: number, y0: number, s: number, o: Face, back: string | null) => {
+      const wPx = o.w * s;
+      const hPx = o.h * s;
+      const flapPx = FLAP * s;
+      const total = flapPx * 2 + hPx * 2;
+      // La hoja entera
+      ctx.save();
+      ctx.shadowColor = "rgba(18,26,36,0.4)";
+      ctx.shadowBlur = 20;
+      ctx.shadowOffsetY = 9;
+      ctx.fillStyle = o.stock.base;
+      ctx.fillRect(x0, y0, wPx, total);
+      ctx.restore();
+      // Pestaña de arriba
+      ctx.fillStyle = mix(o.stock.edge, 0.3);
+      ctx.fillRect(x0, y0, wPx, flapPx);
+      ctx.fillRect(x0, y0 + total - flapPx, wPx, flapPx);
+      // La cara de arriba va al revés en la hoja: al doblarla queda derecha
+      ctx.save();
+      ctx.translate(x0 + wPx / 2, y0 + flapPx + hPx / 2);
+      ctx.rotate(Math.PI);
+      sheet(-wPx / 2, -hPx / 2, s, o, back, false);
+      ctx.restore();
+      sheet(x0, y0 + flapPx + hPx, s, o, null, false);
+      // Los dobleces
+      ctx.save();
+      ctx.setLineDash([6, 5]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#0094DA";
+      [flapPx, flapPx + hPx, flapPx + hPx * 2].forEach((dy) => {
+        ctx.beginPath();
+        ctx.moveTo(x0 - 8, y0 + dy);
+        ctx.lineTo(x0 + wPx + 8, y0 + dy);
+        ctx.stroke();
+      });
+      ctx.restore();
+      ctx.strokeStyle = "rgba(11,12,14,0.3)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x0, y0, wPx, total);
+      // Rótulos
+      tag(cfg.copy.tabLbl, x0 + wPx / 2, y0 + flapPx / 2, "#5A616B");
+      tag(cfg.copy.tabLbl, x0 + wPx / 2, y0 + total - flapPx / 2, "#5A616B");
+      tag(cfg.copy.foldLbl, x0 + wPx / 2, y0 + flapPx + hPx, "#0094DA");
+      // Pegado al borde de la pestaña: en el medio taparía el diseño
+      tag(cfg.copy.upsideLbl, x0 + wPx / 2, y0 + flapPx + 14, "#5A616B");
+      return total;
+    };
+
+    const drawFlatBanner = (x0: number, y0: number, s: number, o: Face) => {
+      const wPx = o.w * s;
+      const hPx = o.h * s;
+      sheet(x0, y0, s, o, null);
+      // Lo que se enrolla dentro de la base
+      const hide = HIDE * s;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0, y0 + hPx - hide, wPx, hide);
+      ctx.clip();
+      ctx.fillStyle = "rgba(18,26,36,0.42)";
+      ctx.fillRect(x0, y0 + hPx - hide, wPx, hide);
+      ctx.strokeStyle = "rgba(255,255,255,0.3)";
+      ctx.lineWidth = Math.max(1, s * 0.02);
+      ctx.beginPath();
+      for (let i = -hide; i < wPx; i += Math.max(7, s * 0.3)) {
+        ctx.moveTo(x0 + i, y0 + hPx);
+        ctx.lineTo(x0 + i + hide, y0 + hPx - hide);
+      }
+      ctx.stroke();
+      ctx.restore();
+      ctx.save();
+      ctx.setLineDash([6, 5]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#0094DA";
+      ctx.beginPath();
+      ctx.moveTo(x0 - 8, y0 + hPx - hide);
+      ctx.lineTo(x0 + wPx + 8, y0 + hPx - hide);
+      ctx.stroke();
+      ctx.restore();
+      tag(cfg.copy.hideLbl, x0 + wPx / 2, y0 + hPx - hide / 2, "#16304F");
+      return hPx;
+    };
+
+    const face = (mini: boolean, tpl?: string): Face => ({
+      ...dims(),
+      stock: stock(),
+      accent: accent().hex,
+      type: val("tipografia"),
+      tpl: tpl ?? val("plantilla"),
+      bg: val("fondo"),
+      photo: val("imagen") === "foto",
+      hide: isBanner() ? HIDE : 0,
+      t: texts(),
+      rows: rows(),
+      mini,
+    });
+
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const { w, h } = dims();
+      const two = twoSided();
+      const banner = isBanner();
+      const top = tools.offsetHeight + 24;
+      const keep = top + 50 + (approx.offsetParent ? 34 : 0);
+      const o = face(false);
+      const bk = val("reverso");
+
+      // Alto y ancho que ocupa cada dibujo, en pulgadas
+      const unitH = flat ? (banner ? h : h * 2 + FLAP * 2) : banner ? h - HIDE + 1.5 + 0.3 : h * 1.1;
+      const unitW = flat ? w : banner ? w + 1.2 : w * 1.3;
+      const faces: Array<string | null> = flat || banner || !two
+        ? [null]
+        : view === "frente"
+          ? [null]
+          : view === "reverso"
+            ? [bk]
+            : [null, bk];
+      const n = faces.length;
+      const gap = w * 0.3;
+      const pad = guides ? 0.45 : 0.12;
+      const s = Math.min(
+        (cw - 44) / (unitW * n + gap * (n - 1) + pad * 2),
+        (ch - keep) / (unitH + pad * 2)
+      );
+      const groupW = unitW * n + gap * (n - 1);
+      const x0 = (cw - groupW * s) / 2;
+      const y0 = Math.max(top, 16 + (ch - unitH * s - 46) / 2);
+      const at = (i: number) => x0 + i * (unitW + gap) * s;
+
+      let drawn = unitH * s;
+      faces.forEach((back, i) => {
+        const px = at(i);
+        if (flat) {
+          drawn = banner ? drawFlatBanner(px, y0, s, o) : drawFlatTent(px, y0, s, o, back ?? (two ? bk : null));
+        } else if (banner) {
+          drawBanner(px + 0.6 * s, y0, s, o);
+        } else {
+          drawTent(px, y0, s, o, back);
+        }
+      });
+
+      // Rótulo de cada cara, debajo
+      if (!flat && !banner && (n > 1 || view !== "ambas")) {
+        ctx.fillStyle = "rgba(11,12,14,0.6)";
+        ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        faces.forEach((back, i) => {
+          ctx.fillText(back ? cfg.copy.backLbl : cfg.copy.front, at(i) + (w * s) / 2, y0 + h * s + 12);
+        });
+      }
+
+      // Cota del ancho, debajo del grupo
+      const gy = y0 + drawn + (flat ? 18 : banner ? (1.5 - HIDE) * s + 20 : 30);
+      const tick = 5;
+      ctx.strokeStyle = "rgba(11,12,14,0.5)";
+      ctx.fillStyle = "rgba(11,12,14,0.66)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x0, gy);
+      ctx.lineTo(x0 + w * s, gy);
+      ctx.moveTo(x0, gy - tick);
+      ctx.lineTo(x0, gy + tick);
+      ctx.moveTo(x0 + w * s, gy - tick);
+      ctx.lineTo(x0 + w * s, gy + tick);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.font = `500 12px "Instrument Sans", system-ui, sans-serif`;
+      const cal = banner ? "" : " · 14 pt";
+      const txt = `${fmtIn(w)} × ${fmtIn(h)} in · ${stock().name}${cal}`;
+      const half = ctx.measureText(txt).width / 2;
+      ctx.fillText(txt, Math.min(Math.max(x0 + (w * s) / 2, half + 8), cw - half - 8), gy + 7);
+
+      canvas.setAttribute(
+        "aria-label",
+        `${cfg.copy.preview}: ${cfg.kinds[kind()]} ${fmtIn(w)} × ${fmtIn(h)} in · ${stock().name} · ${cfg.tpls[val("plantilla")]} · ${accent().name}${texts().negocio ? ` · "${texts().negocio}"` : ""}`
+      );
+    };
+
+    // Miniaturas de los diseños, con el mismo dibujo que la vista previa
+    const renderTpls = () => {
+      const ids = Object.keys(cfg.tpls);
+      form.querySelectorAll<HTMLCanvasElement>(".tt__tpl canvas").forEach((cv, i) => {
+        const c2 = cv.getContext("2d")!;
+        const o: Face = { ...face(true, ids[i] ?? ids[0]), w: 5, h: 7, hide: 0 };
+        c2.setTransform(1, 0, 0, 1, 0, 0);
+        c2.clearRect(0, 0, cv.width, cv.height);
+        const s = Math.min((cv.width - 10) / o.w, (cv.height - 10) / o.h);
+        const x = (cv.width - o.w * s) / 2;
+        const y = (cv.height - o.h * s) / 2;
+        c2.save();
+        c2.beginPath();
+        c2.rect(x, y, o.w * s, o.h * s);
+        c2.clip();
+        drawFace(c2, x, y, s, o, null);
+        c2.restore();
+        c2.lineWidth = 1;
+        c2.strokeStyle = "rgba(11,12,14,0.22)";
+        c2.strokeRect(x, y, o.w * s, o.h * s);
+      });
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const { w, h } = dims();
+      const t = texts();
+      const rs = rows();
+      const out = [
+        `${k.summary}:`,
+        `• ${k.sKind}: ${cfg.kinds[kind()]}`,
+        `• ${k.sFormat}: ${fmtIn(w)} × ${fmtIn(h)} in`,
+        `• ${k.sPaper}: ${stock().name}`,
+      ];
+      if (!isBanner()) out.push(`• ${k.sCaliper}: 14 pt`, `• ${k.sSides}: ${cfg.sides[val("caras")]}`);
+      out.push(
+        `• ${k.sDesign}: ${cfg.tpls[val("plantilla")]}`,
+        `• ${k.sBg}: ${cfg.bgs[val("fondo")]}`,
+        `• ${k.sType}: ${cfg.types[val("tipografia")]}`,
+        `• ${k.sAccent}: ${accent().name}`
+      );
+      if (hasPhoto()) out.push(`• ${k.sImage}: ${cfg.images[val("imagen")]}`);
+      out.push(`• ${k.sName}: ${[t.negocio, t.lema].filter(Boolean).join(" · ")}`);
+      if (t.titular) out.push(`• ${k.sHead}: "${t.titular}" ${t.detalle}`.trim());
+      if (rs.length) out.push(`• ${k.sList}: ${rs.map((r) => `${r.item}${r.price ? ` ${r.price}` : ""}`).join(", ")}`);
+      if (t.frase) out.push(`• ${k.sCta}: "${t.frase}"`);
+      if (t.nota) out.push(`• ${k.sNote}: "${t.nota}"`);
+      out.push(`• ${k.sBiz}: ${[t.tel, t.web].filter(Boolean).join(" / ")}`);
+      if (twoSided()) out.push(`• ${k.sBack}: ${cfg.backs[val("reverso")]}`);
+      out.push(`• ${k.sQty}: ${qty()}`, `• ${k.sLink}: ${shareUrl()}`);
+      return out.join("\n");
+    };
+
+    const syncUI = () => {
+      const banner = isBanner();
+      const { w, h } = dims();
+      // Cada exhibidor enseña solo sus medidas
+      sizesSeg.querySelectorAll<HTMLLabelElement>("label").forEach((l) => {
+        const mine = l.dataset.for === kind();
+        l.hidden = !mine;
+        l.querySelector("input")!.disabled = !mine;
+      });
+      if (SIZES[val("formato")].kind !== kind()) setRadio("formato", DEF_SIZE[kind()]);
+      // El banner va en vinilo y viene armado: ni cartulina ni dos caras
+      mats.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = banner));
+      mats.toggleAttribute("data-off", banner);
+      paperHelp.textContent = banner ? cfg.copy.vinylHelp : cfg.copy.paperHelp;
+      foldHelp.hidden = banner;
+      carasSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = banner));
+      carasSeg.toggleAttribute("data-off", banner);
+      sideHelp.textContent = banner ? cfg.copy.bannerSides : cfg.sideHelp[val("caras")] ?? "";
+      imageSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = !hasPhoto()));
+      imageSeg.toggleAttribute("data-off", !hasPhoto());
+      backSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = !twoSided()));
+      backSeg.toggleAttribute("data-off", !twoSided());
+      backHelp.hidden = twoSided();
+      kindHelp.textContent = cfg.kindHelp[kind()] ?? "";
+      sizeHelp.textContent = cfg.sizeHelp[val("formato")] ?? "";
+      tplHelp.textContent = cfg.tplHelp[val("plantilla")] ?? "";
+      accentName.textContent = accent().name;
+      qtyHelp.textContent = cfg.qtyHelp[kind()] ?? "";
+      approx.textContent = guides
+        ? cfg.copy.guidesOn
+        : flat
+          ? banner
+            ? cfg.copy.flatOnBanner
+            : cfg.copy.flatOnCarpa
+          : cfg.copy.approx;
+      guidesBtn.setAttribute("aria-pressed", String(guides));
+      flatBtn.lastChild!.textContent = flat ? cfg.copy.flatOff : cfg.copy.flat;
+      flatBtn.setAttribute("aria-pressed", String(flat));
+      viewBtn.textContent = cfg.views[view];
+      viewBtn.hidden = !twoSided() || flat;
+      // Las tiradas cambian con el exhibidor: la carpa va por decenas, el banner de uno en uno
+      const qs = QTYS[kind()];
+      root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b, i) => {
+        b.dataset.qty = String(qs[i]);
+        b.textContent = String(qs[i]);
+      });
+      qtyEl.min = String(minQ());
+      qtyEl.step = kind() === "banner" ? "1" : "5";
+      if (kind() !== wasKind) {
+        qtyEl.value = kind() === "banner" ? "1" : "50";
+        wasKind = kind();
+      }
+      const q = qty();
+      root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.qty) === q)));
+      void w;
+      void h;
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+    const render = () => {
+      syncUI();
+      draw();
+      renderTpls();
+      update();
+    };
+
+    // ---------- Eventos ----------
+    const onEdit = (e: Event) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      render();
+    };
+    form.addEventListener("change", onEdit);
+    form.addEventListener("input", onEdit);
+    root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) =>
+      b.addEventListener("click", () => {
+        qtyEl.value = b.dataset.qty!;
+        touched = true;
+        render();
+      })
+    );
+    guidesBtn.addEventListener("click", () => {
+      guides = !guides;
+      syncUI();
+      draw();
+    });
+    flatBtn.addEventListener("click", () => {
+      flat = !flat;
+      syncUI();
+      draw();
+    });
+    viewBtn.addEventListener("click", () => {
+      view = VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length];
+      syncUI();
+      draw();
+    });
+
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    Promise.all(
+      [`800 40px "Saira"`, `700 40px "Playfair Display"`, `400 40px "Michroma"`, `500 40px "Instrument Sans"`].map((f) =>
+        document.fonts.load(f).catch(() => [])
+      )
+    ).then(() => render());
+    render();
+  }
+</script>

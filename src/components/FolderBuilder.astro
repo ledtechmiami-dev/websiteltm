@@ -1,0 +1,1555 @@
+---
+// Constructor de carpetas de presentación (idea tomada del estudio de diseño de
+// Vistaprint, que ofrece tres medidas —6 × 9, 9 × 12 y 9-1/2 × 12 reforzada—,
+// papel mate o brillante en dos grosores, ranura para tarjeta en el bolsillo
+// derecho y lámina metálica de acabado). El cliente elige medida, bolsillos,
+// papel y diseño, escribe sus textos y ve la carpeta por fuera y por dentro.
+// No muestra precios: el precio va en la cotización.
+// El dueño confirmó estas opciones tal como están, el pegado de los
+// bolsillos y la lámina metálica incluidos.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Cartulinas de carpeta. tex: cómo se dibuja en la vista previa.
+const STOCKS = [
+  { id: "mate", es: "Mate", en: "Matte", base: "#FFFFFF", edge: "#E7E8E6", ink: "#14161A", sub: "#5A616B", tex: "mate",
+    sw: "linear-gradient(135deg, #FFF 0 52%, #EFF0EE)" },
+  { id: "brillante", es: "Brillante", en: "Glossy", base: "#FFFFFF", edge: "#E4E8EB", ink: "#14161A", sub: "#5A616B", tex: "brillo",
+    sw: "linear-gradient(118deg, #FFF 0 26%, #D8E2EA 44%, #FFF 62%, #EDF1F4)" },
+  { id: "natural", es: "Sin recubrir", en: "Uncoated", base: "#FAF8F3", edge: "#E6E1D6", ink: "#1A1A18", sub: "#5E5B52", tex: "fibra",
+    sw: "linear-gradient(135deg, #FBF9F4, #EBE5D9)" },
+];
+
+// La paleta LED del logo más neutros de imprenta
+const ACCENTS = [
+  { id: "azul", es: "Azul LED", en: "LED blue", hex: "#0094DA" },
+  { id: "amarillo", es: "Amarillo LED", en: "LED yellow", hex: "#FFCA09" },
+  { id: "verde", es: "Verde LED", en: "LED green", hex: "#99C941" },
+  { id: "rojo", es: "Rojo LED", en: "LED red", hex: "#ED1B24" },
+  { id: "negro", es: "Negro", en: "Black", hex: "#0B0C0E" },
+  { id: "pizarra", es: "Gris pizarra", en: "Slate grey", hex: "#59626D" },
+  { id: "marino", es: "Azul marino", en: "Navy", hex: "#16304F" },
+  { id: "vino", es: "Vino", en: "Wine", hex: "#7A1F2B" },
+  { id: "oliva", es: "Verde oliva", en: "Olive", hex: "#4F5B32" },
+  { id: "terracota", es: "Terracota", en: "Terracotta", hex: "#B4522E" },
+];
+
+// Tiradas habituales de carpeta
+const QTYS = [25, 50, 100, 250, 500];
+
+const COPY = {
+  es: {
+    title: "Diseña tu carpeta",
+    lead: "Elige la medida, los bolsillos, la cartulina y el diseño, escribe tus textos y mira cómo queda la carpeta por fuera y por dentro. Mándanos el diseño y te respondemos con el precio.",
+    format: "Medida",
+    shapes: { media: "Media carta", carta: "Carta", reforzada: "Reforzada" },
+    shapeHelp: {
+      media: "6 × 9 in. Para hojas de media carta, folletos y boletos.",
+      carta: "9 × 12 in. La de siempre: le entran las hojas de 8-1/2 × 11 in.",
+      reforzada: "9-1/2 × 12 in. Media pulgada más ancha, con solapas por dentro: aguanta más papel sin abrirse.",
+    },
+    pockets: "Bolsillos",
+    pocketOpts: { dos: "Dos bolsillos", uno: "Un bolsillo" },
+    pocketCut: "Corte del bolsillo",
+    cuts: { recto: "Recto", diagonal: "Diagonal", curvo: "Curvo" },
+    slot: "Ranura para tarjeta",
+    slotOpts: { si: "Con ranura", no: "Sin ranura" },
+    slotHelp: "La ranura va en el bolsillo derecho y sujeta tu tarjeta de presentación.",
+    paper: "Cartulina",
+    thick: "Grosor",
+    thicks: { t14: "14 pt", t16: "16 pt" },
+    thickHelp: {
+      t14: "La de siempre. Firme, cierra bien y es la más económica.",
+      t16: "Más gruesa y más rígida: se nota en la mano y aguanta mejor el trajín.",
+    },
+    finish: "Acabado",
+    finishes: { ninguno: "Sin acabado", oro: "Lámina dorada", plata: "Lámina plateada" },
+    finishHelp: "La lámina es una capa metálica que se aplica encima: va en el nombre y en el logo.",
+    print: "Impresión",
+    sides: "Qué se imprime",
+    sideOpts: { fuera: "Solo por fuera", ambas: "Por fuera y por dentro" },
+    sidesHelp: "Por dentro se imprimen las dos caras y los bolsillos.",
+    design: "Diseño",
+    tpls: { logo: "Logo centrado", foto: "Foto grande", bloque: "Bloque de color", banda: "Banda diagonal", minimal: "Minimalista" },
+    type: "Tipografía",
+    types: { moderna: "Moderna", clasica: "Clásica", tecnica: "Técnica", sencilla: "Sencilla" },
+    accent: "Color de acento",
+    bg: "Fondo",
+    bgs: { papel: "Cartulina blanca", color: "Color de acento", oscuro: "Oscuro" },
+    image: "Imagen",
+    images: { foto: "Espacio para foto", color: "Bloque de color" },
+    imageHelp: "Déjanos el espacio marcado y",
+    imageCta: "mándanos la foto y el logo por WhatsApp",
+    imageWa: "Hola, quiero imprimir carpetas de presentación. Les envío la foto y el logo.",
+    photoBox: "TU FOTO",
+    words: "La portada",
+    business: "Nombre del negocio",
+    businessPh: "Ej. Tu Negocio",
+    defBusiness: "Tu Negocio",
+    headline: "Lema o rubro",
+    headlinePh: "Ej. Soluciones para tu negocio",
+    defHeadline: "Soluciones para tu negocio",
+    sub: "Segunda línea",
+    subPh: "Ej. Desde 2010 en Miami",
+    defSub: "Desde 2010 en Miami",
+    inside: "El interior",
+    tema1: "Título de la izquierda",
+    tema1Ph: "Ej. Quiénes somos",
+    defTema1: "Quiénes somos",
+    parrafo: "Texto",
+    parrafoPh: "Dos o tres frases sobre tu negocio: qué haces, desde cuándo y por qué te buscan.",
+    defParrafo:
+      "Llevamos años trabajando en Miami. Atendemos a tiempo, dejamos el trabajo limpio y respondemos por lo que hacemos. Cuéntanos qué necesitas y te damos una respuesta clara.",
+    tema2: "Título de la derecha",
+    tema2Ph: "Ej. Lo que ofrecemos",
+    defTema2: "Lo que ofrecemos",
+    items: "Cuatro puntos",
+    itemPh: ["Ej. Visita y medición", "Ej. Presupuesto por escrito", "Ej. Instalación incluida", "Ej. Garantía de un año"],
+    defItems: ["Visita y medición", "Presupuesto por escrito", "Instalación incluida", "Garantía de un año"],
+    biz: "Tus datos",
+    phone: "Teléfono",
+    phonePh: "Ej. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Sitio web o red social",
+    webPh: "Ej. tunegocio.com",
+    defWeb: "tunegocio.com",
+    address: "Dirección",
+    addressPh: "Ej. 123 NW 1st St, Miami, FL",
+    defAddress: "123 NW 1st St, Miami, FL",
+    order: "Tu pedido",
+    qty: "Cantidad",
+    qtyHelp: "Lo normal para tener en la oficina es 100 o 250. Desde 25 en adelante.",
+    guides: "Guías de corte",
+    guidesOn: "Línea roja: sangrado, por donde pasa la cuchilla. Línea azul: zona segura, los textos no deben salir de ahí. Línea punteada: el doblez y el troquel de los bolsillos.",
+    views: { ambas: "Ver: las dos caras", ext: "Ver: solo el exterior", int: "Ver: solo el interior" },
+    viewHelp: "Cambiar la vista",
+    approx: "Vista aproximada · el color impreso varía un poco del de la pantalla",
+    panels: { portada: "Portada", contra: "Contraportada", izq: "Interior izquierdo", der: "Interior derecho" },
+    plain: "Por dentro va sin imprimir",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h. Depende del tiraje, de la cartulina y del acabado.",
+    cta: "Cotizar estas carpetas",
+    wa: "Enviar por WhatsApp",
+    notesPh: "Para cuándo las necesitas, si ya tienes el logo en vectores, si quieres una muestra antes…",
+    summary: "Diseño del constructor de carpetas",
+    sFormat: "Medida",
+    sPockets: "Bolsillos",
+    sCut: "Corte del bolsillo",
+    sSlot: "Ranura para tarjeta",
+    sPaper: "Cartulina",
+    sThick: "Grosor",
+    sFinish: "Acabado",
+    sSides: "Impresión",
+    sDesign: "Diseño",
+    sType: "Tipografía",
+    sAccent: "Color de acento",
+    sBg: "Fondo",
+    sImage: "Imagen",
+    sCover: "Portada",
+    sInside: "Interior",
+    sList: "Puntos",
+    sBiz: "Datos",
+    sQty: "Cantidad",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesan estas carpetas:",
+    preview: "Vista previa de la carpeta",
+    extLbl: "Exterior",
+    intLbl: "Interior",
+    closed: "cerrada",
+    pocketOf: "de",
+  },
+  en: {
+    title: "Design your folder",
+    lead: "Pick the size, the pockets, the card stock and the layout, type your copy and see how the folder looks outside and inside. Send us the design and we'll reply with the price.",
+    format: "Size",
+    shapes: { media: "Half letter", carta: "Letter", reforzada: "Reinforced" },
+    shapeHelp: {
+      media: "6 × 9 in. For half-letter sheets, brochures and tickets.",
+      carta: "9 × 12 in. The usual one: it fits 8-1/2 × 11 in sheets.",
+      reforzada: "9-1/2 × 12 in. Half an inch wider, with inside flaps: it holds more paper without splaying open.",
+    },
+    pockets: "Pockets",
+    pocketOpts: { dos: "Two pockets", uno: "One pocket" },
+    pocketCut: "Pocket cut",
+    cuts: { recto: "Straight", diagonal: "Angled", curvo: "Curved" },
+    slot: "Business card slot",
+    slotOpts: { si: "With slot", no: "No slot" },
+    slotHelp: "The slot sits on the right pocket and holds your business card.",
+    paper: "Card stock",
+    thick: "Thickness",
+    thicks: { t14: "14 pt", t16: "16 pt" },
+    thickHelp: {
+      t14: "The usual one. Solid, closes well and it's the cheapest.",
+      t16: "Thicker and stiffer: you feel it in your hand and it takes more handling.",
+    },
+    finish: "Finish",
+    finishes: { ninguno: "No finish", oro: "Gold foil", plata: "Silver foil" },
+    finishHelp: "Foil is a metallic layer applied on top: it goes on the name and the logo.",
+    print: "Printing",
+    sides: "What gets printed",
+    sideOpts: { fuera: "Outside only", ambas: "Outside and inside" },
+    sidesHelp: "Inside means both inner panels and the pockets.",
+    design: "Layout",
+    tpls: { logo: "Centered logo", foto: "Big photo", bloque: "Color block", banda: "Diagonal band", minimal: "Minimal" },
+    type: "Typeface",
+    types: { moderna: "Modern", clasica: "Classic", tecnica: "Technical", sencilla: "Simple" },
+    accent: "Accent color",
+    bg: "Background",
+    bgs: { papel: "White stock", color: "Accent color", oscuro: "Dark" },
+    image: "Image",
+    images: { foto: "Space for a photo", color: "Color block" },
+    imageHelp: "We'll leave the space marked and you can",
+    imageCta: "send us the photo and the logo on WhatsApp",
+    imageWa: "Hi, I want to print presentation folders. I'll send you the photo and the logo.",
+    photoBox: "YOUR PHOTO",
+    words: "The cover",
+    business: "Business name",
+    businessPh: "E.g. Your Business",
+    defBusiness: "Your Business",
+    headline: "Tagline or trade",
+    headlinePh: "E.g. Solutions for your business",
+    defHeadline: "Solutions for your business",
+    sub: "Second line",
+    subPh: "E.g. In Miami since 2010",
+    defSub: "In Miami since 2010",
+    inside: "The inside",
+    tema1: "Left heading",
+    tema1Ph: "E.g. Who we are",
+    defTema1: "Who we are",
+    parrafo: "Text",
+    parrafoPh: "Two or three sentences about your business: what you do, how long you've done it and why people call you.",
+    defParrafo:
+      "We've been working in Miami for years. We show up on time, leave the job clean and stand behind our work. Tell us what you need and we'll give you a straight answer.",
+    tema2: "Right heading",
+    tema2Ph: "E.g. What we offer",
+    defTema2: "What we offer",
+    items: "Four points",
+    itemPh: ["E.g. Visit and measuring", "E.g. Written estimate", "E.g. Installation included", "E.g. One-year warranty"],
+    defItems: ["Visit and measuring", "Written estimate", "Installation included", "One-year warranty"],
+    biz: "Your details",
+    phone: "Phone",
+    phonePh: "E.g. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Website or social handle",
+    webPh: "E.g. yourbusiness.com",
+    defWeb: "yourbusiness.com",
+    address: "Address",
+    addressPh: "E.g. 123 NW 1st St, Miami, FL",
+    defAddress: "123 NW 1st St, Miami, FL",
+    order: "Your order",
+    qty: "Quantity",
+    qtyHelp: "For keeping in the office, 100 or 250 is normal. From 25 up.",
+    guides: "Cut guides",
+    guidesOn: "Red line: the bleed, where the blade cuts. Blue line: the safe area, keep text inside it. Dotted line: the fold and the pocket die-cut.",
+    views: { ambas: "View: both sides", ext: "View: outside only", int: "View: inside only" },
+    viewHelp: "Change the view",
+    approx: "Approximate preview · printed color varies a little from the screen",
+    panels: { portada: "Front cover", contra: "Back cover", izq: "Inside left", der: "Inside right" },
+    plain: "The inside is left unprinted",
+    price: "Price: we send it with your quote, in under 24 hours. It depends on the run, the stock and the finish.",
+    cta: "Quote these folders",
+    wa: "Send on WhatsApp",
+    notesPh: "When you need them, whether your logo is in vector form, whether you want a sample first…",
+    summary: "Folder builder design",
+    sFormat: "Size",
+    sPockets: "Pockets",
+    sCut: "Pocket cut",
+    sSlot: "Card slot",
+    sPaper: "Card stock",
+    sThick: "Thickness",
+    sFinish: "Finish",
+    sSides: "Printing",
+    sDesign: "Layout",
+    sType: "Typeface",
+    sAccent: "Accent color",
+    sBg: "Background",
+    sImage: "Image",
+    sCover: "Cover",
+    sInside: "Inside",
+    sList: "Points",
+    sBiz: "Details",
+    sQty: "Quantity",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in these folders:",
+    preview: "Folder preview",
+    extLbl: "Outside",
+    intLbl: "Inside",
+    closed: "closed",
+    pocketOf: "of",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  stocks: STOCKS.map((s) => ({ id: s.id, base: s.base, edge: s.edge, ink: s.ink, sub: s.sub, tex: s.tex, name: s[lang] })),
+  accents: ACCENTS.map((a) => ({ id: a.id, hex: a.hex, name: a[lang] })),
+  shapes: c.shapes,
+  shapeHelp: c.shapeHelp,
+  pocketOpts: c.pocketOpts,
+  cuts: c.cuts,
+  slotOpts: c.slotOpts,
+  thicks: c.thicks,
+  thickHelp: c.thickHelp,
+  finishes: c.finishes,
+  sides: c.sideOpts,
+  tpls: c.tpls,
+  types: c.types,
+  bgs: c.bgs,
+  images: c.images,
+  panels: c.panels,
+  views: c.views,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    photoBox: c.photoBox,
+    extLbl: c.extLbl,
+    intLbl: c.intLbl,
+    closed: c.closed,
+    pocketOf: c.pocketOf,
+    plain: c.plain,
+    approx: c.approx,
+    guidesOn: c.guidesOn,
+    summary: c.summary,
+    sFormat: c.sFormat,
+    sPockets: c.sPockets,
+    sCut: c.sCut,
+    sSlot: c.sSlot,
+    sPaper: c.sPaper,
+    sThick: c.sThick,
+    sFinish: c.sFinish,
+    sSides: c.sSides,
+    sDesign: c.sDesign,
+    sType: c.sType,
+    sAccent: c.sAccent,
+    sBg: c.sBg,
+    sImage: c.sImage,
+    sCover: c.sCover,
+    sInside: c.sInside,
+    sList: c.sList,
+    sBiz: c.sBiz,
+    sQty: c.sQty,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+    preview: c.preview,
+    yes: lang === "es" ? "Sí" : "Yes",
+    no: lang === "es" ? "No" : "No",
+  },
+};
+const waPhoto = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.imageWa)}`;
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+const TPLS = Object.keys(c.tpls);
+---
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" />
+
+<section class="section section--flush" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb cp" data-folder data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage">
+        <canvas class="nb__canvas cp__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-guides aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.guides}
+          </button>
+          <button type="button" class="nb__tool cp__view" data-view title={c.viewHelp}>{c.views.ambas}</button>
+        </div>
+        <p class="nb__approx" data-approx>{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.format}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.format} aria-describedby="cp-size-help">
+            {seg("formato", c.shapes, "carta").map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="cp-size-help"><b data-size-out></b> · <span data-size-help>{c.shapeHelp.carta}</span></p>
+          <p class="tb__sub">{c.pockets}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.pockets}>
+            {seg("bolsillos", c.pocketOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.pocketCut}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.pocketCut}>
+            {seg("corte", c.cuts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.slot}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.slot} data-slot>
+            {seg("ranura", c.slotOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.slotHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.paper}</legend>
+          <div class="tb__mats">
+            {STOCKS.map((s) => (
+              <label class="tb__mat">
+                <input type="radio" name="papel" value={s.id} checked={s.id === "mate"} />
+                <i style={`--c:${s.sw}`} aria-hidden="true"></i>
+                <span>{s[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.thick}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.thick} aria-describedby="cp-thick-help">
+            {seg("grosor", c.thicks).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="cp-thick-help" data-thick-help>{c.thickHelp.t14}</p>
+          <p class="tb__sub">{c.finish}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.finish}>
+            {seg("acabado", c.finishes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.finishHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.print}</legend>
+          <p class="tb__sub">{c.sides}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.sides}>
+            {seg("caras", c.sideOpts, "ambas").map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.sidesHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.design}</legend>
+          <div class="fb__pats cp__tpls" role="radiogroup" aria-label={c.design}>
+            {TPLS.map((id, i) => (
+              <label class="fb__pat cp__tpl">
+                <input type="radio" name="plantilla" value={id} checked={i === 0} />
+                <canvas width="200" height="248" aria-hidden="true"></canvas>
+                <span>{c.tpls[id as keyof typeof c.tpls]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.bg}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.bg}>
+            {seg("fondo", c.bgs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.type}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.type}>
+            {seg("tipografia", c.types).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.accent} · <span class="eb__picked" data-accent-name>{ACCENTS[0][lang]}</span></p>
+          <div class="eb__sws" role="radiogroup" aria-label={c.accent}>
+            {ACCENTS.map((a, i) => (
+              <label class="eb__sw" title={a[lang]}>
+                <input type="radio" name="acento" value={a.id} checked={i === 0} />
+                <i style={`--c:${a.hex}`} aria-hidden="true"></i>
+                <span class="sr-only">{a[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.image}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.image} data-image>
+            {seg("imagen", c.images).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.imageHelp} <a class="eb__link" href={waPhoto} target="_blank" rel="noopener">{c.imageCta}</a>.</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.words}</legend>
+          <div class="tb__words">
+            <div class="field">
+              <label for="cp-negocio">{c.business}</label>
+              <input id="cp-negocio" type="text" name="negocio" maxlength="30" autocomplete="off" placeholder={c.businessPh} value={c.defBusiness} />
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="cp-titular">{c.headline}</label>
+                <input id="cp-titular" type="text" name="titular" maxlength="34" autocomplete="off" placeholder={c.headlinePh} value={c.defHeadline} />
+              </div>
+              <div class="field">
+                <label for="cp-sub">{c.sub}</label>
+                <input id="cp-sub" type="text" name="subtitulo" maxlength="34" autocomplete="off" placeholder={c.subPh} value={c.defSub} />
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.inside}</legend>
+          <div class="tb__words">
+            <div class="field">
+              <label for="cp-tema1">{c.tema1}</label>
+              <input id="cp-tema1" type="text" name="tema1" maxlength="24" autocomplete="off" placeholder={c.tema1Ph} value={c.defTema1} />
+            </div>
+            <div class="field">
+              <label for="cp-parrafo">{c.parrafo}</label>
+              <textarea id="cp-parrafo" name="parrafo" rows="3" maxlength="260" placeholder={c.parrafoPh}>{c.defParrafo}</textarea>
+            </div>
+            <div class="field">
+              <label for="cp-tema2">{c.tema2}</label>
+              <input id="cp-tema2" type="text" name="tema2" maxlength="24" autocomplete="off" placeholder={c.tema2Ph} value={c.defTema2} />
+            </div>
+            <p class="tb__sub">{c.items}</p>
+            <div class="cp__rows">
+              {[1, 2, 3, 4].map((n) => (
+                <div class="field">
+                  <input
+                    type="text"
+                    name={`punto${n}`}
+                    maxlength="30"
+                    autocomplete="off"
+                    placeholder={c.itemPh[n - 1]}
+                    value={c.defItems[n - 1]}
+                    aria-label={`${c.items} ${n}`}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.biz}</legend>
+          <div class="tb__words">
+            <div class="form__row">
+              <div class="field">
+                <label for="cp-tel">{c.phone}</label>
+                <input id="cp-tel" type="text" name="tel" maxlength="24" autocomplete="off" placeholder={c.phonePh} value={c.defPhone} />
+              </div>
+              <div class="field">
+                <label for="cp-web">{c.web}</label>
+                <input id="cp-web" type="text" name="web" maxlength="34" autocomplete="off" placeholder={c.webPh} value={c.defWeb} />
+              </div>
+            </div>
+            <div class="field">
+              <label for="cp-dir">{c.address}</label>
+              <input id="cp-dir" type="text" name="direccion" maxlength="42" autocomplete="off" placeholder={c.addressPh} value={c.defAddress} />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="nb__sizes">
+            {QTYS.map((q) => (
+              <button type="button" class="nb__pill" data-qty={q}>{q}</button>
+            ))}
+          </div>
+          <div class="tb__row">
+            <div class="field">
+              <label for="cp-cantidad">{c.qty}</label>
+              <input id="cp-cantidad" type="number" name="cantidad" min="25" max="100000" step="25" value="100" inputmode="numeric" aria-describedby="cp-qty-help" />
+            </div>
+          </div>
+          <p class="nb__help" id="cp-qty-help">{c.qtyHelp}</p>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="cp" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Stock = { id: string; name: string; base: string; edge: string; ink: string; sub: string; tex: string };
+  type Accent = { id: string; name: string; hex: string };
+  type Cfg = {
+    stocks: Stock[];
+    accents: Accent[];
+    shapes: Record<string, string>;
+    shapeHelp: Record<string, string>;
+    pocketOpts: Record<string, string>;
+    cuts: Record<string, string>;
+    slotOpts: Record<string, string>;
+    thicks: Record<string, string>;
+    thickHelp: Record<string, string>;
+    finishes: Record<string, string>;
+    sides: Record<string, string>;
+    tpls: Record<string, string>;
+    types: Record<string, string>;
+    bgs: Record<string, string>;
+    images: Record<string, string>;
+    panels: Record<string, string>;
+    views: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+  // Una cara de la carpeta abierta, ya resuelta desde el formulario
+  type Face = {
+    w: number; // pulgadas, una tapa
+    h: number;
+    pocket: number; // alto del bolsillo
+    flap: number; // solapa vertical de la carpeta reforzada
+    stock: Stock;
+    accent: string;
+    type: string;
+    tpl: string;
+    bg: string;
+    photo: boolean;
+    cut: string;
+    two: boolean; // dos bolsillos
+    slot: boolean;
+    foil: string;
+    inside: boolean; // si el interior va impreso
+    t: Record<string, string>;
+    items: string[];
+    mini: boolean;
+  };
+
+  // Medidas de la carpeta cerrada, en pulgadas. pocket: alto del bolsillo.
+  // flap: la reforzada lleva media pulgada más y solapas verticales por dentro.
+  const SHAPES: Record<string, { w: number; h: number; pocket: number; flap: number }> = {
+    media: { w: 6, h: 9, pocket: 3.25, flap: 0 },
+    carta: { w: 9, h: 12, pocket: 4, flap: 0 },
+    reforzada: { w: 9.5, h: 12, pocket: 4, flap: 0.5 },
+  };
+  const BLEED = 0.125; // sangrado de imprenta
+  const SAFE = 0.25; // margen de seguridad hacia dentro
+
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  // Luminancia relativa: decide si sobre ese color el texto va blanco o negro
+  const lum = (hex: string) =>
+    rgb(hex)
+      .map((v) => v / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)))
+      .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const onColor = (hex: string) => (lum(hex) > 0.42 ? "#0B0C0E" : "#FFFFFF");
+  const mix = (hex: string, t: number) => {
+    const to = t < 0 ? 0 : 255;
+    const a = Math.abs(t);
+    const [r, g, b] = rgb(hex).map((v) => Math.round(v + (to - v) * a));
+    return `rgb(${r},${g},${b})`;
+  };
+  // Azar con semilla: la textura de la cartulina no cambia en cada redibujado
+  const rng = (seed: number) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  // Medidas en pulgadas, escritas como en la imprenta: 9-1/2 in
+  const fmtIn = (v: number) => {
+    const whole = Math.floor(v);
+    const fr = +(v - whole).toFixed(3);
+    const frac: Record<string, string> = { "0.5": "-1/2", "0.25": "-1/4", "0.75": "-3/4" };
+    const f = frac[String(fr)];
+    if (f) return `${whole}${f}`;
+    return fr ? String(+v.toFixed(2)) : String(whole);
+  };
+
+  const FAMS: Record<string, { title: string; body: string; track: string }> = {
+    moderna: { title: '800 {px}px "Saira", "Arial Narrow", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    clasica: { title: '700 {px}px "Playfair Display", Georgia, serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    tecnica: { title: '400 {px}px "Michroma", "Eurostile", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.02em" },
+    sencilla: { title: '600 {px}px "Instrument Sans", system-ui, sans-serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+  };
+  const LABEL = (px: number) => `400 ${px}px "Michroma", "Eurostile", sans-serif`;
+  const setTrack = (c: CanvasRenderingContext2D, v: string) => {
+    (c as unknown as { letterSpacing: string }).letterSpacing = v;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-folder]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const guidesBtn = root.querySelector<HTMLButtonElement>("[data-guides]")!;
+    const viewBtn = root.querySelector<HTMLButtonElement>("[data-view]")!;
+    const tools = root.querySelector<HTMLElement>(".nb__tools")!;
+    const approx = root.querySelector<HTMLElement>("[data-approx]")!;
+    const sizeOut = form.querySelector<HTMLElement>("[data-size-out]")!;
+    const sizeHelp = form.querySelector<HTMLElement>("[data-size-help]")!;
+    const thickHelp = form.querySelector<HTMLElement>("[data-thick-help]")!;
+    const imageSeg = form.querySelector<HTMLElement>("[data-image]")!;
+    const accentName = form.querySelector<HTMLElement>("[data-accent-name]")!;
+    const qtyEl = form.querySelector<HTMLInputElement>("input[name='cantidad']")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    let guides = false;
+    // Las dos caras, o una sola: en una pantalla estrecha la carpeta abierta
+    // queda demasiado chica para leerse
+    const VIEWS = ["ambas", "ext", "int"] as const;
+    let view: (typeof VIEWS)[number] = "ambas";
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const stock = () => cfg.stocks.find((s) => s.id === val("papel")) ?? cfg.stocks[0];
+    const accent = () => cfg.accents.find((a) => a.id === val("acento")) ?? cfg.accents[0];
+    const dims = () => SHAPES[val("formato")] ?? SHAPES.carta;
+    const twoPockets = () => val("bolsillos") === "dos";
+    // La ranura va en el bolsillo derecho: sin bolsillos no hay dónde ponerla
+    const slot = () => val("ranura") === "si";
+    const insidePrinted = () => val("caras") === "ambas";
+    // El diseño minimalista no lleva imagen que elegir
+    const hasPhoto = () => val("plantilla") !== "minimal";
+    const qty = () => Math.max(25, Math.min(100000, Math.round(Number(qtyEl.value) || 100)));
+    const items = () => [1, 2, 3, 4].map((n) => text(`punto${n}`)).filter(Boolean);
+    const texts = () => ({
+      negocio: text("negocio"),
+      titular: text("titular"),
+      sub: text("subtitulo"),
+      tema1: text("tema1"),
+      tema2: text("tema2"),
+      parrafo: text("parrafo"),
+      tel: text("tel"),
+      web: text("web"),
+      direccion: text("direccion"),
+    });
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const RADIOS = ["formato", "bolsillos", "corte", "ranura", "papel", "grosor", "acabado", "caras", "plantilla", "fondo", "tipografia", "acento", "imagen"];
+    const FIELDS: Array<[string, number]> = [
+      ["negocio", 30],
+      ["titular", 34],
+      ["subtitulo", 34],
+      ["tema1", 24],
+      ["parrafo", 260],
+      ["tema2", 24],
+      ["punto1", 30],
+      ["punto2", 30],
+      ["punto3", 30],
+      ["punto4", 30],
+      ["tel", 24],
+      ["web", 34],
+      ["direccion", 42],
+    ];
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const params = new URLSearchParams(location.search);
+    if (params.has("bolsillos") && params.has("formato")) {
+      RADIOS.forEach((n) => setRadio(n, params.get(n)));
+      FIELDS.forEach(([n, max]) => {
+        const v = params.get(n);
+        if (v !== null) (form.elements.namedItem(n) as HTMLInputElement).value = v.slice(0, max);
+      });
+      const q = Number(params.get("cantidad"));
+      if (q >= 25 && q <= 100000) qtyEl.value = String(Math.round(q));
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams();
+      RADIOS.forEach((n) => p.set(n, val(n)));
+      FIELDS.forEach(([n]) => p.set(n, text(n)));
+      p.set("cantidad", String(qty()));
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Dibujo ----------
+    // Textura de la cartulina
+    const paper = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, st: Stock, s: number) => {
+      c.fillStyle = st.base;
+      c.fillRect(x, y, w, h);
+      const r = rng(st.id.charCodeAt(0) * 131 + st.id.length * 17);
+      if (st.tex === "brillo") {
+        const g = c.createLinearGradient(x, y + h, x + w, y);
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.44, "rgba(255,255,255,0)");
+        g.addColorStop(0.5, "rgba(255,255,255,0.55)");
+        g.addColorStop(0.56, "rgba(255,255,255,0)");
+        g.addColorStop(1, "rgba(180,200,215,0.16)");
+        c.fillStyle = g;
+        c.fillRect(x, y, w, h);
+      }
+      if (st.tex === "fibra") {
+        const n = Math.round((w * h) / 110);
+        for (let i = 0; i < n; i++) {
+          c.fillStyle = r() > 0.5 ? "rgba(255,255,255,0.6)" : "rgba(90,84,70,0.13)";
+          const dw = Math.max(0.6, s * (0.004 + r() * 0.008));
+          c.fillRect(x + r() * w, y + r() * h, dw, dw * (r() > 0.7 ? 2.2 : 1));
+        }
+      }
+      const sh = c.createLinearGradient(x, y, x, y + h);
+      sh.addColorStop(0, "rgba(255,255,255,0.12)");
+      sh.addColorStop(0.5, "rgba(255,255,255,0)");
+      sh.addColorStop(1, "rgba(11,12,14,0.06)");
+      c.fillStyle = sh;
+      c.fillRect(x, y, w, h);
+    };
+
+    // Dibuja una cara de la carpeta abierta: el fondo y las dos tapas.
+    // side: exterior, interior, o solo la portada (para las miniaturas).
+    const drawFace = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Face, side: "ext" | "int" | "portada") => {
+      const { h } = o;
+      const w = o.w; // ancho de una tapa
+      const full = side === "portada" ? w : w * 2;
+      const X = (v: number) => x0 + v * s;
+      const Y = (v: number) => y0 + v * s;
+      const P = (v: number) => v * s;
+      const st = o.stock;
+      const acc = o.accent;
+      // El interior sin imprimir se queda con el color de la cartulina
+      const plain = side === "int" && !o.inside;
+
+      // ---- Fondo ----
+      paper(c, X(0), Y(0), P(full), P(h), st, s);
+      const dark = o.bg === "oscuro" && !plain;
+      const colored = o.bg === "color" && !plain;
+      if (dark || colored) {
+        c.fillStyle = dark ? "#14161A" : acc;
+        c.fillRect(X(0), Y(0), P(full), P(h));
+        c.save();
+        c.globalAlpha = 0.12;
+        c.globalCompositeOperation = "overlay";
+        paper(c, X(0), Y(0), P(full), P(h), st, s);
+        c.restore();
+      }
+      const ink = dark ? "#FFFFFF" : colored ? onColor(acc) : st.ink;
+      const sub = dark ? "#AEB5BD" : colored ? mix(onColor(acc), onColor(acc) === "#FFFFFF" ? -0.2 : 0.35) : st.sub;
+      // Sobre un fondo de color, las franjas de acento no se verían: van en el color del texto
+      const mark = colored ? ink : acc;
+      // Sobre una franja, el texto va del color del fondo de la tapa
+      const onMark = colored ? acc : onColor(acc);
+      const hair = dark ? "rgba(255,255,255,0.16)" : colored ? "rgba(255,255,255,0.3)" : "rgba(11,12,14,0.12)";
+
+      // La lámina metálica: un degradado, no un color plano
+      const metal = (xIn: number, wIn: number) => {
+        const g = c.createLinearGradient(X(xIn), 0, X(xIn + wIn), 0);
+        const tones =
+          o.foil === "oro"
+            ? ["#8A6316", "#F3D27A", "#C79A2C", "#FFF0BC", "#9C7320"]
+            : ["#6E7479", "#E6EAEE", "#A8B0B6", "#FBFDFF", "#7D848A"];
+        tones.forEach((t, i) => g.addColorStop(i / (tones.length - 1), t));
+        return g;
+      };
+      const nameInk = (xIn: number, wIn: number) => (o.foil === "ninguno" ? mark : metal(xIn, wIn));
+
+      const fam = () => FAMS[o.type] ?? FAMS.moderna;
+      const make = (kind: "title" | "body" | "label", px: number) =>
+        kind === "label" ? LABEL(px) : fam()[kind].replace("{px}", String(px));
+
+      // Un renglón de texto; en las miniaturas se sustituye por una barra
+      const put = (
+        txt: string,
+        kind: "title" | "body" | "label",
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string | CanvasGradient,
+        align: CanvasTextAlign = "left",
+        upper = false
+      ) => {
+        if (!txt) return 0;
+        const px = Math.max(1, P(sizeIn));
+        const maxPx = P(maxIn);
+        const t = upper ? txt.toLocaleUpperCase() : txt;
+        setTrack(c, kind === "label" ? "0.1em" : fam().track);
+        c.font = make(kind, px);
+        let wd = c.measureText(t).width;
+        if (wd > maxPx && wd > 0) {
+          c.font = make(kind, px * (maxPx / wd));
+          wd = maxPx;
+        }
+        c.fillStyle = color;
+        c.textAlign = align;
+        c.textBaseline = "alphabetic";
+        if (o.mini) {
+          const bh = Math.max(1, px * 0.6);
+          const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+          c.fillRect(bx, Y(yIn) - bh, wd, bh);
+        } else {
+          c.fillText(t, X(xIn), Y(yIn));
+        }
+        setTrack(c, "0px");
+        return wd;
+      };
+
+      // Titular: parte en dos renglones antes que achicarse hasta no leerse
+      const headline = (
+        txt: string,
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string | CanvasGradient,
+        align: CanvasTextAlign = "left",
+        mid = false,
+        maxHIn = 0
+      ) => {
+        if (!txt) return yIn;
+        const maxPx = P(maxIn);
+        let px = Math.max(1, P(sizeIn));
+        c.font = make("title", px);
+        const words = txt.split(/\s+/);
+        let lines = [txt];
+        if (words.length > 1 && c.measureText(txt).width > maxPx) {
+          // El corte que deja los renglones más parejos
+          let best = 1;
+          let diff = Infinity;
+          for (let i = 1; i < words.length; i++) {
+            const a = c.measureText(words.slice(0, i).join(" ")).width;
+            const b = c.measureText(words.slice(i).join(" ")).width;
+            if (Math.abs(a - b) < diff) {
+              diff = Math.abs(a - b);
+              best = i;
+            }
+          }
+          lines = [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+        }
+        const widest = Math.max(...lines.map((l) => c.measureText(l).width));
+        if (widest > maxPx) px *= maxPx / widest;
+        c.font = make("title", px);
+        if (maxHIn && lines.length * px * 1.06 > P(maxHIn)) {
+          px *= P(maxHIn) / (lines.length * px * 1.06);
+          c.font = make("title", px);
+        }
+        const lh = px * 1.06;
+        const baseY = Y(yIn) - (mid ? ((lines.length - 1) * lh) / 2 : 0);
+        lines.forEach((l, i) => {
+          const ly = baseY + i * lh;
+          c.fillStyle = color;
+          c.textAlign = align;
+          c.textBaseline = "alphabetic";
+          if (o.mini) {
+            const wd = c.measureText(l).width;
+            const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+            c.fillRect(bx, ly - px * 0.62, wd, px * 0.62);
+          } else {
+            c.fillText(l, X(xIn), ly);
+          }
+        });
+        return (baseY + (lines.length - 1) * lh - y0) / s;
+      };
+
+      // Párrafo: el texto corrido del interior, partido en renglones
+      const para = (
+        txt: string,
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        maxLines: number,
+        color: string,
+        align: CanvasTextAlign = "left"
+      ) => {
+        if (!txt) return yIn;
+        const px = Math.max(1, P(sizeIn));
+        const maxPx = P(maxIn);
+        setTrack(c, fam().track);
+        c.font = make("body", px);
+        const lines: string[] = [];
+        let cur = "";
+        for (const word of txt.split(/\s+/)) {
+          const test = cur ? `${cur} ${word}` : word;
+          if (cur && c.measureText(test).width > maxPx) {
+            lines.push(cur);
+            if (lines.length === maxLines) {
+              cur = "";
+              break;
+            }
+            cur = word;
+          } else {
+            cur = test;
+          }
+        }
+        if (cur && lines.length < maxLines) lines.push(cur);
+        const lh = px * 1.45;
+        lines.forEach((l, i) => {
+          const ly = Y(yIn) + i * lh;
+          c.fillStyle = color;
+          c.textAlign = align;
+          c.textBaseline = "alphabetic";
+          if (o.mini) {
+            const wd = c.measureText(l).width;
+            const bx = align === "center" ? X(xIn) - wd / 2 : X(xIn);
+            c.fillRect(bx, ly - px * 0.56, wd, px * 0.56);
+          } else {
+            c.fillText(l, X(xIn), ly);
+          }
+        });
+        setTrack(c, "0px");
+        return yIn + ((lines.length - 1) * lh) / s;
+      };
+
+      const band = (xIn: number, yIn: number, wIn: number, hIn: number, color: string | CanvasGradient = mark) => {
+        c.fillStyle = color;
+        c.fillRect(X(xIn), Y(yIn), P(wIn), P(hIn));
+      };
+      // Hueco de la foto: rayado en diagonal con su rótulo, o un bloque de color
+      const image = (xIn: number, yIn: number, wIn: number, hIn: number) => {
+        const bx = X(xIn);
+        const by = Y(yIn);
+        const bw = P(wIn);
+        const bh = P(hIn);
+        if (!o.photo) {
+          c.fillStyle = mark;
+          c.fillRect(bx, by, bw, bh);
+          return;
+        }
+        c.save();
+        c.beginPath();
+        c.rect(bx, by, bw, bh);
+        c.clip();
+        c.fillStyle = dark ? "#23262B" : colored ? mix(acc, onColor(acc) === "#FFFFFF" ? -0.18 : 0.2) : "#E4E7EA";
+        c.fillRect(bx, by, bw, bh);
+        c.strokeStyle = dark ? "rgba(255,255,255,0.1)" : "rgba(11,12,14,0.09)";
+        c.lineWidth = Math.max(1, P(0.02));
+        const step = Math.max(6, P(0.26));
+        c.beginPath();
+        for (let i = -bh; i < bw; i += step) {
+          c.moveTo(bx + i, by + bh);
+          c.lineTo(bx + i + bh, by);
+        }
+        c.stroke();
+        c.restore();
+        if (!o.mini) {
+          const lbl = Math.min(hIn * 0.1, wIn * 0.07);
+          put(cfg.copy.photoBox, "label", lbl, xIn + wIn / 2, yIn + hIn / 2 + lbl * 0.4, wIn * 0.7, dark ? "#8D949C" : colored ? sub : "#8A9099", "center");
+        }
+      };
+      // Marca redonda con la inicial, para las portadas que llevan logo
+      const logoMark = (cxIn: number, cyIn: number, rIn: number) => {
+        const letter = (o.t.negocio || "·").trim().charAt(0).toLocaleUpperCase();
+        c.fillStyle = o.foil === "ninguno" ? mark : metal(cxIn - rIn, rIn * 2);
+        c.beginPath();
+        c.arc(X(cxIn), Y(cyIn), P(rIn), 0, Math.PI * 2);
+        c.fill();
+        if (o.mini) return;
+        c.fillStyle = o.foil === "ninguno" ? onMark : "#2A2015";
+        c.font = make("title", P(rIn * 1.05));
+        c.textAlign = "center";
+        c.textBaseline = "middle";
+        c.fillText(letter, X(cxIn), Y(cyIn) + P(rIn * 0.04));
+        c.textBaseline = "alphabetic";
+      };
+      // Lista de puntos del interior
+      const list = (rows: string[], xIn: number, yIn: number, stepIn: number, sizeIn: number, maxIn: number) => {
+        rows.forEach((r, i) => {
+          const ty = yIn + i * stepIn;
+          const rad = sizeIn * 0.34;
+          c.fillStyle = mark;
+          c.beginPath();
+          c.arc(X(xIn + rad), Y(ty) - P(sizeIn * 0.26), P(rad), 0, Math.PI * 2);
+          c.fill();
+          if (!o.mini) {
+            c.strokeStyle = onMark;
+            c.lineWidth = Math.max(1, P(rad * 0.26));
+            c.lineCap = "round";
+            c.lineJoin = "round";
+            c.beginPath();
+            c.moveTo(X(xIn + rad * 0.55), Y(ty) - P(sizeIn * 0.26));
+            c.lineTo(X(xIn + rad * 0.88), Y(ty) - P(sizeIn * 0.26) + P(rad * 0.38));
+            c.lineTo(X(xIn + rad * 1.45), Y(ty) - P(sizeIn * 0.26) - P(rad * 0.45));
+            c.stroke();
+          }
+          put(r, "body", sizeIn, xIn + rad * 2.6, ty, maxIn - rad * 2.6, sub);
+        });
+      };
+
+      // ---- Las tapas ----
+      const fu = Math.min(h, w * 1.25); // de qué tamaño va el texto
+      const m = Math.max(0.055 * fu, 0.3);
+      const V = (k: number) => k * h;
+
+      // Portada: cinco diseños
+      const cover = (px: number) => {
+        if (o.tpl === "foto") {
+          image(px, 0, w, h * 0.56);
+          const last = headline(o.t.negocio, 0.085 * fu, px + m, V(0.68), w - m * 2, nameInk(px + m, w - m * 2), "left", false, h * 0.14);
+          if (o.t.titular) put(o.t.titular, "body", 0.03 * fu, px + m, last + 0.055 * fu, w - m * 2, sub);
+          band(px, h - 0.1 * fu, w, 0.1 * fu);
+          put(o.t.tel, "title", 0.034 * fu, px + m, h - 0.055 * fu, w * 0.45, onMark);
+          put(o.t.web, "body", 0.026 * fu, px + w - m, h - 0.055 * fu, w * 0.42, onMark, "right");
+        } else if (o.tpl === "bloque") {
+          image(px, 0, w, h * 0.58);
+          band(px, V(0.58), w, h * 0.42);
+          const bInk = colored ? acc : onColor(acc);
+          const nInk = o.foil === "ninguno" ? bInk : metal(px + m, w - m * 2);
+          const last = headline(o.t.negocio, 0.095 * fu, px + m, V(0.72), w - m * 2, nInk, "left", false, h * 0.15);
+          if (o.t.titular) put(o.t.titular, "body", 0.03 * fu, px + m, last + 0.06 * fu, w - m * 2, bInk);
+          if (o.t.sub) put(o.t.sub, "body", 0.026 * fu, px + m, last + 0.11 * fu, w - m * 2, bInk);
+          put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "body", 0.028 * fu, px + m, h - m, w - m * 2, bInk);
+        } else if (o.tpl === "banda") {
+          // La banda cruza la tapa con los 22° del logo. El canto de arriba pasa
+          // por V(0.46) en el centro y sube hacia la derecha.
+          const tan = Math.tan((22 * Math.PI) / 180);
+          const bh = h * 0.2;
+          const edge = (xk: number) => V(0.46) + (w / 2 - xk) * tan;
+          c.beginPath();
+          c.moveTo(X(px), Y(edge(0)));
+          c.lineTo(X(px + w), Y(edge(w)));
+          c.lineTo(X(px + w), Y(edge(w) + bh));
+          c.lineTo(X(px), Y(edge(0) + bh));
+          c.closePath();
+          c.fillStyle = mark;
+          c.fill();
+          logoMark(px + w / 2, V(0.16), Math.min(w * 0.11, h * 0.08));
+          headline(o.t.negocio, 0.085 * fu, px + w / 2, V(0.3), w - m * 2, nameInk(px + m, w - m * 2), "center", true, h * 0.1);
+          put(o.t.titular, "body", 0.03 * fu, px + w / 2, V(0.46) + bh * 0.62, w - m * 3, onMark, "center");
+          if (o.t.sub) put(o.t.sub, "body", 0.026 * fu, px + w / 2, V(0.82), w - m * 2, sub, "center");
+          put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "body", 0.026 * fu, px + w / 2, h - m, w - m * 2, sub, "center");
+        } else if (o.tpl === "minimal") {
+          band(px + m, V(0.12), w * 0.14, 0.014 * fu);
+          const last = headline(o.t.negocio, 0.07 * fu, px + m, V(0.22), w - m * 2, nameInk(px + m, w - m * 2), "left", false, h * 0.12);
+          if (o.t.titular) put(o.t.titular, "body", 0.028 * fu, px + m, last + 0.055 * fu, w - m * 2, sub);
+          if (o.t.sub) put(o.t.sub, "body", 0.024 * fu, px + m, h - 0.1 * fu, w * 0.5, sub);
+          put(o.t.tel, "title", 0.036 * fu, px + w - m, h - 0.1 * fu, w * 0.45, ink, "right");
+          put(o.t.web, "body", 0.026 * fu, px + w - m, h - 0.06 * fu, w * 0.45, sub, "right");
+          band(px + m, h - 0.038 * fu, w - m * 2, Math.max(0.006, 0.008 * fu), hair);
+        } else {
+          // logo: la marca centrada, como la mayoría de las carpetas de empresa
+          logoMark(px + w / 2, V(0.36), Math.min(w * 0.13, h * 0.1));
+          const last = headline(o.t.negocio, 0.1 * fu, px + w / 2, V(0.54), w - m * 2, nameInk(px + m, w - m * 2), "center", true, h * 0.14);
+          band(px + w / 2 - w * 0.08, last + 0.045 * fu, w * 0.16, 0.012 * fu);
+          if (o.t.titular) put(o.t.titular, "body", 0.03 * fu, px + w / 2, last + 0.12 * fu, w - m * 2, sub, "center");
+          if (o.t.sub) put(o.t.sub, "body", 0.026 * fu, px + w / 2, last + 0.17 * fu, w - m * 2, sub, "center");
+          put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "body", 0.028 * fu, px + w / 2, h - m, w - m * 2, ink, "center");
+        }
+      };
+
+      // Contraportada: los datos y poco más, como en la vida real
+      const backCover = (px: number) => {
+        put(o.t.negocio, "label", 0.022 * fu, px + w / 2, V(0.4), w - m * 2, sub, "center");
+        band(px + w / 2 - w * 0.06, V(0.45), w * 0.12, 0.01 * fu);
+        para(o.t.direccion, 0.026 * fu, px + w / 2, V(0.53), w - m * 2, 2, sub, "center");
+        put(o.t.tel, "title", 0.038 * fu, px + w / 2, V(0.62), w - m * 2, ink, "center");
+        put(o.t.web, "body", 0.026 * fu, px + w / 2, V(0.67), w - m * 2, sub, "center");
+        band(px, h - 0.05 * fu, w, 0.05 * fu);
+      };
+
+      // El bolsillo: el troquel, la cara del bolsillo y la ranura de la tarjeta
+      const pocket = (px: number, right: boolean) => {
+        const top = h - o.pocket;
+        // El corte sube hacia el doblez: por fuera queda más bajo
+        const inner = right ? px : px + w;
+        const outer = right ? px + w : px;
+        // El canto alto queda en el borde de fuera y baja hacia el doblez: así
+        // se sacan los papeles sin pelearse con el lomo
+        const dip = o.cut === "recto" ? 0 : o.pocket * (o.cut === "diagonal" ? 0.3 : 0.2);
+        const p = new Path2D();
+        p.moveTo(X(outer), Y(h));
+        p.lineTo(X(outer), Y(top));
+        if (o.cut === "curvo") {
+          p.quadraticCurveTo(X((outer + inner) / 2), Y(top - dip * 0.5), X(inner), Y(top + dip));
+        } else {
+          p.lineTo(X(inner), Y(top + dip));
+        }
+        p.lineTo(X(inner), Y(h));
+        p.closePath();
+
+        // La cara del bolsillo: la misma cartulina, un punto más oscura
+        c.save();
+        c.clip(p);
+        if (plain) {
+          paper(c, X(px), Y(top - dip), P(w), P(o.pocket + dip), st, s);
+          c.fillStyle = "rgba(11,12,14,0.05)";
+          c.fillRect(X(px), Y(top - dip), P(w), P(o.pocket + dip));
+        } else {
+          c.fillStyle = dark ? "#1B1E23" : colored ? mix(acc, onColor(acc) === "#FFFFFF" ? -0.14 : 0.16) : mix(st.base, -0.08);
+          c.fillRect(X(px), Y(top - dip), P(w), P(o.pocket + dip));
+          // Franja de acento al pie del bolsillo
+          c.fillStyle = mark;
+          c.fillRect(X(px), Y(h - 0.085 * fu), P(w), P(0.085 * fu));
+        }
+        c.restore();
+
+        // Sombra por dentro del canto, para que se vea que el bolsillo es otra capa
+        c.save();
+        c.clip(p);
+        c.shadowColor = "rgba(11,12,14,0.5)";
+        c.shadowBlur = Math.max(4, P(0.16));
+        c.shadowOffsetY = Math.max(2, P(0.05));
+        c.strokeStyle = "rgba(11,12,14,0.45)";
+        c.lineWidth = Math.max(1.4, P(0.02));
+        c.stroke(p);
+        c.restore();
+        c.strokeStyle = "rgba(11,12,14,0.22)";
+        c.lineWidth = 1;
+        c.stroke(p);
+
+        if (!plain && !o.mini) {
+          const ty = h - 0.03 * fu;
+          put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "body", 0.024 * fu, px + w / 2, ty, w - m * 2, onMark, "center");
+        }
+
+        // La ranura de la tarjeta, en el bolsillo derecho
+        if (right && o.slot) {
+          const cw = Math.min(3.5, w * 0.45);
+          const chh = cw / 1.75;
+          const cx = px + w - m - cw;
+          const cy = top + dip + Math.max(0.3, o.pocket * 0.16);
+          c.save();
+          c.setLineDash([P(0.1), P(0.08)]);
+          c.lineWidth = Math.max(1, P(0.02));
+          c.strokeStyle = plain ? "rgba(11,12,14,0.35)" : dark || colored ? "rgba(255,255,255,0.5)" : "rgba(11,12,14,0.32)";
+          c.strokeRect(X(cx), Y(cy), P(cw), P(chh));
+          c.restore();
+          // Los dos cortes que sujetan la tarjeta
+          c.strokeStyle = plain ? "rgba(11,12,14,0.5)" : dark || colored ? "rgba(255,255,255,0.7)" : "rgba(11,12,14,0.45)";
+          c.lineWidth = Math.max(1.2, P(0.022));
+          [0.12, 0.88].forEach((k) => {
+            c.beginPath();
+            c.moveTo(X(cx + cw * k), Y(cy + chh * 0.12));
+            c.lineTo(X(cx + cw * k), Y(cy + chh * 0.88));
+            c.stroke();
+          });
+        }
+      };
+
+      // Cara interior: el texto arriba y el bolsillo abajo
+      const insideLeft = (px: number) => {
+        if (plain) return;
+        const top = h - o.pocket;
+        const last = headline(o.t.tema1, 0.05 * fu, px + m, V(0.12), w - m * 2, ink, "left", false, h * 0.1);
+        band(px + m, last + 0.03 * fu, w * 0.12, 0.012 * fu);
+        para(o.t.parrafo, 0.026 * fu, px + m, last + 0.12 * fu, w - m * 2, 6, sub);
+        // La foto va justo encima del bolsillo, sin llegar a tocarlo
+        if (o.tpl !== "minimal") image(px + m, top - h * 0.2, w - m * 2, h * 0.16);
+      };
+      const insideRight = (px: number) => {
+        if (plain) return;
+        const top = h - o.pocket;
+        const last = headline(o.t.tema2, 0.05 * fu, px + m, V(0.12), w - m * 2, ink, "left", false, h * 0.1);
+        band(px + m, last + 0.03 * fu, w * 0.12, 0.012 * fu);
+        const rows = o.items;
+        const from = last + 0.13 * fu;
+        const step = rows.length > 1 ? Math.min(0.11 * fu, (top - 0.3 - from) / (rows.length - 1)) : 0.11 * fu;
+        list(rows, px + m, from, step, 0.028 * fu, w - m * 2);
+      };
+
+      if (side === "portada") {
+        cover(0);
+        return;
+      }
+      if (side === "ext") {
+        backCover(0);
+        cover(w);
+        return;
+      }
+      // Interior: primero el texto y después los bolsillos, que van encima
+      insideLeft(0);
+      insideRight(w);
+      if (o.two) pocket(0, false);
+      pocket(w, true);
+    };
+
+    // Una cara completa: sombra, cartulina, contenido, doblez y guías de corte
+    const drawSheet = (x0: number, y0: number, s: number, o: Face, side: "ext" | "int") => {
+      const full = o.w * 2;
+      const wPx = full * s;
+      const hPx = o.h * s;
+      ctx.save();
+      ctx.shadowColor = "rgba(18,26,36,0.4)";
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 12;
+      ctx.fillStyle = o.stock.edge;
+      ctx.fillRect(x0, y0, wPx, hPx);
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0, y0, wPx, hPx);
+      ctx.clip();
+      drawFace(ctx, x0, y0, s, o, side);
+      ctx.restore();
+
+      // El doblez del lomo y, en la reforzada, las solapas de dentro
+      ctx.save();
+      ctx.strokeStyle = "rgba(11,12,14,0.34)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(Math.round(x0 + o.w * s) + 0.5, y0);
+      ctx.lineTo(Math.round(x0 + o.w * s) + 0.5, y0 + hPx);
+      if (o.flap && side === "int") {
+        [o.flap, full - o.flap].forEach((v) => {
+          ctx.moveTo(Math.round(x0 + v * s) + 0.5, y0);
+          ctx.lineTo(Math.round(x0 + v * s) + 0.5, y0 + hPx);
+        });
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(11,12,14,0.26)";
+      ctx.strokeRect(x0, y0, wPx, hPx);
+
+      if (guides) {
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = "#ED1B24";
+        ctx.strokeRect(x0 - BLEED * s, y0 - BLEED * s, wPx + BLEED * 2 * s, hPx + BLEED * 2 * s);
+        ctx.strokeStyle = "#0094DA";
+        ctx.strokeRect(x0 + SAFE * s, y0 + SAFE * s, wPx - SAFE * 2 * s, hPx - SAFE * 2 * s);
+        ctx.restore();
+      }
+    };
+
+    const face = (mini: boolean, tpl?: string): Face => ({
+      ...dims(),
+      stock: stock(),
+      accent: accent().hex,
+      type: val("tipografia"),
+      tpl: tpl ?? val("plantilla"),
+      bg: val("fondo"),
+      photo: val("imagen") === "foto",
+      cut: val("corte"),
+      two: twoPockets(),
+      slot: slot(),
+      foil: val("acabado"),
+      inside: insidePrinted(),
+      t: texts(),
+      items: items(),
+      mini,
+    });
+
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const o = face(false);
+      const h = o.h;
+      const w = o.w * 2; // la carpeta abierta
+      const sides: Array<"ext" | "int"> = view === "ambas" ? ["ext", "int"] : [view];
+      const n = sides.length;
+      const gap = w * 0.06;
+      const gapV = h * 0.24;
+      const pad = guides ? 0.4 : 0.06;
+      // Arriba están los botones, que en una pantalla estrecha ocupan dos renglones
+      const top = tools.offsetHeight + 24;
+      // Las dos caras se ponen una al lado de otra o una encima de otra, lo que
+      // deje la carpeta más grande: en el móvil lo que cabe es apilarlas.
+      const fit = (cols: number, rows: number) => {
+        const tw = w * cols + gap * (cols - 1);
+        const keep = top + 68 + (approx.offsetParent ? 34 : 0) + rows * 20;
+        return Math.min((cw - 44) / (tw + pad * 2), (ch - keep) / (h * rows + gapV * (rows - 1) + pad * 2));
+      };
+      const [cols, rows] = n === 1 ? [1, 1] : fit(2, 1) >= fit(1, 2) ? [2, 1] : [1, 2];
+      const s = fit(cols, rows);
+      const groupW = w * cols + gap * (cols - 1);
+      const groupH = h * rows + gapV * (rows - 1);
+      const x0 = (cw - groupW * s) / 2;
+      const y0 = Math.max(top, 22 + (ch - groupH * s - 68) / 2);
+      const at = (i: number) => ({
+        x: x0 + (i % cols) * (w + gap) * s,
+        y: y0 + Math.floor(i / cols) * (h + gapV) * s,
+      });
+
+      sides.forEach((side, i) => {
+        const p = at(i);
+        drawSheet(p.x, p.y, s, o, side);
+      });
+
+      // La cara va rotulada encima y cada tapa debajo de la suya
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "center";
+      sides.forEach((side, i) => {
+        const p = at(i);
+        ctx.fillStyle = "rgba(11,12,14,0.62)";
+        ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+        const lbl = side === "ext" ? cfg.copy.extLbl : cfg.copy.intLbl;
+        ctx.fillText(side === "int" && !o.inside ? `${lbl} · ${cfg.copy.plain}` : lbl, p.x + (w * s) / 2, p.y - 9);
+        ctx.fillStyle = "rgba(11,12,14,0.46)";
+        ctx.font = `500 11px "Instrument Sans", system-ui, sans-serif`;
+        const names = side === "ext" ? [cfg.panels.contra, cfg.panels.portada] : [cfg.panels.izq, cfg.panels.der];
+        names.forEach((name, k) => {
+          if (ctx.measureText(name).width < o.w * s - 6) ctx.fillText(name, p.x + (k + 0.5) * o.w * s, p.y + h * s + 16);
+        });
+      });
+
+      // Cota de la carpeta cerrada, debajo de la última fila
+      const gy = y0 + groupH * s + 46;
+      const tick = 5;
+      const cota = at(n === 1 || cols === 2 ? 0 : 1);
+      ctx.strokeStyle = "rgba(11,12,14,0.5)";
+      ctx.fillStyle = "rgba(11,12,14,0.66)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cota.x + o.w * s, gy);
+      ctx.lineTo(cota.x + w * s, gy);
+      ctx.moveTo(cota.x + o.w * s, gy - tick);
+      ctx.lineTo(cota.x + o.w * s, gy + tick);
+      ctx.moveTo(cota.x + w * s, gy - tick);
+      ctx.lineTo(cota.x + w * s, gy + tick);
+      ctx.stroke();
+      ctx.textBaseline = "top";
+      ctx.font = `500 12px "Instrument Sans", system-ui, sans-serif`;
+      const txt = sizeText();
+      const half = ctx.measureText(txt).width / 2;
+      ctx.fillText(txt, Math.min(Math.max(cota.x + ((o.w + w) * s) / 2, half + 8), cw - half - 8), gy + 7);
+
+      canvas.setAttribute(
+        "aria-label",
+        `${cfg.copy.preview}: ${sizeText()} · ${stock().name} · ${cfg.tpls[o.tpl]} · ${accent().name}${o.t.negocio ? ` · "${o.t.negocio}"` : ""}`
+      );
+    };
+
+    // Medida de la carpeta cerrada y alto del bolsillo
+    const sizeText = () => {
+      const d = dims();
+      return `${fmtIn(d.w)} × ${fmtIn(d.h)} in ${cfg.copy.closed} · ${cfg.pocketOpts[val("bolsillos")].toLocaleLowerCase()} ${cfg.copy.pocketOf} ${fmtIn(d.pocket)} in`;
+    };
+
+    // Miniaturas de los diseños: la portada de cada uno
+    const renderTpls = () => {
+      const ids = Object.keys(cfg.tpls);
+      form.querySelectorAll<HTMLCanvasElement>(".cp__tpl canvas").forEach((cv, i) => {
+        const c2 = cv.getContext("2d")!;
+        const o: Face = { ...face(true, ids[i] ?? ids[0]), w: 9, h: 12 };
+        c2.setTransform(1, 0, 0, 1, 0, 0);
+        c2.clearRect(0, 0, cv.width, cv.height);
+        const s = Math.min((cv.width - 12) / o.w, (cv.height - 12) / o.h);
+        const x = (cv.width - o.w * s) / 2;
+        const y = (cv.height - o.h * s) / 2;
+        c2.save();
+        c2.beginPath();
+        c2.rect(x, y, o.w * s, o.h * s);
+        c2.clip();
+        drawFace(c2, x, y, s, o, "portada");
+        c2.restore();
+        c2.lineWidth = 1;
+        c2.strokeStyle = "rgba(11,12,14,0.2)";
+        c2.strokeRect(x, y, o.w * s, o.h * s);
+      });
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const t = texts();
+      const out = [
+        `${k.summary}:`,
+        `• ${k.sFormat}: ${cfg.shapes[val("formato")]} ${sizeText()}`,
+        `• ${k.sPockets}: ${cfg.pocketOpts[val("bolsillos")]}`,
+        `• ${k.sCut}: ${cfg.cuts[val("corte")]}`,
+        `• ${k.sSlot}: ${slot() ? k.yes : k.no}`,
+        `• ${k.sPaper}: ${stock().name}`,
+        `• ${k.sThick}: ${cfg.thicks[val("grosor")]}`,
+        `• ${k.sFinish}: ${cfg.finishes[val("acabado")]}`,
+        `• ${k.sSides}: ${cfg.sides[val("caras")]}`,
+        `• ${k.sDesign}: ${cfg.tpls[val("plantilla")]}`,
+        `• ${k.sBg}: ${cfg.bgs[val("fondo")]}`,
+        `• ${k.sType}: ${cfg.types[val("tipografia")]}`,
+        `• ${k.sAccent}: ${accent().name}`,
+      ];
+      if (hasPhoto()) out.push(`• ${k.sImage}: ${cfg.images[val("imagen")]}`);
+      out.push(`• ${k.sCover}: ${[t.negocio, t.titular, t.sub].filter(Boolean).map((x) => `"${x}"`).join(" / ")}`);
+      if (insidePrinted())
+        out.push(
+          `• ${k.sInside}: ${[t.tema1, t.parrafo, t.tema2].filter(Boolean).map((x) => `"${x}"`).join(" / ")}`,
+          `• ${k.sList}: ${items().join(" / ")}`
+        );
+      out.push(
+        `• ${k.sBiz}: ${[t.tel, t.web, t.direccion].filter(Boolean).join(" / ")}`,
+        `• ${k.sQty}: ${qty()}`,
+        `• ${k.sLink}: ${shareUrl()}`
+      );
+      return out.join("\n");
+    };
+
+    const syncUI = () => {
+      const d = dims();
+      imageSeg.querySelectorAll("input").forEach((i) => (i.disabled = !hasPhoto()));
+      imageSeg.toggleAttribute("data-off", !hasPhoto());
+      sizeHelp.textContent = cfg.shapeHelp[val("formato")] ?? "";
+      thickHelp.textContent = cfg.thickHelp[val("grosor")] ?? "";
+      accentName.textContent = accent().name;
+      sizeOut.textContent = `${fmtIn(d.w)} × ${fmtIn(d.h)} in`;
+      approx.textContent = guides ? cfg.copy.guidesOn : cfg.copy.approx;
+      guidesBtn.setAttribute("aria-pressed", String(guides));
+      viewBtn.textContent = cfg.views[view];
+      const q = qty();
+      root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.qty) === q)));
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+    const render = () => {
+      syncUI();
+      draw();
+      renderTpls();
+      update();
+    };
+
+    // ---------- Eventos ----------
+    const onEdit = (e: Event) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      render();
+    };
+    form.addEventListener("change", onEdit);
+    form.addEventListener("input", onEdit);
+    root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) =>
+      b.addEventListener("click", () => {
+        qtyEl.value = b.dataset.qty!;
+        touched = true;
+        render();
+      })
+    );
+    guidesBtn.addEventListener("click", () => {
+      guides = !guides;
+      syncUI();
+      draw();
+    });
+    viewBtn.addEventListener("click", () => {
+      view = VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length];
+      syncUI();
+      draw();
+    });
+
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    Promise.all(
+      [`800 40px "Saira"`, `700 40px "Playfair Display"`, `400 40px "Michroma"`, `500 40px "Instrument Sans"`].map((f) =>
+        document.fonts.load(f).catch(() => [])
+      )
+    ).then(() => render());
+    render();
+  }
+</script>

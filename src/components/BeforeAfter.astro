@@ -1,0 +1,78 @@
+---
+// Comparador antes / después: se arrastra la línea para ver el cambio.
+// Con fotos (before + after) las usa; sin fotos muestra un dibujo —la cubierta del
+// bote (DeckArt) o la cerca (FenceArt), según `art`— y una marca PENDIENTE.
+// El control es un input range invisible encima, así funciona con mouse, dedo y teclado.
+import DeckArt from "./DeckArt.astro";
+import FenceArt from "./FenceArt.astro";
+import Pending from "./Pending.astro";
+import type { Lang } from "../data/site";
+
+interface Props {
+  lang: Lang;
+  art?: "cubierta" | "cerca"; // qué dibujar mientras no hay fotos
+  before?: string;
+  after?: string;
+  beforeAlt?: string;
+  afterAlt?: string;
+  start?: number; // posición inicial de la línea, en %
+}
+
+const { lang, art = "cubierta", before, after, beforeAlt = "", afterAlt = "", start = 50 } = Astro.props;
+
+const COPY = {
+  es: { before: "Antes", after: "Después", range: "Comparar antes y después", pending: "fotos de antes y después" },
+  en: { before: "Before", after: "After", range: "Compare before and after", pending: "before and after photos" },
+};
+const c = COPY[lang];
+const photos = Boolean(before && after);
+---
+<figure class="ba" style={`--p:${start / 100}`}>
+  <div class="ba__layer">
+    {photos
+      ? <img src={before} alt={beforeAlt} decoding="async" />
+      : art === "cerca" ? <FenceArt /> : <DeckArt />}
+  </div>
+  <div class="ba__layer ba__after">
+    {photos
+      ? <img src={after} alt={afterAlt} decoding="async" />
+      : art === "cerca" ? <FenceArt nueva /> : <DeckArt foam />}
+  </div>
+  <input class="ba__range" type="range" min="0" max="100" step="1" value={start} aria-label={c.range} />
+  <span class="ba__line" aria-hidden="true">
+    <span class="ba__knob">
+      <svg viewBox="0 0 24 24"><path d="M9 6l-5 6 5 6M15 6l5 6-5 6" /></svg>
+    </span>
+  </span>
+  <span class="ba__tag ba__tag--before" aria-hidden="true">{c.before}</span>
+  <span class="ba__tag ba__tag--after" aria-hidden="true">{c.after}</span>
+  {!photos && <span class="slot__tag"><Pending lang={lang}>{c.pending}</Pending></span>}
+</figure>
+
+<script>
+  const motion = document.documentElement.classList.contains("js-motion");
+
+  document.querySelectorAll<HTMLElement>(".ba").forEach((ba) => {
+    const range = ba.querySelector<HTMLInputElement>(".ba__range")!;
+    let touched = false;
+    const set = (p: number) => ba.style.setProperty("--p", String(p));
+    range.addEventListener("input", () => {
+      touched = true;
+      ba.classList.remove("is-nudge");
+      set(Number(range.value) / 100);
+    });
+
+    // La primera vez que se ve, la línea se mueve un poco para mostrar que se puede arrastrar
+    if (!motion) return;
+    new IntersectionObserver(([entry], io) => {
+      if (!entry.isIntersecting) return;
+      io.disconnect();
+      ba.classList.add("is-nudge");
+      const home = Number(range.value) / 100;
+      [[home - 0.14, 700], [home + 0.1, 1350], [home, 2000]].forEach(([p, t]) =>
+        setTimeout(() => { if (!touched) set(p); }, t)
+      );
+      setTimeout(() => ba.classList.remove("is-nudge"), 2700);
+    }, { threshold: 0.6 }).observe(ba);
+  });
+</script>

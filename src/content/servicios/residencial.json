@@ -1,0 +1,60 @@
+{
+  "nombre": "Iluminación residencial",
+  "linea": "iluminacion",
+  "orden": 1,
+  "nameEn": "Residential lighting",
+  "slugEn": "residential",
+  "short": {
+    "es": "Salas, cocinas, baños y dormitorios con luz cálida, eficiente y regulable.",
+    "en": "Living rooms, kitchens, bathrooms and bedrooms with warm, efficient, dimmable light."
+  },
+  "intro": {
+    "es": "Planeamos la luz de tu casa espacio por espacio: dónde va cada luminaria, qué temperatura usar y cómo controlarla. Después la suministramos y la instalamos.",
+    "en": "We plan your home's lighting room by room: where each fixture goes, which color temperature to use and how to control it. Then we supply and install it."
+  },
+  "includes": {
+    "es": [
+      "Luces empotradas (recessed) y downlights",
+      "Lámparas colgantes y de techo",
+      "Luz bajo gabinetes y en closets",
+      "Dimmers y control inteligente",
+      "Cambio de luminarias viejas a LED"
+    ],
+    "en": [
+      "Recessed lights and downlights",
+      "Pendant and ceiling fixtures",
+      "Under-cabinet and closet lighting",
+      "Dimmers and smart controls",
+      "Retrofitting old fixtures to LED"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Salas",
+      "Cocinas",
+      "Baños",
+      "Dormitorios",
+      "Pasillos y escaleras"
+    ],
+    "en": [
+      "Living rooms",
+      "Kitchens",
+      "Bathrooms",
+      "Bedrooms",
+      "Hallways and stairs"
+    ]
+  },
+  "note": {
+    "es": "Para descansar y compartir, luz cálida de 2700 a 3000 K. En cocinas y baños funciona bien una luz algo más neutra.",
+    "en": "For relaxing and gathering, warm light at 2700–3000 K. Kitchens and bathrooms work well with slightly more neutral light."
+  },
+  "kelvin": {
+    "discriminant": true,
+    "value": {
+      "from": 2700,
+      "to": 3000,
+      "label": "2700–3000 K",
+      "rgb": false
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/styles/global.css"
+        ],
+        "createdAt": "2026-10-08T20:12:26.896Z",
+        "reason": "Claude: .site-header::after es la barra LED de 4 colores del manual de marca de LED Tech Miami (progreso de lectura, 3px, horizontal y a todo el ancho del header), no un borde de acento lateral de tarjeta"
+      }
+    ]
+  }
+}

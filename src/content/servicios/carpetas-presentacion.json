@@ -1,0 +1,59 @@
+{
+  "nombre": "Carpetas de presentación",
+  "linea": "graficos",
+  "orden": 10,
+  "padre": "marketing-digital",
+  "nameEn": "Presentation folders",
+  "slugEn": "presentation-folders",
+  "short": {
+    "es": "Carpetas con bolsillos y ranura para tu tarjeta, con el diseño que armas aquí mismo.",
+    "en": "Folders with pockets and a slot for your business card, with the design you build right here."
+  },
+  "intro": {
+    "es": "La carpeta es lo que entregas cuando el cliente se lleva papeles: el presupuesto, el contrato, las fichas. La diseñas aquí mismo: eliges la medida, los bolsillos, la cartulina y una de cinco portadas, escribes tus textos y ves la carpeta por fuera y por dentro antes de pedirla. Te llega troquelada y doblada.",
+    "en": "A folder is what you hand over when the client leaves with paperwork: the estimate, the contract, the spec sheets. You design it right here: pick the size, the pockets, the card stock and one of five covers, type your copy and see the folder outside and inside before you order. It arrives die-cut and folded."
+  },
+  "includes": {
+    "es": [
+      "Medidas de 6 × 9, 9 × 12 y 9-1/2 × 12 in reforzada",
+      "Uno o dos bolsillos, con corte recto, diagonal o curvo",
+      "Ranura para tu tarjeta de presentación en el bolsillo derecho",
+      "Cartulina mate, brillante o sin recubrir, de 14 o 16 pt",
+      "Impresión solo por fuera, o por fuera y por dentro",
+      "Acabado opcional de lámina dorada o plateada"
+    ],
+    "en": [
+      "6 × 9, 9 × 12 and 9-1/2 × 12 in reinforced sizes",
+      "One or two pockets, with a straight, angled or curved cut",
+      "A slot for your business card on the right pocket",
+      "Matte, glossy or uncoated card stock, 14 or 16 pt",
+      "Printed outside only, or outside and inside",
+      "Optional gold or silver foil finish"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Presupuestos y contratos",
+      "Bienes raíces",
+      "Contratistas",
+      "Clínicas y consultorios",
+      "Ferias y eventos",
+      "Presentaciones de empresa"
+    ],
+    "en": [
+      "Estimates and contracts",
+      "Real estate",
+      "Contractors",
+      "Clinics and practices",
+      "Trade shows and events",
+      "Company presentations"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

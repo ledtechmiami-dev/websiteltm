@@ -1,0 +1,59 @@
+{
+  "nombre": "Exhibidores de mesa",
+  "linea": "graficos",
+  "orden": 17,
+  "padre": "marketing-digital",
+  "nameEn": "Tabletop displays",
+  "slugEn": "tabletop-displays",
+  "short": {
+    "es": "Carpas de mesa que se paran solas y mini banners retráctiles con su base, con el diseño que armas aquí mismo.",
+    "en": "Tent cards that stand on their own and mini retractable banners with their base, with the design you build right here."
+  },
+  "intro": {
+    "es": "El exhibidor de mesa es el vendedor que no se cansa: está en la mesa, en el mostrador o en el recibidor, a la altura de los ojos de quien está sentado. La carpa sale de una sola hoja con dos dobleces y se para sola con dos pestañas que se traban; el mini banner se enrolla dentro de su base de aluminio y se arma en diez segundos. Lo diseñas aquí mismo y el constructor te lo enseña armado y desplegado, que es como sale de la máquina.",
+    "en": "A tabletop display is the salesperson who never gets tired: it sits on the table, the counter or the front desk, at eye level for whoever is seated. The tent card comes from a single sheet with two folds and stands on its own with two interlocking tabs; the mini banner rolls up inside its aluminum base and sets up in ten seconds. You design it right here, and the builder shows it both assembled and flat, the way it comes off the press."
+  },
+  "includes": {
+    "es": [
+      "Carpa de mesa de 4 × 6 y 5 × 7 in, cortada en plotter",
+      "Mini banner retráctil de 8-1/2 × 12 y 11 × 17 in, con base y vara",
+      "Cartulina brillante o mate de 14 pt",
+      "El mismo diseño por los dos lados o uno distinto en cada uno",
+      "Código QR para el menú, el mapa o el WhatsApp",
+      "Cinco diseños: promoción, lista, QR, evento y con foto"
+    ],
+    "en": [
+      "4 × 6 and 5 × 7 in tent cards, plotter-cut",
+      "8-1/2 × 12 and 11 × 17 in mini retractable banners, base and pole included",
+      "Glossy or matte 14 pt card stock",
+      "Same design on both sides or a different one on each",
+      "QR code for the menu, the map or WhatsApp",
+      "Five layouts: promotion, list, QR, event and with photo"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Promociones y happy hour",
+      "Especiales del día",
+      "Menú por código QR",
+      "Mostradores y recepciones",
+      "Ferias y exposiciones",
+      "Bodas y eventos"
+    ],
+    "en": [
+      "Promotions and happy hour",
+      "Daily specials",
+      "QR code menus",
+      "Counters and reception desks",
+      "Trade shows and expos",
+      "Weddings and events"
+    ]
+  },
+  "note": {
+    "es": "La carpa llega plana: se dobla y se para en un segundo, sin pegamento. Va en cartulina de 14 pt, que es la que dobla limpio sin hendir; la de 16 pt se raja en el doblez. La cara de dentro no se imprime, porque no se ve. El mini banner viene armado de fábrica, así que hay que pedirlo con tiempo, y la franja de abajo se enrolla dentro de la base: ahí no pongas el logo.",
+    "en": "The tent card arrives flat: you fold it and it stands up in a second, no glue. It comes in 14 pt card stock, the one that folds clean without scoring; 16 pt cracks at the fold. The inside face isn't printed, because nobody sees it. The mini banner arrives assembled from the supplier, so it has to be ordered with time to spare, and the bottom strip rolls up inside the base: don't put your logo there."
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

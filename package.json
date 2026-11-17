@@ -1,0 +1,21 @@
+{
+  "name": "ltm-website",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && node scripts/redirect-slash.mjs",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/react": "^6.0.5",
+    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/vercel": "^11.0.10",
+    "@keystatic/astro": "^6.0.0",
+    "@keystatic/core": "^0.6.9",
+    "astro": "^7.3.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  }
+}

@@ -1,0 +1,61 @@
+---
+import Layout from "../layouts/Layout.astro";
+import PageHero from "../components/PageHero.astro";
+import QuoteSection from "../components/QuoteSection.astro";
+import type { Lang } from "../data/site";
+import { SITE, waLink, mapsLink } from "../data/site";
+import { PAGES, type Bi } from "../data/content";
+import { ROUTES } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = UI[lang];
+const tr = (b: Bi) => b[lang] || b.es;
+const page = PAGES.quote;
+
+const c = {
+  title: tr(page.head.title),
+  h1: tr(page.head.h1),
+  lead: tr(page.head.lead),
+  formTitle: tr(page.formTitle),
+  ...{
+    es: { contactTitle: "Otras formas de contactarnos", email: "Correo" },
+    en: { contactTitle: "Other ways to reach us", email: "Email" },
+  }[lang],
+};
+---
+<Layout lang={lang} page="quote" title={c.title} description={c.lead} alternates={ROUTES.quote}>
+  <PageHero
+    lang={lang}
+    title={c.h1}
+    lead={c.lead}
+    crumbs={[{ label: t.nav.home, href: ROUTES.home[lang] }, { label: t.nav.quote }]}
+  />
+
+  <QuoteSection lang={lang} heading={c.formTitle} />
+
+  <section class="section section--flush">
+    <div class="container">
+      <div class="sec-head"><div><h2>{c.contactTitle}</h2></div></div>
+      <dl class="facts">
+        <div>
+          <dt>WhatsApp</dt>
+          <dd><a href={waLink(t.waText)} target="_blank" rel="noopener">{SITE.phone}</a></dd>
+        </div>
+        <div>
+          <dt>{c.email}</dt>
+          <dd><a href={`mailto:${SITE.email}`}>{SITE.email}</a></dd>
+        </div>
+        <div>
+          <dt>{t.hours}</dt>
+          <dd>{SITE.hours[lang]}</dd>
+        </div>
+        <div>
+          <dt>{t.address}</dt>
+          <dd><a href={mapsLink} target="_blank" rel="noopener">{SITE.address.full}</a></dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+</Layout>

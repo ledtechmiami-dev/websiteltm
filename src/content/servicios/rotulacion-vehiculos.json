@@ -1,0 +1,52 @@
+{
+  "nombre": "Rotulación de vehículos",
+  "linea": "graficos",
+  "orden": 2,
+  "nameEn": "Car wraps",
+  "slugEn": "car-wraps",
+  "short": {
+    "es": "Wraps completos o parciales para autos, vans y camiones.",
+    "en": "Full or partial wraps for cars, vans and trucks."
+  },
+  "intro": {
+    "es": "Convierte tu vehículo en publicidad que se mueve. Diseñamos e instalamos wraps completos, parciales o solo con tu logo y tus datos.",
+    "en": "Turn your vehicle into advertising that moves. We design and install full wraps, partial wraps or just your logo and contact details."
+  },
+  "includes": {
+    "es": [
+      "Diseño adaptado a tu vehículo",
+      "Wrap completo o parcial",
+      "Letras y logos de vinil",
+      "Instalación"
+    ],
+    "en": [
+      "Design fitted to your vehicle",
+      "Full or partial wrap",
+      "Vinyl lettering and logos",
+      "Installation"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Autos",
+      "Vans",
+      "Camiones",
+      "Flotas",
+      "Food trucks"
+    ],
+    "en": [
+      "Cars",
+      "Vans",
+      "Trucks",
+      "Fleets",
+      "Food trucks"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

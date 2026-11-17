@@ -1,0 +1,61 @@
+{
+  "nombre": "Menús",
+  "linea": "graficos",
+  "orden": 15,
+  "padre": "marketing-digital",
+  "nameEn": "Menus",
+  "slugEn": "menus",
+  "short": {
+    "es": "Menús de mesa en papel mate o brillante, laminados para limpiarlos con un trapo, con el diseño que armas aquí mismo.",
+    "en": "Table menus in matte or glossy paper, laminated so they wipe clean, with the design you build right here."
+  },
+  "intro": {
+    "es": "El menú es el papel que más manos toca en un restaurante: se mancha, se dobla y se vuelve a imprimir cada vez que cambia un precio. Por eso lo importante es el laminado, que es lo que aguanta la salsa, y cómo están puestos los platos, porque la vista del cliente se para siempre en el mismo sitio. Lo diseñas aquí mismo, escribes los platos con su precio y el constructor te marca esa zona.",
+    "en": "A menu is the piece of paper most hands touch in a restaurant: it gets stained, it gets folded and it gets reprinted every time a price changes. That's why what matters is the lamination, which is what survives the sauce, and how the dishes are laid out, because the customer's eye always lands in the same place. You design it right here, type the dishes with their prices, and the builder marks that spot."
+  },
+  "includes": {
+    "es": [
+      "Medidas de 8-1/2 × 11 y 8-1/2 × 14 in",
+      "Papel mate o brillante",
+      "Laminado brillante o mate, para limpiarlo con un trapo",
+      "Por una cara o por las dos, con la segunda lista al reverso",
+      "Renglones de plato y precio con la fila de puntos",
+      "Cinco diseños: clásico, moderno, bistró, con foto y pizarra",
+      "Desde 50 menús"
+    ],
+    "en": [
+      "8-1/2 × 11 and 8-1/2 × 14 in sizes",
+      "Matte or glossy paper",
+      "Gloss or matte lamination, so it wipes clean with a cloth",
+      "Single- or double-sided, with the second list on the back",
+      "Dish-and-price rows with the dotted leader",
+      "Five layouts: classic, modern, bistro, with photo and chalkboard",
+      "From 50 menus"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Restaurantes y cafeterías",
+      "Bares y cartas de bebidas",
+      "Comida para llevar",
+      "Food trucks",
+      "Menú del día",
+      "Salones de eventos"
+    ],
+    "en": [
+      "Restaurants and cafés",
+      "Bars and drinks lists",
+      "Takeout",
+      "Food trucks",
+      "Daily specials",
+      "Event venues"
+    ]
+  },
+  "note": {
+    "es": "Si lo quieres doblado, de dos o de tres cuerpos, se arma en el constructor de folletos: ahí eliges el doblez y ves los dos lados de la hoja.",
+    "en": "If you want it folded, bi-fold or tri-fold, it's built in the brochure builder: there you pick the fold and see both sides of the sheet."
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

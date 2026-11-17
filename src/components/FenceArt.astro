@@ -1,0 +1,202 @@
+---
+// Cerca vista de frente, para el antes y después de cercas de aluminio mientras no
+// haya fotos reales. nueva=false: malla ciclónica vieja, chueca, oxidada y rota;
+// nueva=true: la misma vista con cerca de aluminio de tablillas horizontales, dos de
+// acrílico, una con luz LED y dos caladas con el corte de 22° de la marca. El fondo
+// —cielo, pasto, casa y
+// arbustos— es igual en los dos dibujos, así al arrastrar la línea solo cambia la
+// cerca. Todo se dibuja más ancho que el viewBox para que llene el recuadro
+// completo (el SVG recorta lo que sobra) y la capa de arriba tape a la de abajo.
+interface Props {
+  nueva?: boolean;
+}
+
+const { nueva = false } = Astro.props;
+const uid = `f${Math.random().toString(36).slice(2, 7)}`;
+
+const INK = "#0B0C0E";
+const ALU = "#15171B"; // aluminio con acabado negro
+const WOOD = "#8A5A32"; // PVC decorativo color roble
+const PIPE = "#B6BDC5"; // tubo galvanizado
+const RUST = "#9E6B38";
+const SKY = "#E3EBF1";
+const LAWN = "#D6E0C9";
+const GROUND = 296; // línea del piso
+// Fuera del viewBox para que la escena llene cualquier recuadro
+const X0 = -220;
+const X1 = 700;
+
+const POSTS: number[] = [];
+for (let x = 36 - 110 * 2; x < X1; x += 110) POSTS.push(x);
+// Tablillas horizontales con las medidas que fabrica el taller, en pulgadas: acrílico y
+// LED de 2 a 4 in, PVC decorativo de 3-1/2, 5-1/2, 7-1/2 o 9 in y aluminio de 2 a 5 in.
+const SLAT_TOP = 128;
+const SLAT_BOT = 266;
+const INNER_IN = 54; // alto útil del panel de 5 ft
+const U = (SLAT_BOT - SLAT_TOP) / INNER_IN; // unidades del dibujo por pulgada
+// De arriba hacia abajo: luz LED, acrílico, PVC decorativo y aluminio
+const SLAT_KIND: [string, number][] = [
+  ["led", 3], ["acrilico", 3], ["acrilico", 3], ["pvc", 5.5], ["pvc", 5.5],
+  ["alu", 5], ["alu", 5], ["alu", 5], ["alu", 5], ["alu", 5],
+];
+const SLAT_GAP = (INNER_IN - SLAT_KIND.reduce((a, [, s]) => a + s, 0)) / (SLAT_KIND.length - 1);
+let cursor = SLAT_TOP;
+const slats = SLAT_KIND.map(([kind, inches]) => {
+  const y = cursor;
+  cursor += (inches + SLAT_GAP) * U;
+  return { kind, y, h: inches * U, inches };
+});
+// Ranuras del PVC decorativo: corren a lo largo de la tablilla
+const flutes: { y: number; h: number }[] = [];
+for (const s of slats.filter((x) => x.kind === "pvc")) {
+  const n = s.inches >= 9 ? 4 : s.inches >= 7 ? 3 : 2;
+  for (let f = 0; f < n; f++) flutes.push({ y: s.y + ((f + 0.5) * s.h) / n - (s.h / n) * 0.26, h: (s.h / n) * 0.52 });
+}
+
+// Cerca vieja: cada poste va chueco y el tubo de arriba cuelga entre uno y otro
+const LEAN = [-7, 5, -4, 9, -5, 6, -8, 3];
+const lean = (i: number) => LEAN[i % LEAN.length];
+const tops: [number, number][] = POSTS.map((p, i): [number, number] => [p + lean(i), 118]);
+let topLine = `M${X0} 126`;
+for (let i = 0; i < tops.length; i++) {
+  const [x0, y0] = i === 0 ? [X0, 126] : tops[i - 1];
+  const [x1, y1] = tops[i];
+  topLine += `Q${(x0 + x1) / 2} ${(y0 + y1) / 2 + 15} ${x1} ${y1}`;
+}
+topLine += `Q${(tops[tops.length - 1][0] + X1) / 2} ${132 + 15} ${X1} 126`;
+const meshArea = `${topLine}L${X1} ${GROUND - 4}L${X0} ${GROUND - 4}Z`;
+
+const tufts = [-120, 16, 92, 186, 274, 350, 438, 540, 640];
+---
+<svg class="fence-art" viewBox="0 0 480 360" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id={`${uid}-sky`} x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#DCE7F0" />
+      <stop offset="1" stop-color="#EFF2F4" />
+    </linearGradient>
+    {nueva ? (
+      <>
+        <linearGradient id={`${uid}-led`} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#F6C98B" />
+          <stop offset="0.5" stop-color="#FFF0D6" />
+          <stop offset="1" stop-color="#F6C98B" />
+        </linearGradient>
+        <linearGradient id={`${uid}-wood`} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#A97440" />
+          <stop offset="0.45" stop-color={WOOD} />
+          <stop offset="1" stop-color="#5E3C21" />
+        </linearGradient>
+        <linearGradient id={`${uid}-flute`} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#3B2614" stop-opacity="0.55" />
+          <stop offset="0.6" stop-color="#4E3219" stop-opacity="0.3" />
+          <stop offset="1" stop-color="#D9B184" stop-opacity="0.34" />
+        </linearGradient>
+      </>
+    ) : (
+      <>
+        <pattern id={`${uid}-mesh`} width="26" height="26" patternUnits="userSpaceOnUse">
+          <path d="M0 0L26 26M26 0L0 26" fill="none" stroke="#9BA3AC" stroke-width="2.5" />
+        </pattern>
+        <clipPath id={`${uid}-mesh-area`}><path d={meshArea} /></clipPath>
+        <mask id={`${uid}-torn`}>
+          <rect x={X0} y="100" width={X1 - X0} height="210" fill="#fff" />
+          <path d="M72 292c-4-26 2-44 16-54c16-12 32-4 28 14c-4 20-14 26-12 40Z" fill="#000" />
+        </mask>
+      </>
+    )}
+  </defs>
+
+  <rect x={X0} y="-300" width={X1 - X0} height={GROUND + 300} fill={`url(#${uid}-sky)`} />
+  <rect x={X0} y={GROUND} width={X1 - X0} height="400" fill={LAWN} />
+  <rect x={X0} y={GROUND} width={X1 - X0} height="3" fill="#B9C6A8" />
+
+  <g>
+    <path d="M298 168H438V296H298Z" fill="#F2F4F5" />
+    <path d="M288 174L368 106L448 174" fill="none" stroke="#C7CDD4" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" />
+    <rect x="340" y="196" width="42" height="40" rx="4" fill="#CFE3EE" />
+    <path d="M361 196V236M340 216H382" stroke="#F2F4F5" stroke-width="4" />
+  </g>
+  <g fill="#BACCA6">
+    <ellipse cx="60" cy="266" rx="58" ry="34" />
+    <ellipse cx="146" cy="280" rx="38" ry="23" />
+    <ellipse cx="444" cy="270" rx="52" ry="30" />
+    <ellipse cx="-110" cy="272" rx="60" ry="32" />
+  </g>
+
+  <ellipse cx="240" cy={GROUND + 4} rx="420" ry="9" fill={INK} opacity="0.12" />
+
+  {nueva ? (
+    <g>
+      {slats.map((s) => (
+        <g>
+          <rect
+            x={X0}
+            y={s.y}
+            width={X1 - X0}
+            height={s.h}
+            fill={
+              s.kind === "led"
+                ? `url(#${uid}-led)`
+                : s.kind === "acrilico"
+                  ? "#DCEEF8"
+                  : s.kind === "pvc"
+                    ? `url(#${uid}-wood)`
+                    : ALU
+            }
+            opacity={s.kind === "acrilico" ? 0.85 : 1}
+          />
+          {s.kind === "alu" && <rect x={X0} y={s.y} width={X1 - X0} height="2.4" fill="#3A4047" />}
+          {s.kind === "acrilico" && <rect x={X0} y={s.y + 2} width={X1 - X0} height="2.4" fill="#FFFFFF" opacity="0.8" />}
+        </g>
+      ))}
+      {flutes.map((f) => <rect x={X0} y={f.y} width={X1 - X0} height={f.h} fill={`url(#${uid}-flute)`} />)}
+      <rect x={X0} y="118" width={X1 - X0} height="10" rx="2" fill={ALU} />
+      <rect x={X0} y={SLAT_BOT} width={X1 - X0} height="10" rx="2" fill={ALU} />
+      <rect x={X0} y="118" width={X1 - X0} height="3" fill="#3A4047" />
+      {POSTS.map((p) => (
+        <g>
+          <rect x={p - 13} y="104" width="26" height="8" rx="2" fill={ALU} />
+          <rect x={p - 9} y="110" width="18" height={GROUND - 110} fill={ALU} />
+          <rect x={p - 6} y="116" width="3" height={GROUND - 128} rx="1.5" fill="#3A4047" />
+        </g>
+      ))}
+    </g>
+  ) : (
+    <g>
+      <path d={meshArea} fill={`url(#${uid}-mesh)`} mask={`url(#${uid}-torn)`} />
+      <g clip-path={`url(#${uid}-mesh-area)`} fill={RUST} opacity="0.26">
+        <ellipse cx="118" cy="250" rx="30" ry="18" />
+        <ellipse cx="208" cy="198" rx="22" ry="13" />
+        <ellipse cx="402" cy="236" rx="28" ry="16" />
+      </g>
+      <path d={topLine} fill="none" stroke={PIPE} stroke-width="8" stroke-linecap="round" />
+      <path d={topLine} fill="none" stroke="#8A9199" stroke-width="2" stroke-linecap="round" opacity="0.5" />
+      {POSTS.map((p, i) => {
+        const t = p + lean(i);
+        return (
+          <g>
+            <polygon points={`${p - 5},${GROUND} ${p + 5},${GROUND} ${t + 4.5},114 ${t - 4.5},114`} fill={PIPE} stroke="#8A9199" stroke-width="1.5" stroke-linejoin="round" />
+            <ellipse cx={t} cy="114" rx="4.5" ry="2.2" fill="#8A9199" />
+            <path d={`M${p - 4} ${GROUND - 42}h8`} stroke={RUST} stroke-width="13" opacity="0.3" />
+          </g>
+        );
+      })}
+      <g fill="none" stroke="#9BA3AC" stroke-width="2.5" stroke-linecap="round">
+        <path d="M74 292c6-12 2-22-6-26" />
+        <path d="M112 284c8-10 10-22 4-30" />
+        <path d="M96 240c-10 4-14 12-12 22" />
+      </g>
+      <g fill="none" stroke="#7E8B5A" stroke-width="3" stroke-linecap="round" opacity="0.8">
+        <path d="M88 294q2-26 10-36" />
+        <path d="M100 294q-2-22-10-30" />
+        <path d="M110 294q4-20 13-26" />
+      </g>
+    </g>
+  )}
+
+  <g fill="none" stroke="#8FA873" stroke-opacity="0.75" stroke-width="3" stroke-linecap="round">
+    {tufts.map((x) => (
+      <path d={`M${x} ${GROUND + 7}q2-10 5-13M${x + 7} ${GROUND + 7}q0-11 1-14M${x + 14} ${GROUND + 7}q-1-10-4-12`} />
+    ))}
+  </g>
+</svg>

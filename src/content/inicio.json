@@ -1,0 +1,190 @@
+{
+  "seo": {
+    "title": {
+      "es": "LED Tech Miami | Letreros, rotulación y fabricación en Miami",
+      "en": "LED Tech Miami | Signs, wraps and fabrication in Miami"
+    },
+    "description": {
+      "es": "Channel letters, neón LED, wraps para autos y botes, corte láser, cercas de aluminio e iluminación LED en Miami-Dade y Broward. Cotización sin costo.",
+      "en": "Channel letters, LED neon, car and boat wraps, laser cutting, aluminum fences and LED lighting across Miami-Dade and Broward. Free quotes."
+    }
+  },
+  "hero": {
+    "h1": {
+      "es": "Letreros, rotulación y fabricación a medida en Miami",
+      "en": "Signs, wraps and custom fabrication in Miami"
+    },
+    "lead": {
+      "es": "Diseñamos, fabricamos e instalamos: channel letters, neón LED, wraps para autos y botes, corte láser e iluminación LED.",
+      "en": "We design, build and install: channel letters, LED neon, car and boat wraps, laser cutting and LED lighting."
+    },
+    "note": {
+      "es": "Cotización sin costo. Respuesta en menos de 24 horas.",
+      "en": "Free quotes. Response in under 24 hours."
+    }
+  },
+  "strip": [
+    {
+      "es": "Diseño, fabricación e instalación",
+      "en": "Design, fabrication and installation"
+    },
+    {
+      "es": "Respuesta en menos de 24 h",
+      "en": "Response in under 24 hours"
+    },
+    {
+      "es": "Negocios, autos, botes y hogares",
+      "en": "Businesses, cars, boats and homes"
+    },
+    {
+      "es": "Miami-Dade y Broward",
+      "en": "Miami-Dade and Broward"
+    }
+  ],
+  "lines": {
+    "title": {
+      "es": "Nuestras líneas de negocio",
+      "en": "Our business lines"
+    },
+    "text": {
+      "es": "Un solo equipo para la fachada de tu negocio, tu vehículo, tu bote y tu casa.",
+      "en": "One team for your storefront, your vehicle, your boat and your home."
+    }
+  },
+  "packs": {
+    "title": {
+      "es": "Paquetes",
+      "en": "Packages"
+    },
+    "text": {
+      "es": "Servicios que suelen ir juntos, en una sola cotización.",
+      "en": "Services that usually go together, in a single quote."
+    },
+    "items": [
+      {
+        "line": "letreros",
+        "name": {
+          "es": "Local nuevo",
+          "en": "New storefront"
+        },
+        "items": {
+          "es": [
+            "Channel letters para la fachada",
+            "Vinil para la vidriera",
+            "Banner de inauguración"
+          ],
+          "en": [
+            "Channel letters for the facade",
+            "Storefront window vinyl",
+            "Grand opening banner"
+          ]
+        },
+        "price": ""
+      },
+      {
+        "line": "marino",
+        "name": {
+          "es": "Bote personalizado",
+          "en": "Custom boat"
+        },
+        "items": {
+          "es": [
+            "Letras para el casco",
+            "Piso EVA foam en la cubierta",
+            "Tablero a la medida"
+          ],
+          "en": [
+            "Hull lettering",
+            "EVA foam decking",
+            "Custom dashboard"
+          ]
+        },
+        "price": ""
+      },
+      {
+        "line": "graficos",
+        "name": {
+          "es": "Marca en movimiento",
+          "en": "Brand on the move"
+        },
+        "items": {
+          "es": [
+            "Rotulación de tu van o auto",
+            "Camisetas para tu equipo",
+            "Roll-up para eventos"
+          ],
+          "en": [
+            "Van or car wrap",
+            "T-shirts for your team",
+            "Roll-up banner for events"
+          ]
+        },
+        "price": ""
+      }
+    ]
+  },
+  "work": {
+    "title": {
+      "es": "Trabajos recientes",
+      "en": "Recent work"
+    }
+  },
+  "steps": {
+    "title": {
+      "es": "Cómo trabajamos",
+      "en": "How we work"
+    },
+    "items": [
+      {
+        "title": {
+          "es": "Nos cuentas",
+          "en": "You tell us"
+        },
+        "text": {
+          "es": "Llena el formulario o escríbenos por WhatsApp con medidas, fotos o tu idea.",
+          "en": "Fill out the form or message us on WhatsApp with measurements, photos or your idea."
+        }
+      },
+      {
+        "title": {
+          "es": "Diseñamos y cotizamos",
+          "en": "We design and quote"
+        },
+        "text": {
+          "es": "Te enviamos una propuesta clara en menos de 24 horas.",
+          "en": "We send you a clear proposal in under 24 hours."
+        }
+      },
+      {
+        "title": {
+          "es": "Fabricamos",
+          "en": "We build it"
+        },
+        "text": {
+          "es": "Preparamos tu pedido con los materiales y medidas acordados.",
+          "en": "We make your order with the agreed materials and measurements."
+        }
+      },
+      {
+        "title": {
+          "es": "Instalamos",
+          "en": "We install it"
+        },
+        "text": {
+          "es": "Lo instalamos o te lo entregamos listo, según lo que necesites.",
+          "en": "We install it or hand it over ready to go, whatever you need."
+        }
+      }
+    ]
+  },
+  "trust": {
+    "title": {
+      "es": "Negocios que confían en nosotros",
+      "en": "Businesses that trust us"
+    },
+    "reviewsTitle": {
+      "es": "Lo que dicen nuestros clientes",
+      "en": "What our clients say"
+    }
+  }
+}

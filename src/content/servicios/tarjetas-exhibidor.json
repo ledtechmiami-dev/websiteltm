@@ -1,0 +1,59 @@
+{
+  "nombre": "Tarjetas de exhibidor",
+  "linea": "graficos",
+  "orden": 11,
+  "padre": "marketing-digital",
+  "nameEn": "Rack cards",
+  "slugEn": "rack-cards",
+  "short": {
+    "es": "Tarjetas altas de 4 × 9 in para el exhibidor del mostrador, con el diseño que armas aquí mismo.",
+    "en": "Tall 4 × 9 in cards for the counter display, with the design you build right here."
+  },
+  "intro": {
+    "es": "La tarjeta de exhibidor es la que dejas en el mostrador de un hotel, un restaurante o una tienda, en esos soportes de acrílico donde las tarjetas van una delante de otra. Por eso lo importante va arriba: es lo único que se ve. La diseñas aquí mismo, eliges medida, papel y una de cinco maquetas, y el constructor te enseña qué parte tapa el exhibidor.",
+    "en": "A rack card is what you leave on the counter of a hotel, a restaurant or a shop, in those acrylic displays where cards sit one in front of another. That's why the important part goes up top: it's the only part that shows. You design it right here, pick the size, the paper and one of five layouts, and the builder shows you which part the display hides."
+  },
+  "includes": {
+    "es": [
+      "Medidas de 4 × 9, 3-1/2 × 8-1/2 y 4-1/4 × 11 in",
+      "Esquinas rectas o redondeadas",
+      "Papel brillante, mate, sin recubrir, reciclado, lino o perlado",
+      "Papel grueso o cartulina, por una cara o por las dos",
+      "Acabados: barniz por zonas y lámina dorada o plateada",
+      "Talón perforado para que se lleven tu teléfono o un cupón, con taller aliado"
+    ],
+    "en": [
+      "4 × 9, 3-1/2 × 8-1/2 and 4-1/4 × 11 in sizes",
+      "Square or rounded corners",
+      "Glossy, matte, uncoated, recycled, linen or pearl paper",
+      "Heavy paper or card stock, single- or double-sided",
+      "Finishes: spot gloss and gold or silver foil",
+      "Perforated stub so people can take your phone number or a coupon, through a partner shop"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Turismo y paseos",
+      "Hoteles y alquileres",
+      "Restaurantes",
+      "Spas y salones",
+      "Clínicas y consultorios",
+      "Ferias y eventos"
+    ],
+    "en": [
+      "Tours and attractions",
+      "Hotels and rentals",
+      "Restaurants",
+      "Spas and salons",
+      "Clinics and practices",
+      "Trade shows and events"
+    ]
+  },
+  "note": {
+    "es": "Si la quieres con talón, la perforación la hace un taller aliado y suma días a la entrega. Dinos para cuándo la necesitas y te confirmamos si llegamos.",
+    "en": "If you want it with a stub, the perforation is done by a partner shop and adds days to the delivery. Tell us when you need it and we'll confirm whether we make it."
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

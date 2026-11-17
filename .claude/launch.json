@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ltm-website",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-Command", "$env:Path = 'C:\\Program Files\\nodejs;' + $env:Path; $p = if ($env:PORT) { $env:PORT } else { 4321 }; Set-Location 'D:\\Claude Projects\\LTM Website'; npm run dev -- --port $p"],
+      "port": 4321,
+      "autoPort": true
+    }
+  ]
+}

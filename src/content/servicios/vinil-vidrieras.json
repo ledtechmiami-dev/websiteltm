@@ -1,0 +1,50 @@
+{
+  "nombre": "Vinil para vidrieras",
+  "linea": "graficos",
+  "orden": 1,
+  "nameEn": "Storefront stickers",
+  "slugEn": "storefront-stickers",
+  "short": {
+    "es": "Stickers, vinil de corte y esmerilado para vidrieras y puertas.",
+    "en": "Stickers, cut vinyl and frosted film for windows and doors."
+  },
+  "intro": {
+    "es": "Tu logo, horario y promociones en la vidriera. Vinil de corte, impreso o esmerilado para dar privacidad sin quitar luz.",
+    "en": "Your logo, hours and promotions on the window. Cut, printed or frosted vinyl for privacy without blocking light."
+  },
+  "includes": {
+    "es": [
+      "Vinil de corte o impreso",
+      "Vinil esmerilado (frosted)",
+      "Horario y datos de contacto",
+      "Instalación en el local"
+    ],
+    "en": [
+      "Cut or printed vinyl",
+      "Frosted vinyl",
+      "Hours and contact details",
+      "On-site installation"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Vidrieras",
+      "Puertas de vidrio",
+      "Oficinas",
+      "Promociones"
+    ],
+    "en": [
+      "Shop windows",
+      "Glass doors",
+      "Offices",
+      "Promotions"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

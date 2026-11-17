@@ -1,0 +1,50 @@
+{
+  "nombre": "Letreros no iluminados",
+  "linea": "letreros",
+  "orden": 5,
+  "nameEn": "Non-illuminated signs",
+  "slugEn": "non-illuminated-signs",
+  "short": {
+    "es": "Letras y paneles sin luz, en PVC, acrílico o metal.",
+    "en": "Unlit letters and panels in PVC, acrylic or metal."
+  },
+  "intro": {
+    "es": "Cuando el letrero no necesita luz: letras recortadas y paneles en PVC, acrílico o metal, para interiores y fachadas bien iluminadas.",
+    "en": "When the sign doesn't need light: cut letters and panels in PVC, acrylic or metal, for interiors and well-lit storefronts."
+  },
+  "includes": {
+    "es": [
+      "Letras recortadas en PVC, acrílico o metal",
+      "Paneles planos o con relieve",
+      "Pintura en el color de tu marca",
+      "Instalación"
+    ],
+    "en": [
+      "Cut letters in PVC, acrylic or metal",
+      "Flat or dimensional panels",
+      "Painted in your brand colors",
+      "Installation"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Interiores",
+      "Recepciones",
+      "Fachadas",
+      "Oficinas"
+    ],
+    "en": [
+      "Interiors",
+      "Lobbies",
+      "Storefronts",
+      "Offices"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

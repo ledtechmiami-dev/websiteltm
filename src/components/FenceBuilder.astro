@@ -1,0 +1,1791 @@
+---
+// Constructor de cercas de aluminio: el cliente elige el alto (4, 5 o 6 ft), el largo
+// total, el grosor de los postes y de qué va cada tablilla del panel. Las tablillas van
+// horizontales, con las medidas que fabrica el taller, y pueden combinarse dentro del
+// mismo panel: aluminio, PVC decorativo, acrílico o acrílico con luz LED. Se pueden
+// agregar y quitar tablillas; el espacio que sobra se reparte como separación. El diseño
+// del panel se repite en toda la cerca. También elige el color del aluminio (incluida la
+// simulación de madera), el color del PVC y si los topes de los postes van iluminados.
+// Ve la cerca de día y de noche con sus medidas y manda el diseño al correo. Sin precios.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+const HEIGHTS = [4, 5, 6]; // altos que fabrica el taller, en pies
+
+// Medidas de cada tablilla, en pulgadas, según el material
+const SIZES: Record<string, number[]> = {
+  aluminio: [2, 3, 4, 5],
+  pvc: [3.5, 5.5, 7.5, 9],
+  acrilico: [2, 2.5, 3, 3.5, 4],
+  led: [2, 2.5, 3, 3.5, 4], // la tira LED va dentro de una tablilla de acrílico
+};
+const DEF_SIZE: Record<string, number> = { aluminio: 5, pvc: 5.5, acrilico: 3, led: 3 };
+
+// Materiales de las tablillas. sw es la muestra de color que ve el cliente.
+const MATERIALS = [
+  { id: "aluminio", es: "Aluminio", en: "Aluminum", sw: "linear-gradient(180deg,#43484F,#17181B 62%,#30343A)" },
+  { id: "pvc", es: "PVC decorativo", en: "Decorative PVC", sw: "linear-gradient(180deg,#CEA077,#B5814A 42%,#7E5A33)" },
+  { id: "acrilico", es: "Acrílico", en: "Acrylic", sw: "linear-gradient(180deg,#E8F6FD,#9ED2EA 62%,#D2EAF6)" },
+  { id: "led", es: "Luz LED (acrílico)", en: "LED light (acrylic)", sw: "linear-gradient(180deg,#16181F 28%,#FFC98A 50%,#16181F 72%)" },
+];
+// Acabado del aluminio: postes, marco y tablillas de aluminio
+const COLORS = [
+  { id: "negro", hex: "#1D1E21", es: "Negro", en: "Black" },
+  { id: "blanco", hex: "#ECEBE6", es: "Blanco", en: "White" },
+  { id: "bronce", hex: "#4A3526", es: "Bronce", en: "Bronze" },
+  { id: "plata", hex: "#A7ACB1", es: "Plata", en: "Silver" },
+  { id: "madera", hex: "#8A5A32", wood: true, es: "Simulación de madera", en: "Wood look" },
+];
+// Color del PVC decorativo
+const PVCS = [
+  { id: "negro-mate", hex: "#1F1F21", es: "Negro mate", en: "Matte black" },
+  { id: "marron", hex: "#47301F", wood: true, es: "Marrón oscuro", en: "Dark brown" },
+  { id: "roble", hex: "#B5814A", wood: true, es: "Roble", en: "Oak" },
+  { id: "nogal", hex: "#7A4A2B", wood: true, es: "Nogal", en: "Walnut" },
+  { id: "gris-claro", hex: "#B7B4AE", es: "Gris claro", en: "Light gray" },
+  { id: "gris-oscuro", hex: "#56595B", es: "Gris oscuro", en: "Dark gray" },
+  { id: "blanco", hex: "#F0EEE8", es: "Blanco", en: "White" },
+];
+// Patrones del panel decorativo de una sola pieza, cortado con CNC
+const PATS = [
+  { id: "flor", es: "Flor", en: "Flower" },
+  { id: "tropical", es: "Tropical", en: "Tropical" },
+  { id: "celosia", es: "Celosía", en: "Lattice" },
+  { id: "panal", es: "Panal", en: "Honeycomb" },
+  { id: "juncos", es: "Juncos", en: "Reeds" },
+  { id: "corte22", es: "Corte 22°", en: "22° cut" },
+];
+// Color de la luz LED (tablillas iluminadas y topes con luz)
+const LIGHTS = [
+  { id: "calido", hex: "#FFC98A", es: "Blanco cálido", en: "Warm white" },
+  { id: "frio", hex: "#EAF4FF", es: "Blanco frío", en: "Cool white" },
+  { id: "azul", hex: "#4FA8FF", es: "Azul", en: "Blue" },
+  { id: "rgb", hex: "#FF4FD8", es: "RGB (cambia de color)", en: "RGB (color changing)" },
+];
+
+const COPY = {
+  es: {
+    title: "Diseña tu cerca",
+    lead: "Elige el alto, el largo y de qué va cada tablilla. Las tablillas van horizontales, puedes agregar o quitar las que quieras y combinar aluminio, PVC decorativo, acrílico y luz LED en el mismo panel. Míralo de día y de noche y mándanos el diseño; te respondemos con el precio.",
+    height: "Alto de la cerca",
+    heightHelp: "Fabricamos cercas de 4, 5 y 6 pies de alto.",
+    len: "Largo total",
+    lenLbl: "Largo en pies (ft)",
+    lenHelp: "Cada panel mide máximo {m} ft. Repartimos el largo en paneles iguales y contamos los postes.",
+    lenOut: "Paneles y postes",
+    outFmt: "{n} paneles de {w} · {p} postes",
+    outFmt1: "1 panel de {w} · {p} postes",
+    post: "Postes",
+    postOpts: { "3": "3 in", "4": "4 in" },
+    postHelp: "Postes de aluminio de 3 o 4 pulgadas, según el alto y el viento de la zona.",
+    material: "Material del panel",
+    modes: { unico: "Un solo material", combinada: "Combinada", panel: "Panel decorativo" },
+    sizeLbl: "Medida de la tablilla",
+    matHelp: {
+      aluminio: "Tablilla de aluminio horizontal, de 2, 3, 4 o 5 in. No se oxida y deja pasar el aire.",
+      pvc: "Tablilla de PVC decorativo con ranuras y textura de madera, de 3-1/2, 5-1/2, 7-1/2 o 9 in. Tapa la vista y da privacidad.",
+      acrilico: "Tablilla de acrílico traslúcido, de 2 a 4 in. Deja pasar la luz sin dejar ver del todo.",
+      led: "La tira LED va instalada dentro de una tablilla de acrílico, de 2 a 4 in. De noche la cerca se ve encendida.",
+    },
+    panelHelp: "En vez de tablillas, cada panel es una sola lámina de aluminio con el dibujo cortado en CNC. Da privacidad y deja pasar el aire y la luz. Solo en aluminio. Por el peso de la lámina, a 4 ft de alto el panel llega hasta 6 ft de largo; a 5 y 6 ft de alto, hasta 4 ft.",
+    pattern: "Patrón del corte",
+    patternHelp: "Cortamos el dibujo a la medida de tu panel. ¿Quieres otro? Escríbelo en las notas y te mandamos el plano.",
+    pattern2: "Patrón de los tramos pares",
+    onePiece: "Panel de una sola pieza",
+    vary: "Variación tramo por tramo",
+    varyOpts: { igual: "Todos iguales", alterna: "Alternados" },
+    varyHelpPat: "Los tramos se van alternando entre los dos patrones: uno, el otro, uno, el otro.",
+    varyHelpSlat: "Los tramos pares llevan el mismo diseño volteado de arriba abajo. Se nota cuando el panel combina materiales o medidas distintas.",
+    design: "Diseño del panel",
+    designHelp: "Toca una tablilla para ponerle el material elegido y cámbiale la medida al lado. Agrega o quita las que quieras: el espacio que sobra se reparte como separación. Con «Llenar el panel» se agregan tablillas hasta cubrirlo completo, sin espacios. El mismo diseño se repite en todos los paneles; en «Variación tramo por tramo» puedes alternarlos.",
+    slatN: "Tablilla {n}",
+    slatsOut: "{n} tablillas por panel",
+    slatsOut1: "1 tablilla por panel",
+    addSlat: "Agregar tablilla",
+    delSlat: "Quitar la tablilla {n}",
+    sizeOf: "Medida de la tablilla {n}",
+    budget: "{n} tablillas suman {used} de {inner} · separación de {gap}",
+    // Con una sola tablilla no hay separación que repartir: lo que sobra es hueco
+    budget1: "1 tablilla ocupa {used} de {inner} · queda {free} libre",
+    budgetFull: "{n} tablillas cubren el panel completo de {inner} · sin espacios",
+    noFit: "Ahí ya no cabe: quita una tablilla o usa una medida más chica.",
+    fillPanel: "Llenar el panel",
+    fillAll: "Todas iguales",
+    half: "Mitad y mitad",
+    alternate: "Alternadas",
+    colorsLbl: "Colores de las tablillas",
+    colorModes: { uno: "Uno solo", varios: "Por tablilla" },
+    multiHelp: "Elige el color más abajo y toca las tablillas que quieras de ese color. El acrílico y la luz LED no llevan color.",
+    color: "Color de las tablillas de aluminio",
+    panelColor: "Color del panel de aluminio",
+    colorBrush: "Color de aluminio para pintar",
+    pvcBrushColor: "Color de PVC para pintar",
+    postColor: "Color de los postes y el marco",
+    pvcColor: "Color del PVC",
+    caps: "Topes de los postes",
+    capsOpts: { luz: "Iluminados", simple: "Sin luz" },
+    capsHelp: "El tope iluminado lleva un LED dentro del remate de cada poste.",
+    light: "Color de la luz",
+    order: "Instalación y lugar",
+    installs: { si: "Con instalación", no: "Solo la cerca" },
+    use: "¿Dónde va?",
+    uses: { casa: "Casa", piscina: "Piscina", negocio: "Negocio" },
+    night: "Noche",
+    approx: "Vista aproximada · los colores reales varían",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h.",
+    cta: "Cotizar esta cerca",
+    wa: "Enviar por WhatsApp",
+    gate: "¿Lleva puerta o portón?",
+    gateHelp: "Escríbelo en las notas y lo incluimos en la cotización.",
+    notesPh: "Medidas del terreno, si lleva puerta, desniveles, dirección…",
+    preview: "Vista previa de la cerca",
+    of: "{a} de {b} paneles",
+    totalLbl: "Largo total",
+    each: "c/u",
+    summary: "Diseño del constructor de cercas",
+    sHeight: "Alto",
+    sLen: "Largo total",
+    sPanels: "Paneles",
+    sPanelMax: "máx. {m} ft por panel",
+    sPosts: "Postes",
+    sPostsVal: "{n} de {s} in",
+    sSlats: "Tablillas",
+    sSlatsVal: "{n} por panel, horizontales",
+    sSlatsVal1: "1 por panel, horizontal",
+    sGap: "Separación entre tablillas",
+    sNoGap: "sin espacios, panel cerrado",
+    sFree: "Espacio libre en el panel",
+    sMaterial: "Material",
+    sMatVal: "{m} en tablillas de {s}",
+    sPanel: "Panel",
+    sPanelVal: "De una sola pieza, lámina de aluminio cortada en CNC",
+    sPattern: "Patrón del corte",
+    sVary: "Variación tramo por tramo",
+    sVarySame: "todos los tramos iguales",
+    sVaryPat: "tramos alternados: {a} y {b}",
+    sVaryFlip: "tramos alternados: el mismo diseño volteado de arriba abajo",
+    sDesign: "Diseño del panel (de arriba a abajo)",
+    sRun: "{q} {m} de {s}",
+    sRunC: "{q} {m} {c} de {s}",
+    sColor: "Color de las tablillas de aluminio",
+    sPostColor: "Color de los postes y el marco",
+    sPvc: "Color del PVC",
+    sCaps: "Topes de los postes",
+    sLight: "Color de la luz",
+    sInstall: "Instalación",
+    sUse: "Dónde va",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesa esta cerca:",
+  },
+  en: {
+    title: "Design your fence",
+    lead: "Pick the height, the length and what each slat is made of. Slats run horizontally, you can add or remove as many as you want and combine aluminum, decorative PVC, acrylic and LED light in the same panel. See it by day and by night and send us the design; we'll reply with the price.",
+    height: "Fence height",
+    heightHelp: "We build fences 4, 5 and 6 feet tall.",
+    len: "Total length",
+    lenLbl: "Length in feet (ft)",
+    lenHelp: "Each panel is {m} ft long at most. We split the length into equal panels and count the posts.",
+    lenOut: "Panels and posts",
+    outFmt: "{n} panels {w} wide · {p} posts",
+    outFmt1: "1 panel {w} wide · {p} posts",
+    post: "Posts",
+    postOpts: { "3": "3 in", "4": "4 in" },
+    postHelp: "Aluminum posts 3 or 4 inches thick, depending on the height and the wind in your area.",
+    material: "Panel material",
+    modes: { unico: "One material", combinada: "Mixed", panel: "Decorative panel" },
+    sizeLbl: "Slat size",
+    matHelp: {
+      aluminio: "Horizontal aluminum slat, 2, 3, 4 or 5 in. It won't rust and lets the air through.",
+      pvc: "Decorative PVC slat with grooves and wood texture, 3-1/2, 5-1/2, 7-1/2 or 9 in. It blocks the view and gives you privacy.",
+      acrilico: "Translucent acrylic slat, 2 to 4 in. It lets light through without full view.",
+      led: "The LED strip goes inside an acrylic slat, 2 to 4 in. At night the fence glows.",
+    },
+    panelHelp: "Instead of slats, each panel is a single aluminum sheet with the design CNC-cut into it. It gives privacy and still lets air and light through. Aluminum only. Because of the sheet's weight, a 4 ft tall panel can be up to 6 ft long; at 5 and 6 ft tall, up to 4 ft.",
+    pattern: "Cut pattern",
+    patternHelp: "We cut the design to the size of your panel. Want a different one? Add it to the notes and we'll send you the drawing.",
+    pattern2: "Pattern for every other panel",
+    onePiece: "One-piece panel",
+    vary: "Panel-by-panel variation",
+    varyOpts: { igual: "All the same", alterna: "Alternating" },
+    varyHelpPat: "Panels alternate between the two patterns: one, the other, one, the other.",
+    varyHelpSlat: "Every other panel runs the same design flipped top to bottom. You'll see it when the panel mixes materials or sizes.",
+    design: "Panel design",
+    designHelp: "Tap a slat to give it the material you picked and change its size next to it. Add or remove as many as you want: the space left over is shared out as spacing. \"Fill the panel\" adds slats until it is fully covered, with no gaps. The same design repeats on every panel; use \"Panel-by-panel variation\" to alternate them.",
+    slatN: "Slat {n}",
+    slatsOut: "{n} slats per panel",
+    slatsOut1: "1 slat per panel",
+    addSlat: "Add a slat",
+    delSlat: "Remove slat {n}",
+    sizeOf: "Size of slat {n}",
+    budget: "{n} slats add up to {used} of {inner} · {gap} spacing",
+    // Con una sola tablilla no hay separación que repartir: lo que sobra es hueco
+    budget1: "1 slat takes up {used} of {inner} · {free} left over",
+    budgetFull: "{n} slats cover the whole {inner} panel · no gaps",
+    noFit: "That no longer fits: remove a slat or pick a smaller size.",
+    fillPanel: "Fill the panel",
+    fillAll: "All the same",
+    half: "Half and half",
+    alternate: "Alternating",
+    colorsLbl: "Slat colors",
+    colorModes: { uno: "One color", varios: "Per slat" },
+    multiHelp: "Pick the color further down and tap the slats you want in that color. Acrylic and LED light have no color.",
+    color: "Aluminum slat color",
+    panelColor: "Aluminum panel color",
+    colorBrush: "Aluminum color to paint with",
+    pvcBrushColor: "PVC color to paint with",
+    postColor: "Post and frame color",
+    pvcColor: "PVC color",
+    caps: "Post caps",
+    capsOpts: { luz: "Lit", simple: "Not lit" },
+    capsHelp: "A lit cap has an LED inside the top of each post.",
+    light: "Light color",
+    order: "Installation and location",
+    installs: { si: "With installation", no: "Fence only" },
+    use: "Where does it go?",
+    uses: { casa: "Home", piscina: "Pool", negocio: "Business" },
+    night: "Night",
+    approx: "Approximate preview · real colors vary",
+    price: "Price: we send it with your quote, in under 24 hours.",
+    cta: "Quote this fence",
+    wa: "Send on WhatsApp",
+    gate: "Do you need a gate?",
+    gateHelp: "Add it to the notes and we'll include it in the quote.",
+    notesPh: "Property measurements, gate, slopes, address…",
+    preview: "Fence preview",
+    of: "{a} of {b} panels",
+    totalLbl: "Total length",
+    each: "each",
+    summary: "Fence builder design",
+    sHeight: "Height",
+    sLen: "Total length",
+    sPanels: "Panels",
+    sPanelMax: "{m} ft per panel max",
+    sPosts: "Posts",
+    sPostsVal: "{n}, {s} in",
+    sSlats: "Slats",
+    sSlatsVal: "{n} per panel, horizontal",
+    sSlatsVal1: "1 per panel, horizontal",
+    sGap: "Spacing between slats",
+    sNoGap: "none, closed panel",
+    sFree: "Open space in the panel",
+    sMaterial: "Material",
+    sMatVal: "{m}, {s} slats",
+    sPanel: "Panel",
+    sPanelVal: "One piece, CNC-cut aluminum sheet",
+    sPattern: "Cut pattern",
+    sVary: "Panel-by-panel variation",
+    sVarySame: "every panel the same",
+    sVaryPat: "alternating panels: {a} and {b}",
+    sVaryFlip: "alternating panels: the same design flipped top to bottom",
+    sDesign: "Panel design (top to bottom)",
+    sRun: "{q} × {m} {s}",
+    sRunC: "{q} × {m} {c} {s}",
+    sColor: "Aluminum slat color",
+    sPostColor: "Post and frame color",
+    sPvc: "PVC color",
+    sCaps: "Post caps",
+    sLight: "Light color",
+    sInstall: "Installation",
+    sUse: "Where it goes",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in this fence:",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  materials: MATERIALS.map((m) => ({ id: m.id, name: m[lang], sw: m.sw })),
+  colors: COLORS.map((x) => ({ id: x.id, hex: x.hex, wood: Boolean(x.wood), name: x[lang] })),
+  pvcs: PVCS.map((x) => ({ id: x.id, hex: x.hex, wood: Boolean(x.wood), name: x[lang] })),
+  lights: LIGHTS.map((x) => ({ id: x.id, hex: x.hex, name: x[lang] })),
+  pats: PATS.map((x) => ({ id: x.id, name: x[lang] })),
+  sizes: SIZES,
+  defSize: DEF_SIZE,
+  modes: c.modes,
+  colorModes: c.colorModes,
+  matHelp: c.matHelp,
+  panelHelp: c.panelHelp,
+  capsOpts: c.capsOpts,
+  installs: c.installs,
+  uses: c.uses,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    outFmt: c.outFmt,
+    outFmt1: c.outFmt1,
+    lenHelp: c.lenHelp,
+    slatN: c.slatN,
+    slatsOut: c.slatsOut,
+    slatsOut1: c.slatsOut1,
+    onePiece: c.onePiece,
+    sPanel: c.sPanel,
+    sPanelVal: c.sPanelVal,
+    sPattern: c.sPattern,
+    varyHelpPat: c.varyHelpPat,
+    varyHelpSlat: c.varyHelpSlat,
+    sVary: c.sVary,
+    sVarySame: c.sVarySame,
+    sVaryPat: c.sVaryPat,
+    sVaryFlip: c.sVaryFlip,
+    delSlat: c.delSlat,
+    sizeOf: c.sizeOf,
+    budget: c.budget,
+    budget1: c.budget1,
+    budgetFull: c.budgetFull,
+    noFit: c.noFit,
+    preview: c.preview,
+    of: c.of,
+    totalLbl: c.totalLbl,
+    each: c.each,
+    summary: c.summary,
+    sHeight: c.sHeight,
+    sLen: c.sLen,
+    sPanels: c.sPanels,
+    sPanelMax: c.sPanelMax,
+    sPosts: c.sPosts,
+    sPostsVal: c.sPostsVal,
+    sSlats: c.sSlats,
+    sSlatsVal: c.sSlatsVal,
+    sSlatsVal1: c.sSlatsVal1,
+    sGap: c.sGap,
+    sNoGap: c.sNoGap,
+    sFree: c.sFree,
+    sMaterial: c.sMaterial,
+    sMatVal: c.sMatVal,
+    sDesign: c.sDesign,
+    sRun: c.sRun,
+    sRunC: c.sRunC,
+    color: c.color,
+    panelColor: c.panelColor,
+    colorBrush: c.colorBrush,
+    pvcColor: c.pvcColor,
+    pvcBrushColor: c.pvcBrushColor,
+    sColor: c.sColor,
+    sPostColor: c.sPostColor,
+    sPvc: c.sPvc,
+    sCaps: c.sCaps,
+    sLight: c.sLight,
+    sInstall: c.sInstall,
+    sUse: c.sUse,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+  },
+};
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+---
+<section class="section" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb fb" data-fence data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage">
+        <canvas class="nb__canvas fb__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-night aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.night}
+          </button>
+        </div>
+        <p class="nb__approx">{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.height}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.height}>
+            {HEIGHTS.map((h) => (
+              <label>
+                <input type="radio" name="alto" value={h} checked={h === 5} />
+                <span>{h} ft</span>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help"><span data-slats-out></span> · {c.heightHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.len}</legend>
+          <div class="eb__row">
+            <div class="field">
+              <label for="fb-largo">{c.lenLbl}</label>
+              <input id="fb-largo" type="number" name="largo" min="4" max="400" step="1" value="40" inputmode="numeric" />
+            </div>
+          </div>
+          <div class="cl__len">
+            <span>{c.lenOut}</span>
+            <output data-panels-out>—</output>
+          </div>
+          <p class="nb__help" data-len-help></p>
+          <p class="tb__sub">{c.post}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.post}>
+            {seg("postes", c.postOpts, "4").map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.postHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.material}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.material}>
+            {seg("modo", c.modes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <div class="nb__colors" data-mats>
+            {MATERIALS.map((m, i) => (
+              <label class="nb__color fb__mat">
+                <input type="radio" name="material" value={m.id} checked={i === 0} />
+                <i style={`--c:${m.sw}`} aria-hidden="true"></i>
+                <span>{m[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help" data-mat-help>{c.matHelp.aluminio}</p>
+          <div class="fb__size-row" data-size-row>
+            <label class="fb__size-lbl" for="fb-medida">{c.sizeLbl}</label>
+            <select class="fb__size" id="fb-medida" name="medida"></select>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group" data-pat-group hidden>
+          <legend class="nb__label">{c.pattern}</legend>
+          <div class="fb__pats" role="radiogroup" aria-label={c.pattern}>
+            {PATS.map((p, i) => (
+              <label class="fb__pat">
+                <input type="radio" name="patron" value={p.id} checked={i === 0} />
+                <canvas width="208" height="112" aria-hidden="true"></canvas>
+                <span>{p[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help">{c.patternHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group" data-vary-group hidden>
+          <legend class="nb__label">{c.vary}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.vary}>
+            {seg("variacion", c.varyOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-vary-help></p>
+        </fieldset>
+
+        <fieldset class="nb__group" data-pat2-group hidden>
+          <legend class="nb__label">{c.pattern2}</legend>
+          <div class="fb__pats" role="radiogroup" aria-label={c.pattern2}>
+            {PATS.map((p) => (
+              <label class="fb__pat">
+                <input type="radio" name="patron2" value={p.id} checked={p.id === "celosia"} />
+                <canvas width="208" height="112" aria-hidden="true"></canvas>
+                <span>{p[lang]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group" data-mix hidden>
+          <legend class="nb__label">{c.design}</legend>
+          <p class="nb__help">{c.designHelp}</p>
+          <p class="tb__sub">{c.colorsLbl}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.colorsLbl}>
+            {seg("colores", c.colorModes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-multi-help hidden>{c.multiHelp}</p>
+          <div class="fb__slats" data-slats></div>
+          <p class="nb__help" data-budget></p>
+          <div class="fb__quick">
+            <button type="button" class="nb__pill" data-add>{c.addSlat}</button>
+            <button type="button" class="nb__pill" data-close>{c.fillPanel}</button>
+            <button type="button" class="nb__pill" data-fill>{c.fillAll}</button>
+            <button type="button" class="nb__pill" data-half>{c.half}</button>
+            <button type="button" class="nb__pill" data-alt>{c.alternate}</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group" data-alu-group>
+          <legend class="nb__label"><span data-color-lbl>{c.color}</span>: <span class="eb__picked" data-color-name></span></legend>
+          <div class="eb__sws">
+            {COLORS.map((x) => (
+              <label class="eb__sw" title={x[lang]}>
+                <input type="radio" name="color" value={x.id} checked={x.id === "negro"} aria-label={x[lang]} />
+                <i style={`--c:${x.wood ? `linear-gradient(145deg,#B98A52,${x.hex} 48%,#5E3C21)` : x.hex}`} aria-hidden="true"></i>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.postColor}: <span class="eb__picked" data-pcolor-name></span></legend>
+          <div class="eb__sws">
+            {COLORS.map((x) => (
+              <label class="eb__sw" title={x[lang]}>
+                <input type="radio" name="cpostes" value={x.id} checked={x.id === "negro"} aria-label={x[lang]} />
+                <i style={`--c:${x.wood ? `linear-gradient(145deg,#B98A52,${x.hex} 48%,#5E3C21)` : x.hex}`} aria-hidden="true"></i>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group" data-pvc-group hidden>
+          <legend class="nb__label"><span data-pvc-lbl>{c.pvcColor}</span>: <span class="eb__picked" data-pvc-name></span></legend>
+          <div class="eb__sws">
+            {PVCS.map((x) => (
+              <label class="eb__sw" title={x[lang]}>
+                <input type="radio" name="pvc" value={x.id} checked={x.id === "roble"} aria-label={x[lang]} />
+                <i style={`--c:${x.wood ? `linear-gradient(145deg,#D8A879,${x.hex} 48%,#4A2E18)` : x.hex}`} aria-hidden="true"></i>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.caps}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.caps} aria-describedby="fb-caps-help">
+            {seg("topes", c.capsOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="fb-caps-help">{c.capsHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group" data-light-group>
+          <legend class="nb__label">{c.light}: <span class="eb__picked" data-light-name></span></legend>
+          <div class="eb__sws">
+            {LIGHTS.map((x) => (
+              <label class="eb__sw" title={x[lang]}>
+                <input type="radio" name="luz" value={x.id} checked={x.id === "calido"} aria-label={x[lang]} />
+                <i class="cl__glow" style={`--c:${x.hex}`} aria-hidden="true"></i>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.order}>
+            {seg("instal", c.installs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.use}</p>
+          <div class="nb__seg eb__seg3" role="radiogroup" aria-label={c.use}>
+            {seg("uso", c.uses).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="fb" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+          <p class="nb__logo">{c.gate} <span>{c.gateHelp}</span></p>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Swatch = { id: string; hex: string; wood?: boolean; name: string };
+  type Material = { id: string; name: string; sw: string };
+  type Slat = { m: string; s: number; c?: string }; // c: color propio de esa tablilla
+  type Cfg = {
+    materials: Material[];
+    colors: Swatch[];
+    pvcs: Swatch[];
+    lights: Swatch[];
+    pats: { id: string; name: string }[];
+    panelHelp: string;
+    sizes: Record<string, number[]>;
+    defSize: Record<string, number>;
+    modes: Record<string, string>;
+    colorModes: Record<string, string>;
+    matHelp: Record<string, string>;
+    capsOpts: Record<string, string>;
+    installs: Record<string, string>;
+    uses: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+
+  const PANEL_MAX = 6; // largo máximo de cada panel de tablillas, en pies
+  // El panel decorativo es una lámina entera: a 5 y 6 ft de alto pesa demasiado
+  // para hacerlo de 6 ft de largo, así que se queda en 4 ft
+  const PANEL_MAX_CNC: Record<number, number> = { 4: 6, 5: 4, 6: 4 };
+  const BASE_IN = 2; // la cerca no toca el piso
+  const RAIL_IN = 2; // riel de arriba y de abajo del panel
+  const MIN_GAP = 0.75; // separación mínima entre tablillas, en pulgadas
+  const MAX_SLATS = 40;
+  const MIN_LEN = 4;
+  const MAX_LEN = 400;
+  const M_FT = 0.3048;
+  const MIN_PANEL_PX = 110; // debajo de esto no se ven las tablillas: se dibuja solo un tramo
+  const RGB_CYCLE = ["#FF3B6B", "#FFC414", "#3DEB6A", "#3C8BFF", "#B45CFF"];
+  const CODE: Record<string, string> = { aluminio: "a", pvc: "p", acrilico: "c", led: "l" };
+  const FROM_CODE: Record<string, string> = { a: "aluminio", p: "pvc", c: "acrilico", l: "led" };
+
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const hx = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+  const mix = (hex: string, to: number[], t: number) => {
+    const [r, g, b] = rgb(hex);
+    return `rgb(${Math.round(r + (to[0] - r) * t)},${Math.round(g + (to[1] - g) * t)},${Math.round(b + (to[2] - b) * t)})`;
+  };
+  const mixHex = (hex: string, to: number[], t: number) => {
+    const [r, g, b] = rgb(hex);
+    return `#${hx(r + (to[0] - r) * t)}${hx(g + (to[1] - g) * t)}${hx(b + (to[2] - b) * t)}`;
+  };
+  const alpha = (hex: string, a: number) => `rgba(${rgb(hex).join(",")},${a})`;
+  const BLACK = [0, 0, 0];
+  const WHITE = [255, 255, 255];
+
+  // 3.5 → 3-1/2 in
+  const fmtIn = (v: number) => {
+    const w = Math.floor(v + 1e-6);
+    let f = Math.round((v - w) * 8);
+    if (f === 8) return `${w + 1} in`;
+    if (f === 0) return `${w} in`;
+    let den = 8;
+    while (f % 2 === 0) {
+      f /= 2;
+      den /= 2;
+    }
+    return `${w ? `${w}-` : ""}${f}/${den} in`;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-fence]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const stage = root.querySelector<HTMLElement>(".nb__stage")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".fb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const lenEl = form.querySelector<HTMLInputElement>("input[name='largo']")!;
+    const sizeEl = form.querySelector<HTMLSelectElement>("#fb-medida")!;
+    const panelsOut = form.querySelector<HTMLOutputElement>("[data-panels-out]")!;
+    const slatsOut = form.querySelector<HTMLElement>("[data-slats-out]")!;
+    const lenHelp = form.querySelector<HTMLElement>("[data-len-help]")!;
+    const matHelp = form.querySelector<HTMLElement>("[data-mat-help]")!;
+    const matsBox = form.querySelector<HTMLElement>("[data-mats]")!;
+    const sizeRow = form.querySelector<HTMLElement>("[data-size-row]")!;
+    const patGroup = form.querySelector<HTMLFieldSetElement>("[data-pat-group]")!;
+    const pat2Group = form.querySelector<HTMLFieldSetElement>("[data-pat2-group]")!;
+    const varyGroup = form.querySelector<HTMLFieldSetElement>("[data-vary-group]")!;
+    const varyHelp = form.querySelector<HTMLElement>("[data-vary-help]")!;
+    const mixBox = form.querySelector<HTMLElement>("[data-mix]")!;
+    const slatList = form.querySelector<HTMLElement>("[data-slats]")!;
+    const budget = form.querySelector<HTMLElement>("[data-budget]")!;
+    const addBtn = form.querySelector<HTMLButtonElement>("[data-add]")!;
+    const closeBtn = form.querySelector<HTMLButtonElement>("[data-close]")!;
+    const multiHelp = form.querySelector<HTMLElement>("[data-multi-help]")!;
+    const aluGroup = form.querySelector<HTMLFieldSetElement>("[data-alu-group]")!;
+    const colorLbl = form.querySelector<HTMLElement>("[data-color-lbl]")!;
+    const pvcLbl = form.querySelector<HTMLElement>("[data-pvc-lbl]")!;
+    const colorName = form.querySelector<HTMLElement>("[data-color-name]")!;
+    const pcolorName = form.querySelector<HTMLElement>("[data-pcolor-name]")!;
+    const pvcGroup = form.querySelector<HTMLFieldSetElement>("[data-pvc-group]")!;
+    const pvcName = form.querySelector<HTMLElement>("[data-pvc-name]")!;
+    const lightGroup = form.querySelector<HTMLFieldSetElement>("[data-light-group]")!;
+    const lightName = form.querySelector<HTMLElement>("[data-light-name]")!;
+    const nightBtn = root.querySelector<HTMLButtonElement>("[data-night]")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    let night = false;
+    let touched = false;
+    let design: Slat[] = []; // cada tablilla del panel, de arriba hacia abajo
+    let savedMix: Slat[] | null = null; // el diseño combinado se guarda al cambiar a un solo material
+    let warn = false; // se pidió algo que ya no cabe en el panel
+    let wasClosed = false; // el panel estaba cerrado en el dibujo anterior
+    let pendingSize: number | null = null; // medida que viene en la dirección
+    // Geometría del último dibujo, para saber qué tablilla se tocó. Con tramos
+    // alternados, el tramo volteado tiene sus tablillas en otras alturas (ysF).
+    let hit = { x0: 0, x1: 0, w: 0, vary: false, ys: [] as number[][], ysF: [] as number[][] };
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList | HTMLInputElement).value;
+    const heightFt = () => Number(val("alto"));
+    const postIn = () => Number(val("postes"));
+    const innerIn = () => heightFt() * 12 - BASE_IN - RAIL_IN * 2;
+    const lengthFt = () => {
+      const v = Number(lenEl.value);
+      return Number.isFinite(v) ? Math.min(MAX_LEN, Math.max(MIN_LEN, v)) : 40;
+    };
+    const panelMax = () => (panelMode() ? (PANEL_MAX_CNC[heightFt()] ?? 4) : PANEL_MAX);
+    const count = () => Math.max(1, Math.ceil(lengthFt() / panelMax()));
+    const panelFt = () => lengthFt() / count();
+    const mixed = () => val("modo") === "combinada";
+    // Panel de una sola pieza: lámina de aluminio con el dibujo cortado en CNC
+    const panelMode = () => val("modo") === "panel";
+    const pattern = () => cfg.pats.find((p) => p.id === val("patron")) ?? cfg.pats[0];
+    const pattern2 = () => cfg.pats.find((p) => p.id === val("patron2")) ?? cfg.pats[0];
+    // Alternar tramos solo tiene sentido si hay más de un tramo y algo que alternar
+    const canVary = () => count() > 1 && (mixed() || panelMode());
+    const varied = () => canVary() && val("variacion") === "alterna";
+    const material = () => cfg.materials.find((m) => m.id === val("material")) ?? cfg.materials[0];
+    const color = () => cfg.colors.find((x) => x.id === val("color")) ?? cfg.colors[0];
+    const postColor = () => cfg.colors.find((x) => x.id === val("cpostes")) ?? cfg.colors[0];
+    const pvc = () => cfg.pvcs.find((x) => x.id === val("pvc")) ?? cfg.pvcs[0];
+    const light = () => cfg.lights.find((x) => x.id === val("luz")) ?? cfg.lights[0];
+    const litCaps = () => val("topes") === "luz";
+    const nameOf = (id: string) => cfg.materials.find((m) => m.id === id)?.name ?? id;
+    const sizesOf = (id: string) => cfg.sizes[id] ?? cfg.sizes.aluminio;
+    // Colores por tablilla: solo el aluminio y el PVC tienen dónde elegir
+    const multiOn = () => val("colores") === "varios";
+    const multi = () => mixed() && multiOn();
+    const colorsFor = (m: string) => (m === "aluminio" ? cfg.colors : m === "pvc" ? cfg.pvcs : null);
+    const pickedColor = (m: string) => (m === "aluminio" ? color() : m === "pvc" ? pvc() : null);
+    const slatColor = (d: Slat) => {
+      const list = colorsFor(d.m);
+      if (!list) return null;
+      if (multi() && d.c) return list.find((x) => x.id === d.c) ?? pickedColor(d.m);
+      return pickedColor(d.m);
+    };
+    const brush = (): Slat => {
+      const m = material().id;
+      return { m, s: Number(sizeEl.value) || cfg.defSize[m], c: pickedColor(m)?.id };
+    };
+    const anyLed = () => litCaps() || (!panelMode() && design.some((d) => d.m === "led"));
+    const anyPvc = () => !panelMode() && design.some((d) => d.m === "pvc");
+    const anyAlu = () => panelMode() || design.some((d) => d.m === "aluminio");
+
+    // El espacio que sobra se reparte como separación entre tablillas
+    const used = (arr: Slat[] = design) => arr.reduce((a, d) => a + d.s, 0);
+    // Tope duro: las tablillas pueden llegar a tocarse y cerrar el panel
+    const fits = (arr: Slat[]) => used(arr) <= innerIn() + 1e-6;
+    // Los diseños que arma el constructor dejan siempre una separación mínima
+    const fitsOpen = (arr: Slat[]) => used(arr) + Math.max(0, arr.length - 1) * MIN_GAP <= innerIn() + 1e-6;
+    const gapIn = () => (design.length > 1 ? (innerIn() - used()) / (design.length - 1) : 0);
+    const closed = () => innerIn() - used() < 0.05;
+    const packCount = (s: number) => Math.max(1, Math.floor((innerIn() + MIN_GAP) / (s + MIN_GAP)));
+    const fillAll = (m: string, s: number): Slat[] =>
+      Array.from({ length: packCount(s) }, () => ({ m, s, c: pickedColor(m)?.id }));
+    // Al cambiar el alto se repite el mismo diseño hasta llenar el panel nuevo.
+    // `tight` lo aprieta hasta cerrarlo; si no, respeta la separación mínima.
+    const repeat = (tight: boolean) => {
+      const base = design.length ? design.map((d) => ({ ...d })) : fillAll(material().id, brush().s);
+      const ok = tight ? fits : fitsOpen;
+      const out: Slat[] = [];
+      for (let k = 0; k < MAX_SLATS; k++) {
+        const it = { ...base[k % base.length] };
+        if (!ok([...out, it])) break;
+        out.push(it);
+      }
+      return { base, out: out.length ? out : [{ ...base[0] }] };
+    };
+    const refit = () => {
+      design = repeat(false).out;
+    };
+
+    // Cerrar el panel: se agregan tablillas hasta cubrirlo completo, sin espacios.
+    // Lo que falte al final se cierra exacto con una o dos tablillas de la medida justa.
+    // Las medidas con que se puede cerrar, de la más grande a la más chica. Se buscan
+    // primero entre los materiales que ya están en el diseño, para no meter uno nuevo.
+    const sizePool = (mats: string[]) => {
+      const out: Slat[] = [];
+      for (const m of mats)
+        for (const s of sizesOf(m)) if (!out.some((o) => o.s === s)) out.push({ m, s, c: pickedColor(m)?.id });
+      return out.sort((a, b) => b.s - a.s);
+    };
+    const closeWith = (rest: number, pool: Slat[]): Slat[] | null => {
+      for (const a of pool) if (Math.abs(a.s - rest) < 1e-6) return [a];
+      for (const a of pool) for (const b of pool) if (Math.abs(a.s + b.s - rest) < 1e-6) return [a, b];
+      for (const a of pool)
+        for (const b of pool) for (const c of pool) if (Math.abs(a.s + b.s + c.s - rest) < 1e-6) return [a, b, c];
+      return null;
+    };
+    const closeDesign = () => {
+      const { base, out } = repeat(true);
+      const mats = [...new Set(base.map((d) => d.m))];
+      // Si lo que falta no se puede cerrar exacto, se suelta la última tablilla y se reintenta
+      const tryClose = (pool: Slat[]) => {
+        let rest = innerIn() - used(out);
+        for (let i = 0; i < 4 && rest > 1e-6; i++) {
+          const sol = closeWith(rest, pool);
+          if (sol) return sol;
+          if (out.length < 2) break;
+          rest += out.pop()!.s;
+        }
+        return rest <= 1e-6 ? [] : null;
+      };
+      const sol = tryClose(sizePool(mats.includes("aluminio") ? mats : [...mats, "aluminio"]))
+        ?? tryClose(sizePool(Object.keys(cfg.sizes)));
+      if (sol) out.push(...sol.map((x) => ({ ...x })));
+      design = out;
+    };
+
+    const fmtFtIn = (ft: number) => {
+      const whole = Math.floor(ft + 1e-6);
+      const inches = Math.round((ft - whole) * 12);
+      if (inches === 12) return `${whole + 1} ft`;
+      return inches ? `${whole} ft ${inches} in` : `${whole} ft`;
+    };
+    const meters = (ft: number) => `${(ft * M_FT).toFixed(1)} m`;
+    // Una separación mínima no se redondea a «0 in»: el panel no está cerrado
+    const fmtGap = (v: number) => (v > 0.001 && v < 0.125 ? `< ${fmtIn(0.125)}` : fmtIn(Math.max(0, v)));
+
+    // Muestras de color: siguen al acabado que el cliente eligió
+    const woodCss = (hex: string) =>
+      `linear-gradient(180deg,${mixHex(hex, WHITE, 0.3)},${hex} 42%,${mixHex(hex, BLACK, 0.3)})`;
+    const metalCss = (x: Swatch) =>
+      x.wood ? woodCss(x.hex) : `linear-gradient(180deg,${mixHex(x.hex, WHITE, 0.35)},${x.hex} 58%,${mixHex(x.hex, BLACK, 0.25)})`;
+    const swOf = (id: string, pick?: Swatch | null) => {
+      if (id === "aluminio") return metalCss(pick ?? color());
+      if (id === "pvc") return woodCss((pick ?? pvc()).hex);
+      if (id === "acrilico") return "linear-gradient(180deg,#E8F6FD,#9ED2EA 62%,#D2EAF6)";
+      return `linear-gradient(180deg,#16181F 28%,${light().hex} 50%,#16181F 72%)`;
+    };
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const params = new URLSearchParams(location.search);
+    if (params.get("alto") || params.get("largo")) {
+      ["alto", "modo", "colores", "material", "patron", "patron2", "variacion", "color", "cpostes", "pvc", "postes", "topes", "luz", "instal", "uso"]
+        .forEach((n) => setRadio(n, params.get(n)));
+      const l = Number(params.get("largo"));
+      if (l >= MIN_LEN && l <= MAX_LEN) lenEl.value = String(Math.round(l));
+      const md = Number(params.get("medida"));
+      if (md > 0) pendingSize = md;
+      const t = params.get("tablillas");
+      if (t)
+        design = t
+          .split(",")
+          .map((x) => {
+            const [sz, ci] = x.slice(1).split(".");
+            const m = FROM_CODE[x[0]];
+            const list = m ? colorsFor(m) : null;
+            return { m, s: Number(sz.replace("h", ".5")), c: list && ci ? list[Number(ci)]?.id : undefined };
+          })
+          .filter((d) => d.m && d.s > 0)
+          // Una dirección vieja puede traer una medida que ya no se fabrica: se usa la más cercana
+          .map((d) => ({ ...d, s: sizesOf(d.m).reduce((a, b) => (Math.abs(b - d.s) < Math.abs(a - d.s) ? b : a)) }))
+          .slice(0, MAX_SLATS);
+    }
+    let prevH = heightFt();
+    let prevMixed = mixed();
+    let prevMulti = multiOn();
+
+    const code = (d: Slat) => {
+      const base = `${CODE[d.m]}${d.s % 1 ? `${Math.floor(d.s)}h` : d.s}`;
+      const i = multi() && d.c ? (colorsFor(d.m)?.findIndex((x) => x.id === d.c) ?? -1) : -1;
+      return i >= 0 ? `${base}.${i}` : base;
+    };
+    const shareUrl = () => {
+      const p = new URLSearchParams({
+        alto: String(heightFt()),
+        largo: String(lengthFt()),
+        postes: val("postes"),
+        modo: val("modo"),
+        colores: val("colores"),
+        material: val("material"),
+        medida: String(brush().s),
+        color: val("color"),
+        cpostes: val("cpostes"),
+        topes: val("topes"),
+        luz: val("luz"),
+        instal: val("instal"),
+        uso: val("uso"),
+      });
+      if (anyPvc()) p.set("pvc", val("pvc"));
+      if (panelMode()) p.set("patron", val("patron"));
+      if (canVary()) p.set("variacion", val("variacion"));
+      if (panelMode() && varied()) p.set("patron2", val("patron2"));
+      if (mixed()) p.set("tablillas", design.map(code).join(","));
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Texturas ----------
+    // Veta de madera: va igual en el aluminio con simulación y en el PVC de madera
+    const grain = (x: number, y: number, w: number, h: number, hex: string, dim: number) => {
+      if (h < 3) return;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+      ctx.lineWidth = 1;
+      const lines = Math.max(2, Math.round(h / 3.2));
+      for (let i = 0; i < lines; i++) {
+        const gy = y + ((i + 0.5) * h) / lines;
+        ctx.strokeStyle =
+          i % 2
+            ? alpha(mixHex(hex, BLACK, 0.5), 0.26 * dim)
+            : alpha(mixHex(hex, WHITE, 0.45), 0.22 * dim);
+        ctx.beginPath();
+        ctx.moveTo(x, gy);
+        for (let gx = x; gx <= x + w; gx += 12)
+          ctx.lineTo(gx, gy + Math.sin((gx + i * 41) * 0.06) * Math.min(1.1, h * 0.05));
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+    // Ranuras del PVC decorativo, como el panel de la foto
+    const flutes = (x: number, y: number, w: number, h: number, hex: string, n: number) => {
+      const band = h / n;
+      for (let f = 0; f < n; f++) {
+        const cy = y + (f + 0.5) * band;
+        const gh = Math.max(1, band * 0.52);
+        const g = ctx.createLinearGradient(0, cy - gh / 2, 0, cy + gh / 2);
+        g.addColorStop(0, alpha(mixHex(hex, BLACK, 0.65), 0.5));
+        g.addColorStop(0.55, alpha(mixHex(hex, BLACK, 0.4), 0.3));
+        g.addColorStop(1, alpha(mixHex(hex, WHITE, 0.35), 0.34));
+        ctx.fillStyle = g;
+        ctx.fillRect(x, cy - gh / 2, w, gh);
+      }
+    };
+
+    // ---------- Panel decorativo: el dibujo que corta la CNC ----------
+    // Cada patrón agrega sus huecos al trazo; se rellena con "evenodd" para que
+    // sean agujeros de verdad y se vea el fondo a través de ellos.
+    const holes = (c2: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, u: number, id: string) => {
+      const cols = Math.max(1, Math.round(w / u));
+      const rows = Math.max(1, Math.round(h / u));
+      const ux = w / cols;
+      const uy = h / rows;
+      if (id === "flor") {
+        // Flores grandes de pétalos puntiagudos, como la referencia
+        const petal = (cx: number, cy: number, a: number, r0: number, r1: number, t: number) => {
+          const ca = Math.cos(a);
+          const sa = Math.sin(a);
+          const p = (r: number, o: number) => [cx + ca * r - sa * o, cy + sa * r + ca * o];
+          const [ax, ay] = p(r0, 0);
+          const [bx, by] = p(r1, 0);
+          const [c1x, c1y] = p((r0 + r1) * 0.48, t);
+          const [c2x, c2y] = p((r0 + r1) * 0.48, -t);
+          c2.moveTo(ax, ay);
+          c2.quadraticCurveTo(c1x, c1y, bx, by);
+          c2.quadraticCurveTo(c2x, c2y, ax, ay);
+        };
+        for (let r = 0; r <= rows; r++)
+          for (let i = 0; i <= cols; i++) {
+            const cx = x + (i + (r % 2 ? 0.5 : 0)) * ux;
+            const cy = y + r * uy;
+            const rr = Math.min(ux, uy);
+            const turn = ((i * 7 + r * 11) % 9) * 0.17;
+            for (let k = 0; k < 9; k++) petal(cx, cy, turn + (k * Math.PI * 2) / 9, rr * 0.12, rr * 0.52, rr * 0.085);
+            for (let k = 0; k < 9; k++) {
+              const a = turn + ((k + 0.5) * Math.PI * 2) / 9;
+              c2.moveTo(cx + Math.cos(a) * rr * 0.3 + rr * 0.045, cy + Math.sin(a) * rr * 0.3);
+              c2.arc(cx + Math.cos(a) * rr * 0.3, cy + Math.sin(a) * rr * 0.3, rr * 0.045, 0, Math.PI * 2);
+            }
+          }
+      } else if (id === "tropical") {
+        // Hojas sueltas, como las de un jardín de Miami
+        const leaf = (cx: number, cy: number, a: number, L: number, Wd: number) => {
+          const ca = Math.cos(a);
+          const sa = Math.sin(a);
+          const p = (r: number, o: number) => [cx + ca * r - sa * o, cy + sa * r + ca * o];
+          const [ax, ay] = p(-L, 0);
+          const [bx, by] = p(L, 0);
+          const [c1x, c1y] = p(0, Wd);
+          const [c2x, c2y] = p(0, -Wd);
+          c2.moveTo(ax, ay);
+          c2.quadraticCurveTo(c1x, c1y, bx, by);
+          c2.quadraticCurveTo(c2x, c2y, ax, ay);
+        };
+        for (let r = 0; r <= rows; r++)
+          for (let i = 0; i <= cols; i++) {
+            const cx = x + (i + (r % 2 ? 0.5 : 0)) * ux;
+            const cy = y + r * uy;
+            const rr = Math.min(ux, uy);
+            const turn = ((i * 5 + r * 3) % 8) * 0.39;
+            for (let k = 0; k < 5; k++) {
+              const a = turn + (k * Math.PI * 2) / 5;
+              const d = rr * 0.34;
+              leaf(cx + Math.cos(a) * d, cy + Math.sin(a) * d, a, rr * 0.3, rr * 0.11);
+            }
+            c2.moveTo(cx + rr * 0.07, cy);
+            c2.arc(cx, cy, rr * 0.07, 0, Math.PI * 2);
+          }
+      } else if (id === "celosia") {
+        for (let r = 0; r <= rows; r++)
+          for (let i = 0; i <= cols; i++) {
+            const cx = x + (i + (r % 2 ? 0.5 : 0)) * ux;
+            const cy = y + r * uy;
+            const a = ux * 0.42;
+            const b = uy * 0.42;
+            c2.moveTo(cx, cy - b);
+            c2.lineTo(cx + a, cy);
+            c2.lineTo(cx, cy + b);
+            c2.lineTo(cx - a, cy);
+            c2.closePath();
+          }
+      } else if (id === "panal") {
+        for (let r = 0; r <= rows; r++)
+          for (let i = 0; i <= cols; i++) {
+            const cx = x + (i + (r % 2 ? 0.5 : 0)) * ux;
+            const cy = y + r * uy * 0.88;
+            const rr = Math.min(ux, uy) * 0.46;
+            for (let k = 0; k < 6; k++) {
+              const a = (k * Math.PI) / 3 + Math.PI / 6;
+              const px = cx + Math.cos(a) * rr;
+              const py = cy + Math.sin(a) * rr;
+              if (k) c2.lineTo(px, py);
+              else c2.moveTo(px, py);
+            }
+            c2.closePath();
+          }
+      } else if (id === "juncos") {
+        // Cañas verticales con sus nudos. El desfase de los nudos se cuenta por el
+        // número de caña dentro del panel, no por dónde cae la caña en el lienzo:
+        // así todos los paneles salen idénticos, que es como los corta la CNC con
+        // el mismo archivo.
+        const step = Math.max(6, u * 0.42);
+        const wdt = step * 0.44;
+        const seg = Math.max(14, u * 1.1);
+        for (let k = 0; (k + 0.5) * step < w; k++) {
+          const px = x + (k + 0.5) * step;
+          const off = (k % 3) * seg * 0.33;
+          for (let py = y + off - seg; py < y + h; py += seg + wdt * 0.9) {
+            const a = Math.max(y + 2, py);
+            const b = Math.min(y + h - 2, py + seg);
+            if (b - a < wdt * 0.8) continue;
+            c2.moveTo(px, a);
+            c2.roundRect?.(px - wdt / 2, a, wdt, b - a, wdt / 2);
+            if (!c2.roundRect) c2.rect(px - wdt / 2, a, wdt, b - a);
+          }
+        }
+      } else {
+        // El corte de 22° de la marca, en filas
+        const rowH = Math.max(10, u * 0.52);
+        const sw = Math.max(4, rowH * 0.34);
+        const skew = rowH * 0.4;
+        for (let py = y + rowH * 0.3; py < y + h - rowH * 0.3; py += rowH * 1.5)
+          for (let px = x + sw; px < x + w - sw; px += sw * 2.6) {
+            const a = py + rowH * 0.78;
+            const b = py;
+            c2.moveTo(px, a);
+            c2.lineTo(px + sw, a);
+            c2.lineTo(px + sw + skew, b);
+            c2.lineTo(px + skew, b);
+            c2.closePath();
+          }
+      }
+    };
+    // Lámina con el dibujo recortado
+    const cutSheet = (
+      c2: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      u: number,
+      id: string,
+      fill: string | CanvasGradient
+    ) => {
+      c2.save();
+      c2.beginPath();
+      c2.rect(x, y, w, h);
+      c2.clip();
+      c2.beginPath();
+      c2.rect(x, y, w, h);
+      holes(c2, x, y, w, h, u, id);
+      c2.fillStyle = fill;
+      c2.fill("evenodd");
+      c2.restore();
+    };
+
+    // ---------- Dibujo ----------
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const H = heightFt();
+      const total = lengthFt();
+      const n = count();
+      const pw = panelFt();
+      const R = design.length;
+      // En RGB cada tablilla encendida lleva un color distinto
+      const litAt = (r: number) => (light().id === "rgb" ? RGB_CYCLE[r % RGB_CYCLE.length] : light().hex);
+
+      const padL = Math.min(62, cw * 0.14);
+      const padR = 20;
+      const padT = 20;
+      const padB = Math.min(56, ch * 0.16);
+      const availW = Math.max(60, cw - padL - padR);
+      const availH = Math.max(60, ch - padT - padB);
+      // Se dibujan los paneles que quepan sin achicar la cerca: así se ven las tablillas.
+      // Cuando la cerca es larga se muestra un tramo y la cota dice el largo total.
+      const ppfH = availH / (H + 1.1);
+      const shown = Math.max(
+        1,
+        Math.min(n, Math.max(2, Math.floor(availW / (pw * ppfH))), Math.max(1, Math.floor(availW / MIN_PANEL_PX)))
+      );
+      const ppf = Math.min(availW / (shown * pw), ppfH);
+      const pxIn = ppf / 12;
+      const fenceW = shown * pw * ppf;
+      const x0 = padL + (availW - fenceW) / 2;
+      const groundY = padT + availH;
+      const yT = groundY - H * ppf; // tope del panel
+      const railH = Math.max(2, RAIL_IN * pxIn);
+      const yB = groundY - Math.max(1.5, BASE_IN * pxIn); // base de la cerca
+      const capH = Math.max(5, 0.26 * ppf);
+      const postW = Math.max(5, (postIn() / 12) * ppf);
+      const innerTop = yT + railH;
+      const gp = gapIn() * pxIn;
+
+      // Dónde queda cada tablilla, para el clic y para no recalcularlo dos veces
+      const layout = (arr: Slat[]) => {
+        const out: number[][] = [];
+        let cur = innerTop;
+        for (const d of arr) {
+          const sh = Math.max(1.2, d.s * pxIn);
+          out.push([cur, cur + sh]);
+          cur += sh + gp;
+        }
+        return out;
+      };
+      // Tramos alternados: los pares llevan el mismo diseño volteado de arriba abajo.
+      // Suman lo mismo, así que la separación no cambia; solo cambian las alturas.
+      const vary = varied();
+      const flipped = vary && !panelMode() ? [...design].reverse() : design;
+      const ys = layout(design);
+      const ysF = flipped === design ? ys : layout(flipped);
+      hit = { x0, x1: x0 + fenceW, w: pw * ppf, vary, ys, ysF };
+
+      // Seto y pasto
+      ctx.save();
+      ctx.globalAlpha = night ? 0.5 : 0.65;
+      ctx.fillStyle = night ? "#1B2B22" : "#A9BE97";
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      const hedge = groundY - Math.max(20, H * ppf * 0.62);
+      for (let x = 0; x <= cw; x += 30) ctx.lineTo(x, hedge + Math.sin(x * 0.035) * 7 + Math.sin(x * 0.011) * 5);
+      ctx.lineTo(cw, groundY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      const lawn = ctx.createLinearGradient(0, groundY, 0, ch);
+      lawn.addColorStop(0, night ? "#20301F" : "#B3C796");
+      lawn.addColorStop(1, night ? "#0D140C" : "#8DA772");
+      ctx.fillStyle = lawn;
+      ctx.fillRect(0, groundY, cw, ch - groundY);
+
+      // De noche la luz de las tablillas LED baña el pasto
+      const ledRows = panelMode() ? [] : [...Array(R).keys()].filter((r) => design[r].m === "led");
+      if (night && ledRows.length) {
+        ctx.save();
+        ledRows.forEach((r) => {
+          const g = ctx.createLinearGradient(0, groundY, 0, ch);
+          g.addColorStop(0, alpha(litAt(r), 0.3 / ledRows.length + 0.14));
+          g.addColorStop(1, alpha(litAt(r), 0));
+          ctx.fillStyle = g;
+          ctx.fillRect(x0 - 20, groundY, fenceW + 40, ch - groundY);
+        });
+        ctx.restore();
+      }
+
+      // Sombra de la cerca
+      ctx.fillStyle = night ? "rgba(0,0,0,0.45)" : "rgba(42,54,30,0.22)";
+      ctx.beginPath();
+      ctx.ellipse(x0 + fenceW / 2, groundY + Math.max(3, 0.1 * ppf), fenceW / 2 + 8, Math.max(3, 0.14 * ppf), 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cada tablilla lleva su color (ver el bucle); los postes y el marco, el suyo
+      const pc = postColor();
+      const pdark = night ? mix(pc.hex, BLACK, 0.55) : mix(pc.hex, BLACK, 0.3);
+      const pface = night ? mix(pc.hex, BLACK, 0.4) : pc.hex;
+      const pfaceHex = night ? mixHex(pc.hex, BLACK, 0.4) : pc.hex;
+      const dim = night ? 0.6 : 1;
+
+      // ---------- Tablillas (o la lámina cortada), panel por panel ----------
+      for (let i = 0; i < shown; i++) {
+        const x = x0 + i * pw * ppf;
+        const w = pw * ppf;
+        const flip = vary && i % 2 === 1;
+        if (panelMode()) {
+          // Una sola lámina de aluminio con el dibujo cortado en CNC
+          const sc = color();
+          const sheet = night ? mixHex(sc.hex, BLACK, 0.4) : sc.hex;
+          const inH = innerIn() * pxIn;
+          cutSheet(ctx, x, innerTop, w, inH, Math.max(16, ppf), (flip ? pattern2() : pattern()).id, sheet);
+          if (sc.wood) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, innerTop, w, inH);
+            ctx.clip();
+            grain(x, innerTop, w, inH, sheet, dim * 0.5);
+            ctx.restore();
+          }
+          ctx.fillStyle = night ? "rgba(188,208,232,0.1)" : "rgba(255,255,255,0.12)";
+          ctx.fillRect(x, innerTop, w, Math.max(1, 0.6 * pxIn * 12));
+        }
+        const arr = flip ? flipped : design;
+        const pos = flip ? ysF : ys;
+        for (let r = 0; r < (panelMode() ? 0 : R); r++) {
+          const [sy, sy2] = pos[r];
+          const sh = sy2 - sy;
+          const d = arr[r];
+          const lit = litAt(r);
+
+          // Cada tablilla puede llevar su propio color del mismo material
+          const sc = slatColor(d);
+          const scHex = sc ? (night ? mixHex(sc.hex, BLACK, 0.4) : sc.hex) : pfaceHex;
+
+          if (d.m === "aluminio") {
+            ctx.fillStyle = scHex;
+            ctx.fillRect(x, sy, w, sh);
+            if (sc?.wood) grain(x, sy, w, sh, scHex, dim);
+            ctx.fillStyle = night ? "rgba(188,208,232,0.16)" : "rgba(255,255,255,0.22)";
+            ctx.fillRect(x, sy, w, Math.max(0.8, sh * 0.18));
+            ctx.fillStyle = "rgba(0,0,0,0.22)";
+            ctx.fillRect(x, sy + sh - Math.max(0.8, sh * 0.18), w, Math.max(0.8, sh * 0.18));
+          } else if (d.m === "pvc") {
+            const pvHex = night ? mixHex(sc!.hex, BLACK, 0.45) : sc!.hex;
+            const g = ctx.createLinearGradient(0, sy, 0, sy + sh);
+            g.addColorStop(0, mix(pvHex, WHITE, 0.16));
+            g.addColorStop(1, mix(pvHex, BLACK, 0.2));
+            ctx.fillStyle = g;
+            ctx.fillRect(x, sy, w, sh);
+            if (sc!.wood) grain(x, sy, w, sh, pvHex, dim);
+            // Ranuras decorativas: la tablilla ancha lleva más
+            flutes(x, sy, w, sh, pvHex, d.s >= 9 ? 4 : d.s >= 7 ? 3 : d.s >= 5 ? 2 : 1);
+          } else if (d.m === "acrilico") {
+            ctx.fillStyle = night ? "rgba(150,195,225,0.26)" : "rgba(226,243,251,0.78)";
+            ctx.fillRect(x, sy, w, sh);
+            ctx.fillStyle = night ? "rgba(220,240,255,0.2)" : "rgba(255,255,255,0.8)";
+            ctx.fillRect(x, sy + sh * 0.18, w, Math.max(0.8, sh * 0.16));
+            ctx.strokeStyle = night ? "rgba(190,220,240,0.3)" : "rgba(120,160,185,0.45)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 0.5, sy + 0.5, w - 1, sh - 1);
+          } else {
+            // Tablilla de acrílico con la tira LED adentro
+            if (night) {
+              ctx.save();
+              ctx.shadowColor = lit;
+              ctx.fillStyle = alpha(lit, 0.9);
+              for (const b of [0.9, 0.45, 0.18]) {
+                ctx.shadowBlur = Math.max(6, ppf * b) * dpr;
+                ctx.fillRect(x, sy + sh * 0.2, w, sh * 0.6);
+              }
+              ctx.restore();
+            }
+            ctx.fillStyle = night ? "#0D0F15" : mix(pc.hex, WHITE, 0.55);
+            ctx.fillRect(x, sy, w, sh);
+            const g = ctx.createLinearGradient(0, sy, 0, sy + sh);
+            const edge = night ? alpha(lit, 0.35) : alpha(lit, 0.3);
+            const core = night ? mix(lit, WHITE, 0.45) : alpha(lit, 0.9);
+            g.addColorStop(0, edge);
+            g.addColorStop(0.35, core);
+            g.addColorStop(0.65, core);
+            g.addColorStop(1, edge);
+            ctx.fillStyle = g;
+            ctx.fillRect(x, sy + sh * 0.16, w, sh * 0.68);
+          }
+        }
+
+        // Marco del panel: riel de arriba y de abajo
+        ctx.fillStyle = pface;
+        ctx.fillRect(x, yT, w, railH);
+        ctx.fillRect(x, yB - railH, w, railH);
+        if (pc.wood) {
+          grain(x, yT, w, railH, pfaceHex, dim);
+          grain(x, yB - railH, w, railH, pfaceHex, dim);
+        }
+        ctx.fillStyle = night ? "rgba(188,208,232,0.3)" : "rgba(255,255,255,0.2)";
+        ctx.fillRect(x, yT, w, Math.max(1, railH * 0.3));
+      }
+
+      // ---------- Postes ----------
+      for (let i = 0; i <= shown; i++) {
+        const px = x0 + i * pw * ppf - postW / 2;
+        ctx.fillStyle = pdark;
+        ctx.fillRect(px, yT - capH, postW, groundY - yT + capH);
+        ctx.fillStyle = pface;
+        ctx.fillRect(px, yT - capH, postW * 0.78, groundY - yT + capH);
+        if (pc.wood) grain(px, yT - capH, postW * 0.78, groundY - yT + capH, pfaceHex, dim);
+        ctx.fillStyle = night ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.22)";
+        ctx.fillRect(px + 1, yT - capH, Math.max(1, postW * 0.16), groundY - yT + capH);
+
+        // Remate del poste
+        const cx = px + postW / 2;
+        if (litCaps()) {
+          const lit = light().id === "rgb" ? RGB_CYCLE[i % RGB_CYCLE.length] : light().hex;
+          ctx.save();
+          if (night) {
+            ctx.shadowColor = lit;
+            ctx.shadowBlur = Math.max(10, 0.8 * ppf) * dpr;
+          }
+          ctx.fillStyle = night ? mix(lit, WHITE, 0.35) : alpha(lit, 0.85);
+          ctx.fillRect(px - 1, yT - capH - capH * 0.75, postW + 2, capH * 0.75);
+          ctx.restore();
+          ctx.fillStyle = pface;
+          ctx.fillRect(px - 2, yT - capH - capH * 0.95, postW + 4, capH * 0.22);
+        } else {
+          ctx.fillStyle = pface;
+          ctx.beginPath();
+          ctx.moveTo(px - 2, yT - capH);
+          ctx.lineTo(px + postW + 2, yT - capH);
+          ctx.lineTo(cx, yT - capH - capH * 0.85);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // ---------- Cotas ----------
+      const ink = night ? "rgba(255,255,255,0.84)" : "rgba(11,12,14,0.74)";
+      const tick = 5;
+      ctx.save();
+      ctx.strokeStyle = ink;
+      ctx.fillStyle = ink;
+      ctx.lineWidth = 1;
+      ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+      const gx = Math.max(x0 - 18, 24);
+      ctx.beginPath();
+      ctx.moveTo(gx, yT);
+      ctx.lineTo(gx, groundY);
+      ctx.moveTo(gx - tick, yT);
+      ctx.lineTo(gx + tick, yT);
+      ctx.moveTo(gx - tick, groundY);
+      ctx.lineTo(gx + tick, groundY);
+      ctx.stroke();
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`${H} ft`, gx - 7, (yT + groundY) / 2);
+
+      const gy = groundY + Math.max(16, padB * 0.4);
+      ctx.beginPath();
+      ctx.moveTo(x0, gy);
+      ctx.lineTo(x0 + fenceW, gy);
+      ctx.moveTo(x0, gy - tick);
+      ctx.lineTo(x0, gy + tick);
+      ctx.moveTo(x0 + fenceW, gy - tick);
+      ctx.lineTo(x0 + fenceW, gy + tick);
+      if (shown > 1) {
+        ctx.moveTo(x0 + pw * ppf, gy - tick);
+        ctx.lineTo(x0 + pw * ppf, gy + tick);
+      }
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      const below =
+        shown === n
+          ? `${total} ft · ${meters(total)}`
+          : cfg.copy.of.replace("{a}", String(shown)).replace("{b}", String(n));
+      ctx.fillText(below, x0 + fenceW / 2, gy + 7);
+      if (pw * ppf > 86) ctx.fillText(`${fmtFtIn(pw)} ${cfg.copy.each}`, x0 + (pw * ppf) / 2, gy - 20);
+      if (shown < n) {
+        ctx.textAlign = "right";
+        ctx.fillText(`${cfg.copy.totalLbl}: ${total} ft · ${meters(total)}`, cw - 14, padT - 4);
+      }
+      ctx.restore();
+
+      const mats = panelMode()
+        ? `${cfg.copy.onePiece} · ${vary ? `${pattern().name} + ${pattern2().name}` : pattern().name}`
+        : [...new Set(design.map((d) => d.m))].map(nameOf).join(" + ");
+      canvas.setAttribute(
+        "aria-label",
+        `${cfg.copy.preview}: ${H} ft · ${total} ft · ${n} ${cfg.copy.sPanels.toLowerCase()} · ${mats} · ${color().name}`
+      );
+    };
+
+    // ---------- Diseño del panel: una fila por tablilla ----------
+    const sizeOpts = (m: string, s: number) =>
+      sizesOf(m)
+        .map((v) => `<option value="${v}"${v === s ? " selected" : ""}>${fmtIn(v)}</option>`)
+        .join("");
+    const renderList = () => {
+      if (!mixed()) return;
+      const n = design.length;
+      if (slatList.childElementCount !== n) {
+        slatList.innerHTML = "";
+        for (let r = 0; r < n; r++) {
+          const row = document.createElement("div");
+          row.className = "fb__slat";
+          row.innerHTML =
+            `<button type="button" class="fb__pick" data-slat="${r}"><em></em><i aria-hidden="true"></i><b></b></button>` +
+            `<select class="fb__size" data-size="${r}"></select>` +
+            `<button type="button" class="fb__del" data-del="${r}">&times;</button>`;
+          slatList.append(row);
+        }
+      }
+      [...slatList.children].forEach((row, r) => {
+        const d = design[r];
+        const name = cfg.copy.slatN.replace("{n}", String(r + 1));
+        const pick = row.querySelector<HTMLElement>(".fb__pick")!;
+        const sel = row.querySelector<HTMLSelectElement>(".fb__size")!;
+        const del = row.querySelector<HTMLButtonElement>(".fb__del")!;
+        const sc = slatColor(d);
+        const label = multi() && sc ? `${nameOf(d.m)} ${sc.name.toLowerCase()}` : nameOf(d.m);
+        pick.querySelector("em")!.textContent = String(r + 1);
+        pick.querySelector("i")!.style.setProperty("--c", swOf(d.m, sc));
+        pick.querySelector("b")!.textContent = label;
+        pick.title = `${name}: ${label}`;
+        pick.setAttribute("aria-label", `${name}: ${label}`);
+        if (sel.dataset.state !== d.m) {
+          sel.dataset.state = d.m;
+          sel.innerHTML = sizeOpts(d.m, d.s);
+        }
+        sel.value = String(d.s); // si la medida pedida no cabía, la lista vuelve a la buena
+        sel.setAttribute("aria-label", cfg.copy.sizeOf.replace("{n}", String(r + 1)));
+        del.disabled = design.length < 2;
+        del.setAttribute("aria-label", cfg.copy.delSlat.replace("{n}", String(r + 1)));
+      });
+    };
+    // Cambiarle el material a una tablilla: se lleva la medida del material elegido
+    const paint = (r: number) => {
+      if (!mixed() || r < 0 || r >= design.length) return;
+      const b = brush();
+      // Con colores por tablilla, tocar una del mismo material solo le cambia el color
+      if (multi() && design[r].m === b.m) {
+        design[r] = { ...design[r], c: b.c };
+        touched = true;
+        return render();
+      }
+      const rest = design.filter((_, i) => i !== r);
+      let s = b.s;
+      if (!fits([...rest, { m: b.m, s }])) {
+        s = Math.min(...sizesOf(b.m));
+        if (!fits([...rest, { m: b.m, s }])) warn = true;
+      }
+      if (!warn) design[r] = { m: b.m, s, c: b.c };
+      touched = true;
+      render();
+    };
+
+    // Miniatura de cada patrón, dibujada con el mismo corte y el color elegido
+    const renderPats = () => {
+      const sheet = night ? mixHex(color().hex, BLACK, 0.4) : color().hex;
+      if (patGroup.dataset.sheet === sheet) return;
+      patGroup.dataset.sheet = sheet;
+      // Los dos grupos de patrones llevan la misma lista, en el mismo orden
+      form.querySelectorAll<HTMLCanvasElement>(".fb__pat canvas").forEach((cv, i) => {
+        const c2 = cv.getContext("2d")!;
+        c2.clearRect(0, 0, cv.width, cv.height);
+        cutSheet(c2, 0, 0, cv.width, cv.height, 54, cfg.pats[i % cfg.pats.length].id, sheet);
+      });
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const H = heightFt();
+      const total = lengthFt();
+      const n = count();
+      const out = [
+        `${k.summary}:`,
+        `• ${k.sHeight}: ${H} ft (${meters(H)})`,
+        `• ${k.sLen}: ${total} ft (${meters(total)})`,
+        `• ${k.sPanels}: ${n} × ${fmtFtIn(panelFt())} (${k.sPanelMax.replace("{m}", String(panelMax()))})`,
+        `• ${k.sPosts}: ${k.sPostsVal.replace("{n}", String(n + 1)).replace("{s}", String(postIn()))}`,
+      ];
+      if (panelMode()) {
+        out.push(`• ${k.sPanel}: ${k.sPanelVal}`, `• ${k.sPattern}: ${pattern().name}`);
+      } else
+        out.push(
+          `• ${k.sSlats}: ${design.length === 1 ? k.sSlatsVal1 : k.sSlatsVal.replace("{n}", String(design.length))}`
+        );
+      if (canVary())
+        out.push(
+          `• ${k.sVary}: ${
+            !varied()
+              ? k.sVarySame
+              : panelMode()
+                ? k.sVaryPat.replace("{a}", pattern().name).replace("{b}", pattern2().name)
+                : k.sVaryFlip
+          }`
+        );
+      if (panelMode()) {
+        // una lámina entera: no hay tramos ni separación que listar
+      } else if (mixed()) {
+        // Tramos seguidos del mismo material y medida, de arriba hacia abajo
+        const runs: (Slat & { q: number })[] = [];
+        design.forEach((d) => {
+          const last = runs[runs.length - 1];
+          if (last && last.m === d.m && last.s === d.s && (!multi() || last.c === d.c)) last.q++;
+          else runs.push({ ...d, q: 1 });
+        });
+        const txt = runs
+          .map((r) => {
+            const sc = multi() ? slatColor(r) : null;
+            return (sc ? k.sRunC.replace("{c}", sc.name.toLowerCase()) : k.sRun)
+              .replace("{q}", String(r.q))
+              .replace("{m}", nameOf(r.m))
+              .replace("{s}", fmtIn(r.s));
+          })
+          .join(", ");
+        out.push(`• ${k.sDesign}: ${txt}`);
+      } else {
+        out.push(`• ${k.sMaterial}: ${k.sMatVal.replace("{m}", material().name).replace("{s}", fmtIn(brush().s))}`);
+      }
+      // La separación se reparte entre tablillas: con una sola lo que hay es hueco
+      if (!panelMode())
+        out.push(
+          design.length > 1
+            ? `• ${k.sGap}: ${closed() ? k.sNoGap : fmtGap(gapIn())}`
+            : `• ${k.sFree}: ${fmtIn(innerIn() - used())}`
+        );
+      // Con colores por tablilla, cada color ya va en la línea del diseño
+      if (panelMode()) out.push(`• ${k.panelColor}: ${color().name}`);
+      else if (!multi() && anyAlu()) out.push(`• ${k.sColor}: ${color().name}`);
+      out.push(`• ${k.sPostColor}: ${postColor().name}`);
+      if (!multi() && anyPvc()) out.push(`• ${k.sPvc}: ${pvc().name}`);
+      out.push(`• ${k.sCaps}: ${cfg.capsOpts[val("topes")]}`);
+      if (anyLed()) out.push(`• ${k.sLight}: ${light().name}`);
+      out.push(
+        `• ${k.sInstall}: ${cfg.installs[val("instal")]}`,
+        `• ${k.sUse}: ${cfg.uses[val("uso")]}`,
+        `• ${k.sLink}: ${shareUrl()}`
+      );
+      return out.join("\n");
+    };
+
+    // La lista de medidas cambia con el material elegido
+    const syncSizes = () => {
+      const id = material().id;
+      if (sizeEl.dataset.for === id) return;
+      const list = sizesOf(id);
+      const cur = Number(sizeEl.value);
+      let pick = cfg.defSize[id];
+      if (pendingSize != null && list.includes(pendingSize)) {
+        pick = pendingSize;
+        pendingSize = null;
+      } else if (Number.isFinite(cur) && cur > 0) {
+        pick = list.includes(cur) ? cur : list.reduce((a, b) => (Math.abs(b - cur) < Math.abs(a - cur) ? b : a));
+      }
+      sizeEl.dataset.for = id;
+      sizeEl.innerHTML = sizeOpts(id, pick);
+      sizeEl.value = String(pick);
+    };
+
+    const syncUI = () => {
+      syncSizes();
+      if (heightFt() !== prevH) {
+        prevH = heightFt();
+        // Si el panel estaba cerrado, el alto nuevo también queda cerrado
+        if (wasClosed) closeDesign();
+        else refit();
+      }
+      if (mixed() !== prevMixed) {
+        if (mixed()) {
+          if (savedMix) design = savedMix;
+          savedMix = null;
+        } else savedMix = design.map((d) => ({ ...d }));
+        prevMixed = mixed();
+      }
+      // Al pasar a colores por tablilla, cada una arranca con el color que se veía
+      if (multiOn() !== prevMulti) {
+        if (multiOn()) design = design.map((d) => ({ ...d, c: pickedColor(d.m)?.id }));
+        prevMulti = multiOn();
+      }
+      if (!mixed() && !panelMode()) design = fillAll(material().id, brush().s);
+      while (design.length > 1 && !fits(design)) design.pop();
+      if (!design.length) design = fillAll(material().id, brush().s);
+
+      // El panel de una pieza es siempre de aluminio: no hay material ni medida que elegir
+      matHelp.textContent = panelMode() ? cfg.panelHelp : cfg.matHelp[material().id];
+      matsBox.hidden = panelMode();
+      sizeRow.hidden = panelMode();
+      patGroup.hidden = !panelMode();
+      varyGroup.hidden = !canVary();
+      pat2Group.hidden = !(panelMode() && varied());
+      varyHelp.textContent = panelMode() ? cfg.copy.varyHelpPat : cfg.copy.varyHelpSlat;
+      mixBox.hidden = !mixed();
+      stage.toggleAttribute("data-pick", mixed());
+      multiHelp.hidden = !multi();
+      colorLbl.textContent = panelMode() ? cfg.copy.panelColor : multi() ? cfg.copy.colorBrush : cfg.copy.color;
+      pvcLbl.textContent = multi() ? cfg.copy.pvcBrushColor : cfg.copy.pvcColor;
+      colorName.textContent = color().name;
+      aluGroup.hidden = !anyAlu() && !(multi() && material().id === "aluminio");
+      if (panelMode()) renderPats();
+      pcolorName.textContent = postColor().name;
+      pvcName.textContent = pvc().name;
+      pvcGroup.hidden = !anyPvc() && !(multi() && material().id === "pvc");
+      lightName.textContent = light().name;
+      lightGroup.hidden = !anyLed();
+      // Las muestras de los materiales siguen al acabado elegido
+      form.querySelectorAll<HTMLElement>(".fb__mat").forEach((lbl) => {
+        const id = lbl.querySelector<HTMLInputElement>("input")!.value;
+        lbl.querySelector("i")!.style.setProperty("--c", swOf(id));
+      });
+      renderList();
+      addBtn.disabled = !fits([...design, brush()]);
+      closeBtn.disabled = closed();
+      budget.classList.toggle("is-warn", warn);
+      budget.textContent = warn
+        ? cfg.copy.noFit
+        : closed()
+          ? cfg.copy.budgetFull.replace("{n}", String(design.length)).replace("{inner}", fmtIn(innerIn()))
+          : design.length === 1
+            ? cfg.copy.budget1
+                .replace("{used}", fmtIn(used()))
+                .replace("{inner}", fmtIn(innerIn()))
+                .replace("{free}", fmtIn(innerIn() - used()))
+            : cfg.copy.budget
+                .replace("{n}", String(design.length))
+                .replace("{used}", fmtIn(used()))
+                .replace("{inner}", fmtIn(innerIn()))
+                .replace("{gap}", fmtGap(gapIn()));
+      warn = false;
+      wasClosed = closed();
+    };
+    const update = () => {
+      const n = count();
+      panelsOut.value = (n === 1 ? cfg.copy.outFmt1 : cfg.copy.outFmt)
+        .replace("{n}", String(n))
+        .replace("{w}", fmtFtIn(panelFt()))
+        .replace("{p}", String(n + 1));
+      slatsOut.textContent = panelMode()
+        ? cfg.copy.onePiece
+        : design.length === 1
+          ? cfg.copy.slatsOut1
+          : cfg.copy.slatsOut.replace("{n}", String(design.length));
+      lenHelp.textContent = cfg.copy.lenHelp.replace("{m}", String(panelMax()));
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+    const render = () => {
+      syncUI();
+      draw();
+      update();
+    };
+
+    // ---------- Patrones rápidos ----------
+    const pack = (next: (i: number, sum: number) => Slat) => {
+      const out: Slat[] = [];
+      for (let i = 0; i < MAX_SLATS; i++) {
+        const it = next(i, used(out));
+        if (!fitsOpen([...out, it])) break;
+        out.push(it);
+      }
+      design = out.length ? out : [next(0, 0)];
+      touched = true;
+      render();
+    };
+    const alu = (): Slat => ({ m: "aluminio", s: cfg.defSize.aluminio, c: color().id });
+
+    // ---------- Eventos ----------
+    const onEdit = (e: Event) => {
+      if (contactBox.contains(e.target as Node)) return;
+      const t = e.target as HTMLElement;
+      // La medida de una tablilla suelta se aplica solo si cabe
+      if (t.dataset && t.dataset.size != null) {
+        const r = Number(t.dataset.size);
+        const s = Number((t as HTMLSelectElement).value);
+        const test = design.map((d, i) => (i === r ? { ...d, s } : d));
+        if (fits(test)) design = test;
+        else warn = true;
+      }
+      touched = true;
+      render();
+    };
+    form.addEventListener("input", onEdit);
+    form.addEventListener("change", onEdit);
+    lenEl.addEventListener("blur", () => {
+      if (lenEl.value) lenEl.value = String(lengthFt());
+      render();
+    });
+    slatList.addEventListener("click", (e) => {
+      const t = e.target as HTMLElement;
+      const del = t.closest<HTMLButtonElement>("[data-del]");
+      if (del) {
+        if (design.length < 2) return;
+        design.splice(Number(del.dataset.del), 1);
+        touched = true;
+        return render();
+      }
+      const b = t.closest<HTMLButtonElement>("[data-slat]");
+      if (b) paint(Number(b.dataset.slat));
+    });
+    addBtn.addEventListener("click", () => {
+      const it = brush();
+      if (fits([...design, it])) design.push(it);
+      else warn = true;
+      touched = true;
+      render();
+    });
+    closeBtn.addEventListener("click", () => {
+      closeDesign();
+      touched = true;
+      render();
+    });
+    form.querySelector<HTMLButtonElement>("[data-fill]")!.addEventListener("click", () => pack(() => brush()));
+    form.querySelector<HTMLButtonElement>("[data-half]")!.addEventListener("click", () =>
+      pack((_, sum) => (sum < innerIn() / 2 ? brush() : alu()))
+    );
+    form.querySelector<HTMLButtonElement>("[data-alt]")!.addEventListener("click", () =>
+      pack((i) => (i % 2 ? alu() : brush()))
+    );
+    canvas.addEventListener("click", (e) => {
+      if (!mixed()) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (x < hit.x0 - 6 || x > hit.x1 + 6) return;
+      // En un tramo volteado, la tablilla de arriba es la última del diseño
+      const i = hit.w > 0 ? Math.max(0, Math.floor((x - hit.x0) / hit.w)) : 0;
+      const flip = hit.vary && i % 2 === 1;
+      const ys = flip ? hit.ysF : hit.ys;
+      // El punto medio de cada separación decide a qué tablilla pertenece el toque
+      const r = ys.findIndex((p, k) => {
+        const top = k ? (ys[k - 1][1] + p[0]) / 2 : p[0] - 4;
+        const bot = k < ys.length - 1 ? (p[1] + ys[k + 1][0]) / 2 : p[1] + 4;
+        return y >= top && y <= bot;
+      });
+      if (r >= 0) paint(flip ? ys.length - 1 - r : r);
+    });
+    nightBtn.addEventListener("click", () => {
+      night = !night;
+      nightBtn.setAttribute("aria-pressed", String(night));
+      stage.toggleAttribute("data-dark", night);
+      draw();
+    });
+
+    wireQuote(form, {
+      formValue: cfg.formValue,
+      lang: cfg.lang,
+      summary,
+      invalidAt: () => {
+        const v = Number(lenEl.value);
+        return !lenEl.value || !Number.isFinite(v) || v < MIN_LEN || v > MAX_LEN ? lenEl : null;
+      },
+    });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    syncSizes();
+    if (!design.length) design = fillAll(material().id, brush().s);
+    render();
+  }
+</script>

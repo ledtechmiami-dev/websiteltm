@@ -1,0 +1,59 @@
+{
+  "nombre": "Etiquetas",
+  "linea": "graficos",
+  "orden": 18,
+  "padre": "marketing-digital",
+  "nameEn": "Labels",
+  "slugEn": "labels",
+  "short": {
+    "es": "Etiquetas adhesivas redondas, ovaladas, cuadradas o rectangulares, en papel mate o brillante, con el diseño que armas aquí mismo.",
+    "en": "Round, oval, square or rectangular adhesive labels in matte or glossy paper, with the design you build right here."
+  },
+  "intro": {
+    "es": "La etiqueta es lo único de tu producto que el cliente toca antes de comprarlo, y es lo que decide si parece hecho en casa o hecho en serio. Lo que importa aquí es que la medida sea la del frasco, no la que sonaba bien, y que el papel aguante lo que le va a pasar encima. Lo diseñas aquí mismo y el constructor te la pega en el frasco, la botella, la caja o la bolsa, a tamaño real, para que lo veas antes de imprimir.",
+    "en": "The label is the only part of your product a customer touches before buying it, and it's what decides whether the product looks homemade or serious. What matters here is that the size fits the actual jar, not the one that sounded right, and that the paper survives what's coming at it. You design it here and the builder sticks it on a jar, a bottle, a box or a bag, at real size, so you see it before printing."
+  },
+  "includes": {
+    "es": [
+      "Redondas, ovaladas, cuadradas y rectangulares, de 1 a 4 in",
+      "Papel mate y papel brillante",
+      "Acabado antirrayado opcional",
+      "En pliego, listas para despegar",
+      "Troquel a la medida si tu forma no es ninguna de estas",
+      "Desde 100 etiquetas"
+    ],
+    "en": [
+      "Round, oval, square and rectangular, from 1 to 4 in",
+      "Matte paper and glossy paper",
+      "Optional anti-scratch finish",
+      "On sheets, ready to peel",
+      "Custom die-cut if your shape isn't one of these",
+      "From 100 labels"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Productos de comida y conservas",
+      "Cosmética y velas",
+      "Bebidas y botellas",
+      "Sellos de bolsa y de caja",
+      "Remite y envíos",
+      "Marcas pequeñas y ferias"
+    ],
+    "en": [
+      "Food products and preserves",
+      "Cosmetics and candles",
+      "Drinks and bottles",
+      "Bag and box seals",
+      "Return address and shipping",
+      "Small brands and markets"
+    ]
+  },
+  "note": {
+    "es": "Las dos son de papel: aguantan el roce, no el agua. Sirven para el frasco de la despensa, la caja y la bolsa; para una botella que va en hielo o en la nevera hay que buscar otro material. Dinos dónde va a vivir la etiqueta antes de imprimir.",
+    "en": "Both are paper: they take rubbing, not water. They work on the pantry jar, the box and the bag; for a bottle that goes on ice or in the fridge we need a different material. Tell us where the label is going to live before we print."
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

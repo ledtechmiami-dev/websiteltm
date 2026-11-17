@@ -1,0 +1,50 @@
+{
+  "nombre": "Tablas de cortar",
+  "linea": "fabricacion",
+  "orden": 3,
+  "nameEn": "Cutting boards",
+  "slugEn": "cutting-boards",
+  "short": {
+    "es": "Tablas a la medida para el bote, la cocina o para regalar.",
+    "en": "Custom boards for the boat, the kitchen or as gifts."
+  },
+  "intro": {
+    "es": "Tablas de cortar a la medida para la estación de pesca del bote, la cocina o como regalo, con tu logo o nombre si lo quieres.",
+    "en": "Cutting boards made to size for your boat's fishing station, the kitchen or as gifts, with your logo or name if you'd like."
+  },
+  "includes": {
+    "es": [
+      "Medidas a tu gusto",
+      "Esquinas y bordes redondeados",
+      "Logo o nombre grabado",
+      "Pedidos individuales o por cantidad"
+    ],
+    "en": [
+      "Custom sizes",
+      "Rounded corners and edges",
+      "Engraved logo or name",
+      "Single or bulk orders"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Botes de pesca",
+      "Cocinas",
+      "Parrillas",
+      "Regalos corporativos"
+    ],
+    "en": [
+      "Fishing boats",
+      "Kitchens",
+      "Grills",
+      "Corporate gifts"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

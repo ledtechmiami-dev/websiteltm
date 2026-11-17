@@ -1,0 +1,24 @@
+{
+  "head": {
+    "title": {
+      "es": "Proyectos | LED Tech Miami",
+      "en": "Projects | LED Tech Miami"
+    },
+    "h1": {
+      "es": "Trabajos en Miami y el sur de Florida",
+      "en": "Work across Miami and South Florida"
+    },
+    "lead": {
+      "es": "Letreros, rotulaciones, botes, piezas de metal e iluminación que hemos hecho para negocios y familias de la zona.",
+      "en": "Signs, wraps, boats, metal parts and lighting we've made for local businesses and families."
+    }
+  },
+  "ctaTitle": {
+    "es": "¿Tienes un proyecto parecido?",
+    "en": "Have a similar project?"
+  },
+  "ctaText": {
+    "es": "Cuéntanos qué necesitas y te enviamos una propuesta en menos de 24 horas.",
+    "en": "Tell us what you need and we'll send you a proposal in under 24 hours."
+  }
+}

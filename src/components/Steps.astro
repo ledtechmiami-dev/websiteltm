@@ -1,0 +1,16 @@
+---
+// Pasos del trabajo (panel: Inicio → Cómo trabajamos). Secuencia real, por eso lleva números.
+import type { Lang } from "../data/site";
+import { HOME } from "../data/content";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+---
+<ol class="steps">
+  {HOME.steps.items.map((s) => (
+    <li>
+      <h3>{s.title[lang] || s.title.es}</h3>
+      <p>{s.text[lang] || s.text.es}</p>
+    </li>
+  ))}
+</ol>

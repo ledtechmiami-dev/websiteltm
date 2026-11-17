@@ -1,0 +1,50 @@
+{
+  "nombre": "Cercas de aluminio",
+  "linea": "fabricacion",
+  "orden": 2,
+  "nameEn": "Aluminum fences",
+  "slugEn": "aluminum-fences",
+  "short": {
+    "es": "Cercas de aluminio para casas, piscinas y negocios.",
+    "en": "Aluminum fencing for homes, pools and businesses."
+  },
+  "intro": {
+    "es": "Cercas de aluminio que no se oxidan, en diseños lisos o con paneles cortados con láser. Las medimos, fabricamos e instalamos.",
+    "en": "Aluminum fences that won't rust, in plain designs or with laser-cut panels. We measure, build and install them."
+  },
+  "includes": {
+    "es": [
+      "Medición en sitio",
+      "Diseños lisos o decorativos",
+      "Paneles cortados con láser",
+      "Instalación"
+    ],
+    "en": [
+      "On-site measuring",
+      "Plain or decorative designs",
+      "Laser-cut panels",
+      "Installation"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Casas",
+      "Piscinas",
+      "Negocios",
+      "Jardines"
+    ],
+    "en": [
+      "Homes",
+      "Pools",
+      "Businesses",
+      "Gardens"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

@@ -1,0 +1,51 @@
+---
+// Página a la que vuelve el cliente después de pagar en Stripe. Vacía el carrito.
+import Layout from "../layouts/Layout.astro";
+import type { Lang } from "../data/site";
+import { SITE, waLink } from "../data/site";
+import { ROUTES } from "../i18n/routes";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+
+const c = {
+  es: {
+    title: "¡Gracias por tu compra!",
+    text: "Recibimos tu pago. Stripe te envía el recibo por correo y nosotros te contactamos para coordinar la recogida, la entrega o el envío.",
+    wa: "Escríbenos por WhatsApp",
+    waText: "Hola, acabo de hacer un pedido en la tienda.",
+    back: "Volver a la tienda",
+  },
+  en: {
+    title: "Thank you for your order!",
+    text: "We received your payment. Stripe emails you the receipt, and we'll contact you to arrange pickup, delivery or shipping.",
+    wa: "Message us on WhatsApp",
+    waText: "Hi, I just placed an order in your shop.",
+    back: "Back to the shop",
+  },
+}[lang];
+---
+<Layout lang={lang} page="thanks" title={`${c.title} | ${SITE.name}`} description={c.text} alternates={ROUTES.thanks} noindex>
+  <section class="section section--top">
+    <div class="container">
+      <div class="cta thanks">
+        <div class="ledbar" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <h1>{c.title}</h1>
+        <p>{c.text}</p>
+        <div class="hero-actions">
+          <a class="btn" href={ROUTES.shop[lang]}>{c.back}</a>
+          <a class="wa-link" href={waLink(c.waText)} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  import { clearCart } from "../scripts/cart";
+
+  // Solo se vacía si se llega desde el pago (Stripe agrega session_id)
+  if (new URLSearchParams(location.search).has("session_id")) clearCart();
+</script>

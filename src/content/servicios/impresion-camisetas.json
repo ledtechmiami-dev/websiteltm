@@ -1,0 +1,50 @@
+{
+  "nombre": "Impresión de camisetas",
+  "linea": "graficos",
+  "orden": 5,
+  "nameEn": "T-shirt printing",
+  "slugEn": "t-shirt-printing",
+  "short": {
+    "es": "Camisetas con tu logo para tu equipo, eventos y promociones.",
+    "en": "T-shirts with your logo for your team, events and promotions."
+  },
+  "intro": {
+    "es": "Camisetas con tu logo o diseño para uniformar a tu equipo, vender o regalar en eventos.",
+    "en": "T-shirts with your logo or design to outfit your team, sell or give away at events."
+  },
+  "includes": {
+    "es": [
+      "Diseño o adaptación de tu logo",
+      "Impresión a todo color",
+      "Varias tallas y colores",
+      "Pedidos para equipos y eventos"
+    ],
+    "en": [
+      "Logo design or adaptation",
+      "Full-color printing",
+      "Multiple sizes and colors",
+      "Orders for teams and events"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Uniformes",
+      "Eventos",
+      "Promociones",
+      "Equipos deportivos"
+    ],
+    "en": [
+      "Uniforms",
+      "Events",
+      "Promotions",
+      "Sports teams"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

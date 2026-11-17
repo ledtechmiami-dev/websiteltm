@@ -1,0 +1,50 @@
+{
+  "nombre": "Puertas de Starboard",
+  "linea": "marino",
+  "orden": 5,
+  "nameEn": "Starboard doors",
+  "slugEn": "starboard-doors",
+  "short": {
+    "es": "Puertas y tapas de polímero marino que no se pudren.",
+    "en": "Marine polymer doors and hatches that won't rot."
+  },
+  "intro": {
+    "es": "Puertas, tapas y paneles cortados en Starboard, un polímero marino que no se pudre ni se hincha con el agua. A la medida de tu bote.",
+    "en": "Doors, hatches and panels cut from Starboard, a marine polymer that won't rot or swell with water. Made to fit your boat."
+  },
+  "includes": {
+    "es": [
+      "Medidas según tu bote",
+      "Corte CNC",
+      "Colores de Starboard disponibles",
+      "Instalación"
+    ],
+    "en": [
+      "Sized to your boat",
+      "CNC cutting",
+      "Available Starboard colors",
+      "Installation"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Consolas",
+      "Compartimentos",
+      "Guanteras",
+      "Cabinas"
+    ],
+    "en": [
+      "Consoles",
+      "Storage compartments",
+      "Glove boxes",
+      "Cabins"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

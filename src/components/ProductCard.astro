@@ -1,0 +1,42 @@
+---
+// Tarjeta de producto de la tienda: foto (o el dibujo de su línea con la marca PENDIENTE),
+// categoría, nombre, resumen y precio.
+import LineArt from "./LineArt.astro";
+import Pending from "./Pending.astro";
+import type { Lang } from "../data/site";
+import { lineByKey } from "../data/catalog";
+import { categoryOf, money, priceRange, productUrl, type Product } from "../data/shop";
+
+interface Props {
+  lang: Lang;
+  product: Product;
+}
+
+const { lang, product: p } = Astro.props;
+const cat = categoryOf(p);
+const line = lineByKey(cat.line);
+const range = priceRange(p);
+const c = {
+  es: { example: "producto de ejemplo", price: "precio", from: "Desde", soldOut: "Agotado" },
+  en: { example: "sample product", price: "price", from: "From", soldOut: "Sold out" },
+}[lang];
+---
+<li class="pcard" data-cat={p.category}>
+  <div class="pcard__img" style={`--ground:${line.ground}`}>
+    {p.images[0]
+      ? <img src={p.images[0]} alt="" loading="lazy" decoding="async" />
+      : <LineArt type={line.key} />}
+    {p.example && <span class="pcard__tag"><Pending lang={lang}>{c.example}</Pending></span>}
+    {p.soldOut && <span class="pcard__flag">{c.soldOut}</span>}
+  </div>
+  <div class="pcard__body">
+    <p class="pack__kicker"><span class="chip" style={`--c:${line.color}`}></span>{cat.name[lang]}</p>
+    <h3><a href={productUrl(p, lang)}>{p[lang].name}</a></h3>
+    <p class="pcard__short">{p[lang].short}</p>
+    <p class="pcard__price">
+      {range && !p.example
+        ? <>{range.varies && <small>{c.from}</small>}{money(range.from, lang)}</>
+        : <Pending lang={lang}>{c.price}</Pending>}
+    </p>
+  </div>
+</li>

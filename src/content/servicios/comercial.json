@@ -1,0 +1,58 @@
+{
+  "nombre": "Iluminación comercial",
+  "linea": "iluminacion",
+  "orden": 2,
+  "nameEn": "Commercial lighting",
+  "slugEn": "commercial",
+  "short": {
+    "es": "Tiendas, oficinas y restaurantes. Iluminación que vende y reduce consumo.",
+    "en": "Stores, offices and restaurants. Lighting that sells and cuts energy costs."
+  },
+  "intro": {
+    "es": "Iluminación para que tus clientes vean bien lo que vendes y tu equipo trabaje cómodo, con un consumo menor que el de la iluminación tradicional.",
+    "en": "Lighting that helps customers see what you sell and keeps your team comfortable, using less energy than traditional lighting."
+  },
+  "includes": {
+    "es": [
+      "Paneles y luminarias lineales para oficinas",
+      "Rieles y spots para vitrinas",
+      "Iluminación de ambiente para restaurantes",
+      "Cambio a LED de locales completos"
+    ],
+    "en": [
+      "Panels and linear fixtures for offices",
+      "Track lights and spots for displays",
+      "Ambient lighting for restaurants",
+      "Full LED retrofits for commercial spaces"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Tiendas",
+      "Oficinas",
+      "Restaurantes",
+      "Salones y spas",
+      "Bodegas"
+    ],
+    "en": [
+      "Stores",
+      "Offices",
+      "Restaurants",
+      "Salons and spas",
+      "Warehouses"
+    ]
+  },
+  "note": {
+    "es": "Oficinas y tiendas suelen ir entre 3500 y 4000 K. Los restaurantes se ven mejor con luz más cálida, cerca de 3000 K.",
+    "en": "Offices and stores usually sit between 3500 and 4000 K. Restaurants look better with warmer light, around 3000 K."
+  },
+  "kelvin": {
+    "discriminant": true,
+    "value": {
+      "from": 3000,
+      "to": 4000,
+      "label": "3000–4000 K",
+      "rgb": false
+    }
+  }
+}

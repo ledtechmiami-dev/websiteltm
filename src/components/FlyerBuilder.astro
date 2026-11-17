@@ -1,0 +1,1322 @@
+---
+// Constructor de volantes (idea tomada del estudio de diseño de Vistaprint, que
+// ofrece 11 medidas, 4 papeles, 6 grosores y una o dos caras): el cliente elige
+// medida, papel, diseño y colores, escribe sus textos y ve el volante como sale
+// impreso. El diseño se envía directo al correo. No muestra precios: el precio
+// va en la cotización, porque depende del tiraje, del papel y del grosor.
+// El dueño confirmó estas opciones tal como están: los papeles, los grosores,
+// los acabados y los mínimos.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Los cuatro papeles de volante del oficio. tex: cómo se dibuja en la vista previa.
+const STOCKS = [
+  { id: "brillante", es: "Brillante", en: "Glossy", base: "#FFFFFF", edge: "#E4E8EB", ink: "#14161A", sub: "#5A616B", tex: "brillo",
+    sw: "linear-gradient(118deg, #FFF 0 26%, #D8E2EA 44%, #FFF 62%, #EDF1F4)" },
+  { id: "mate", es: "Mate", en: "Matte", base: "#FFFFFF", edge: "#E7E8E6", ink: "#14161A", sub: "#5A616B", tex: "mate",
+    sw: "linear-gradient(135deg, #FFF 0 52%, #EFF0EE)" },
+  { id: "natural", es: "Sin recubrir", en: "Uncoated", base: "#FAF8F3", edge: "#E6E1D6", ink: "#1A1A18", sub: "#5E5B52", tex: "fibra",
+    sw: "linear-gradient(135deg, #FBF9F4, #EBE5D9)" },
+  { id: "reciclado", es: "Reciclado", en: "Recycled", base: "#F0ECE2", edge: "#D9D3C4", ink: "#1E1C17", sub: "#60594B", tex: "reciclado",
+    sw: "linear-gradient(135deg, #F2EEE4, #DED8C9)" },
+];
+
+// La paleta LED del logo más neutros de imprenta
+const ACCENTS = [
+  { id: "azul", es: "Azul LED", en: "LED blue", hex: "#0094DA" },
+  { id: "amarillo", es: "Amarillo LED", en: "LED yellow", hex: "#FFCA09" },
+  { id: "verde", es: "Verde LED", en: "LED green", hex: "#99C941" },
+  { id: "rojo", es: "Rojo LED", en: "LED red", hex: "#ED1B24" },
+  { id: "negro", es: "Negro", en: "Black", hex: "#0B0C0E" },
+  { id: "pizarra", es: "Gris pizarra", en: "Slate grey", hex: "#59626D" },
+  { id: "marino", es: "Azul marino", en: "Navy", hex: "#16304F" },
+  { id: "vino", es: "Vino", en: "Wine", hex: "#7A1F2B" },
+  { id: "oliva", es: "Verde oliva", en: "Olive", hex: "#4F5B32" },
+  { id: "terracota", es: "Terracota", en: "Terracotta", hex: "#B4522E" },
+];
+
+// Tiradas habituales de volante
+const QTYS = [100, 250, 500, 1000, 2500];
+
+const COPY = {
+  es: {
+    title: "Diseña tus volantes",
+    lead: "Elige la medida, el papel y el diseño, escribe lo que quieres anunciar y mira cómo queda el volante. Mándanos el diseño y te respondemos con el precio.",
+    format: "Medida",
+    shapes: {
+      carta: "Carta",
+      media: "Media carta",
+      cuarto: "Cuarto",
+      postal: "Postal",
+      legal: "Legal",
+      tabloide: "Tabloide",
+    },
+    shapeHelp: "La carta es la de siempre. La media y el cuarto rinden más por hoja y se reparten mejor en mano.",
+    orient: "Orientación",
+    orients: { vertical: "Vertical", horizontal: "Horizontal" },
+    paper: "Papel",
+    thick: "Grosor",
+    thicks: { ligero: "Papel ligero", normal: "Papel grueso", cartulina: "Cartulina" },
+    thickHelp: {
+      ligero: "70 lb. El más económico: para repartir en mano o dejar en buzones.",
+      normal: "100 lb. Se siente firme y no se transparenta por detrás.",
+      cartulina: "100 lb portada. Rígido, aguanta en el mostrador o en un exhibidor.",
+    },
+    print: "Impresión",
+    sides: "Caras",
+    sideOpts: { una: "Una cara", dos: "Dos caras" },
+    tabs: "Flecos recortables",
+    tabOpts: { no: "Sin flecos", si: "Con flecos" },
+    tabsHelp: "Los flecos de abajo llevan tu teléfono y se cortan con una perforación: el que pasa arranca uno y se lo lleva. Solo en volantes verticales.",
+    design: "Diseño",
+    tpls: { evento: "Evento", oferta: "Oferta", servicios: "Servicios", foto: "Foto grande", tipografica: "Solo texto" },
+    type: "Tipografía",
+    types: { moderna: "Moderna", clasica: "Clásica", tecnica: "Técnica", sencilla: "Sencilla" },
+    accent: "Color de acento",
+    bg: "Fondo",
+    bgs: { papel: "Papel blanco", color: "Color de acento", oscuro: "Oscuro" },
+    image: "Imagen",
+    images: { foto: "Espacio para foto", color: "Bloque de color" },
+    imageHelp: "Déjanos el espacio marcado y",
+    imageCta: "mándanos la foto por WhatsApp",
+    imageWa: "Hola, quiero imprimir volantes. Les envío la foto y el logo.",
+    photoBox: "TU FOTO",
+    words: "Qué anuncias",
+    headline: "Titular",
+    headlinePh: "Ej. Gran apertura",
+    defHeadline: "Gran apertura",
+    sub: "Segunda línea",
+    subPh: "Ej. Sábado 12 · 6 p.m.",
+    defSub: "Sábado 12 · 6 p.m.",
+    offer: "Lo que más destaca",
+    offerPh: "Ej. 20% de descuento",
+    defOffer: "20% de descuento",
+    details: "Tres detalles",
+    d1Ph: "Ej. Entrada libre",
+    defD1: "Entrada libre",
+    d2Ph: "Ej. Música en vivo",
+    defD2: "Música en vivo",
+    d3Ph: "Ej. Estacionamiento gratis",
+    defD3: "Estacionamiento gratis",
+    biz: "Tu negocio",
+    business: "Nombre del negocio",
+    businessPh: "Ej. Tu Negocio",
+    defBusiness: "Tu Negocio",
+    phone: "Teléfono",
+    phonePh: "Ej. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Sitio web o red social",
+    webPh: "Ej. tunegocio.com",
+    defWeb: "tunegocio.com",
+    back: "Reverso",
+    backs: { info: "Más información", cupon: "Cupón recortable", logo: "Logo en color" },
+    backHelp: "El reverso solo se imprime si eliges dos caras.",
+    coupon: "Presenta este cupón",
+    order: "Tu pedido",
+    qty: "Cantidad",
+    qtyHelp: "Lo normal para repartir en la calle es 500 o 1 000. Desde 25 en adelante.",
+    guides: "Guías de corte",
+    guidesOn: "Línea roja: sangrado, por donde pasa la cuchilla. Línea azul: zona segura, los textos no deben salir de ahí.",
+    approx: "Vista aproximada · el color impreso varía un poco del de la pantalla",
+    front: "Frente",
+    backLbl: "Reverso",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h. Depende del tiraje, del papel y del grosor.",
+    cta: "Cotizar estos volantes",
+    wa: "Enviar por WhatsApp",
+    notesPh: "Para cuándo los necesitas, si quieres que los repartamos, si ya tienes el diseño hecho…",
+    summary: "Diseño del constructor de volantes",
+    sFormat: "Medida",
+    sPaper: "Papel",
+    sThick: "Grosor",
+    sSides: "Caras",
+    sTabs: "Flecos recortables",
+    sDesign: "Diseño",
+    sType: "Tipografía",
+    sAccent: "Color de acento",
+    sBg: "Fondo",
+    sImage: "Imagen",
+    sWords: "Textos",
+    sBiz: "Negocio",
+    sBack: "Reverso",
+    sQty: "Cantidad",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesan estos volantes:",
+    preview: "Vista previa del volante",
+  },
+  en: {
+    title: "Design your flyers",
+    lead: "Pick the size, the paper and the layout, type what you want to announce and see how the flyer comes out. Send us the design and we'll reply with the price.",
+    format: "Size",
+    shapes: {
+      carta: "Letter",
+      media: "Half letter",
+      cuarto: "Quarter",
+      postal: "Postcard",
+      legal: "Legal",
+      tabloide: "Tabloid",
+    },
+    shapeHelp: "Letter is the usual one. Half and quarter get more out of each sheet and are easier to hand out.",
+    orient: "Orientation",
+    orients: { vertical: "Portrait", horizontal: "Landscape" },
+    paper: "Paper",
+    thick: "Thickness",
+    thicks: { ligero: "Light paper", normal: "Heavy paper", cartulina: "Card stock" },
+    thickHelp: {
+      ligero: "70 lb. The cheapest: for handing out or dropping in mailboxes.",
+      normal: "100 lb. Feels solid and the back doesn't show through.",
+      cartulina: "100 lb cover. Stiff, it holds up on a counter or in a display.",
+    },
+    print: "Printing",
+    sides: "Sides",
+    sideOpts: { una: "Single-sided", dos: "Double-sided" },
+    tabs: "Tear-off tabs",
+    tabOpts: { no: "No tabs", si: "With tabs" },
+    tabsHelp: "The tabs along the bottom carry your phone number and are perforated: people tear one off and take it with them. Portrait flyers only.",
+    design: "Layout",
+    tpls: { evento: "Event", oferta: "Offer", servicios: "Services", foto: "Big photo", tipografica: "Type only" },
+    type: "Typeface",
+    types: { moderna: "Modern", clasica: "Classic", tecnica: "Technical", sencilla: "Simple" },
+    accent: "Accent color",
+    bg: "Background",
+    bgs: { papel: "White paper", color: "Accent color", oscuro: "Dark" },
+    image: "Image",
+    images: { foto: "Space for a photo", color: "Color block" },
+    imageHelp: "We'll leave the space marked and you can",
+    imageCta: "send us the photo on WhatsApp",
+    imageWa: "Hi, I want to print flyers. I'll send you the photo and the logo.",
+    photoBox: "YOUR PHOTO",
+    words: "What you're announcing",
+    headline: "Headline",
+    headlinePh: "E.g. Grand opening",
+    defHeadline: "Grand opening",
+    sub: "Second line",
+    subPh: "E.g. Saturday 12th · 6 p.m.",
+    defSub: "Saturday 12th · 6 p.m.",
+    offer: "The part that stands out",
+    offerPh: "E.g. 20% off",
+    defOffer: "20% off",
+    details: "Three details",
+    d1Ph: "E.g. Free entry",
+    defD1: "Free entry",
+    d2Ph: "E.g. Live music",
+    defD2: "Live music",
+    d3Ph: "E.g. Free parking",
+    defD3: "Free parking",
+    biz: "Your business",
+    business: "Business name",
+    businessPh: "E.g. Your Business",
+    defBusiness: "Your Business",
+    phone: "Phone",
+    phonePh: "E.g. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Website or social handle",
+    webPh: "E.g. yourbusiness.com",
+    defWeb: "yourbusiness.com",
+    back: "Back",
+    backs: { info: "More information", cupon: "Tear-off coupon", logo: "Logo in color" },
+    backHelp: "The back is only printed if you choose double-sided.",
+    coupon: "Show this coupon",
+    order: "Your order",
+    qty: "Quantity",
+    qtyHelp: "For handing out on the street, 500 or 1,000 is normal. From 25 up.",
+    guides: "Cut guides",
+    guidesOn: "Red line: the bleed, where the blade cuts. Blue line: the safe area, keep text inside it.",
+    approx: "Approximate preview · printed color varies a little from the screen",
+    front: "Front",
+    backLbl: "Back",
+    price: "Price: we send it with your quote, in under 24 hours. It depends on the run, the paper and the thickness.",
+    cta: "Quote these flyers",
+    wa: "Send on WhatsApp",
+    notesPh: "When you need them, whether you want us to hand them out, whether your design is already done…",
+    summary: "Flyer builder design",
+    sFormat: "Size",
+    sPaper: "Paper",
+    sThick: "Thickness",
+    sSides: "Sides",
+    sTabs: "Tear-off tabs",
+    sDesign: "Layout",
+    sType: "Typeface",
+    sAccent: "Accent color",
+    sBg: "Background",
+    sImage: "Image",
+    sWords: "Copy",
+    sBiz: "Business",
+    sBack: "Back",
+    sQty: "Quantity",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in these flyers:",
+    preview: "Flyer preview",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  stocks: STOCKS.map((s) => ({ id: s.id, base: s.base, edge: s.edge, ink: s.ink, sub: s.sub, tex: s.tex, name: s[lang] })),
+  accents: ACCENTS.map((a) => ({ id: a.id, hex: a.hex, name: a[lang] })),
+  shapes: c.shapes,
+  orients: c.orients,
+  thicks: c.thicks,
+  thickHelp: c.thickHelp,
+  sides: c.sideOpts,
+  tabOpts: c.tabOpts,
+  tpls: c.tpls,
+  types: c.types,
+  bgs: c.bgs,
+  images: c.images,
+  backs: c.backs,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    photoBox: c.photoBox,
+    coupon: c.coupon,
+    front: c.front,
+    backLbl: c.backLbl,
+    approx: c.approx,
+    guidesOn: c.guidesOn,
+    summary: c.summary,
+    sFormat: c.sFormat,
+    sPaper: c.sPaper,
+    sThick: c.sThick,
+    sSides: c.sSides,
+    sTabs: c.sTabs,
+    sDesign: c.sDesign,
+    sType: c.sType,
+    sAccent: c.sAccent,
+    sBg: c.sBg,
+    sImage: c.sImage,
+    sWords: c.sWords,
+    sBiz: c.sBiz,
+    sBack: c.sBack,
+    sQty: c.sQty,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+    preview: c.preview,
+    yes: lang === "es" ? "Sí" : "Yes",
+    no: lang === "es" ? "No" : "No",
+  },
+};
+const waPhoto = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.imageWa)}`;
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+const TPLS = Object.keys(c.tpls);
+---
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" />
+
+<section class="section section--flush" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb fl" data-flyer data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage">
+        <canvas class="nb__canvas fl__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-guides aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.guides}
+          </button>
+        </div>
+        <p class="nb__approx" data-approx>{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.format}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.format}>
+            {seg("formato", c.shapes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help"><b data-size-out></b> · {c.shapeHelp}</p>
+          <p class="tb__sub">{c.orient}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.orient}>
+            {seg("orientacion", c.orients).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.paper}</legend>
+          <div class="tb__mats">
+            {STOCKS.map((s) => (
+              <label class="tb__mat">
+                <input type="radio" name="papel" value={s.id} checked={s.id === "brillante"} />
+                <i style={`--c:${s.sw}`} aria-hidden="true"></i>
+                <span>{s[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.thick}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.thick} aria-describedby="fl-thick-help">
+            {seg("grosor", c.thicks, "normal").map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="fl-thick-help" data-thick-help>{c.thickHelp.normal}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.print}</legend>
+          <p class="tb__sub">{c.sides}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.sides}>
+            {seg("caras", c.sideOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.tabs}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.tabs} data-tabs>
+            {seg("flecos", c.tabOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.tabsHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.design}</legend>
+          <div class="fb__pats fl__tpls" role="radiogroup" aria-label={c.design}>
+            {TPLS.map((id, i) => (
+              <label class="fb__pat fl__tpl">
+                <input type="radio" name="plantilla" value={id} checked={i === 0} />
+                <canvas width="200" height="248" aria-hidden="true"></canvas>
+                <span>{c.tpls[id as keyof typeof c.tpls]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.bg}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.bg}>
+            {seg("fondo", c.bgs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.type}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.type}>
+            {seg("tipografia", c.types).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.accent} · <span class="eb__picked" data-accent-name>{ACCENTS[0][lang]}</span></p>
+          <div class="eb__sws" role="radiogroup" aria-label={c.accent}>
+            {ACCENTS.map((a, i) => (
+              <label class="eb__sw" title={a[lang]}>
+                <input type="radio" name="acento" value={a.id} checked={i === 0} />
+                <i style={`--c:${a.hex}`} aria-hidden="true"></i>
+                <span class="sr-only">{a[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.image}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.image} data-image>
+            {seg("imagen", c.images).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.imageHelp} <a class="eb__link" href={waPhoto} target="_blank" rel="noopener">{c.imageCta}</a>.</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.words}</legend>
+          <div class="tb__words">
+            <div class="field">
+              <label for="fl-titular">{c.headline}</label>
+              <input id="fl-titular" type="text" name="titular" maxlength="38" autocomplete="off" placeholder={c.headlinePh} value={c.defHeadline} />
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="fl-sub">{c.sub}</label>
+                <input id="fl-sub" type="text" name="subtitulo" maxlength="40" autocomplete="off" placeholder={c.subPh} value={c.defSub} />
+              </div>
+              <div class="field">
+                <label for="fl-oferta">{c.offer}</label>
+                <input id="fl-oferta" type="text" name="oferta" maxlength="26" autocomplete="off" placeholder={c.offerPh} value={c.defOffer} />
+              </div>
+            </div>
+            <p class="tb__sub">{c.details}</p>
+            <div class="fl__rows">
+              {[1, 2, 3].map((n) => (
+                <div class="field">
+                  <input
+                    type="text"
+                    name={`detalle${n}`}
+                    maxlength="34"
+                    autocomplete="off"
+                    placeholder={[c.d1Ph, c.d2Ph, c.d3Ph][n - 1]}
+                    value={[c.defD1, c.defD2, c.defD3][n - 1]}
+                    aria-label={`${c.details} ${n}`}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.biz}</legend>
+          <div class="tb__words">
+            <div class="field">
+              <label for="fl-negocio">{c.business}</label>
+              <input id="fl-negocio" type="text" name="negocio" maxlength="34" autocomplete="off" placeholder={c.businessPh} value={c.defBusiness} />
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="fl-tel">{c.phone}</label>
+                <input id="fl-tel" type="text" name="tel" maxlength="24" autocomplete="off" placeholder={c.phonePh} value={c.defPhone} />
+              </div>
+              <div class="field">
+                <label for="fl-web">{c.web}</label>
+                <input id="fl-web" type="text" name="web" maxlength="34" autocomplete="off" placeholder={c.webPh} value={c.defWeb} />
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.back}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.back} data-back>
+            {seg("reverso", c.backs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-back-help hidden>{c.backHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="nb__sizes">
+            {QTYS.map((q) => (
+              <button type="button" class="nb__pill" data-qty={q}>{q}</button>
+            ))}
+          </div>
+          <div class="tb__row">
+            <div class="field">
+              <label for="fl-cantidad">{c.qty}</label>
+              <input id="fl-cantidad" type="number" name="cantidad" min="25" max="100000" step="25" value="500" inputmode="numeric" aria-describedby="fl-qty-help" />
+            </div>
+          </div>
+          <p class="nb__help" id="fl-qty-help">{c.qtyHelp}</p>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="fl" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Stock = { id: string; name: string; base: string; edge: string; ink: string; sub: string; tex: string };
+  type Accent = { id: string; name: string; hex: string };
+  type Cfg = {
+    stocks: Stock[];
+    accents: Accent[];
+    shapes: Record<string, string>;
+    orients: Record<string, string>;
+    thicks: Record<string, string>;
+    thickHelp: Record<string, string>;
+    sides: Record<string, string>;
+    tabOpts: Record<string, string>;
+    tpls: Record<string, string>;
+    types: Record<string, string>;
+    bgs: Record<string, string>;
+    images: Record<string, string>;
+    backs: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+  // Lo que hay que dibujar en una cara, ya resuelto desde el formulario
+  type Face = {
+    w: number; // pulgadas
+    h: number;
+    stock: Stock;
+    accent: string;
+    type: string;
+    tpl: string;
+    bg: string;
+    photo: boolean;
+    tabs: boolean;
+    t: Record<string, string>;
+    mini: boolean;
+  };
+
+  // Medidas de volante, en pulgadas (vertical)
+  const SHAPES: Record<string, { w: number; h: number }> = {
+    carta: { w: 8.5, h: 11 },
+    media: { w: 5.5, h: 8.5 },
+    cuarto: { w: 4.25, h: 5.5 },
+    postal: { w: 4, h: 6 },
+    legal: { w: 8.5, h: 14 },
+    tabloide: { w: 11, h: 17 },
+  };
+  const BLEED = 0.125; // sangrado de imprenta
+  const SAFE = 0.25; // margen de seguridad hacia dentro
+
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  // Luminancia relativa: decide si sobre ese color el texto va blanco o negro
+  const lum = (hex: string) =>
+    rgb(hex)
+      .map((v) => v / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)))
+      .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const onColor = (hex: string) => (lum(hex) > 0.42 ? "#0B0C0E" : "#FFFFFF");
+  const mix = (hex: string, t: number) => {
+    const to = t < 0 ? 0 : 255;
+    const a = Math.abs(t);
+    const [r, g, b] = rgb(hex).map((v) => Math.round(v + (to - v) * a));
+    return `rgb(${r},${g},${b})`;
+  };
+  // Azar con semilla: la textura del papel no cambia en cada redibujado
+  const rng = (seed: number) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  // Medidas en pulgadas, escritas como en la imprenta: 8-1/2 in
+  const fmtIn = (v: number) => {
+    const whole = Math.floor(v);
+    const fr = +(v - whole).toFixed(3);
+    const frac: Record<string, string> = { "0.5": "-1/2", "0.25": "-1/4", "0.75": "-3/4" };
+    const f = frac[String(fr)];
+    if (f) return `${whole}${f}`;
+    return fr ? String(+v.toFixed(2)) : String(whole);
+  };
+
+  const FAMS: Record<string, { title: string; body: string; track: string }> = {
+    moderna: { title: '800 {px}px "Saira", "Arial Narrow", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    clasica: { title: '700 {px}px "Playfair Display", Georgia, serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    tecnica: { title: '400 {px}px "Michroma", "Eurostile", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.02em" },
+    sencilla: { title: '600 {px}px "Instrument Sans", system-ui, sans-serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+  };
+  const LABEL = (px: number) => `400 ${px}px "Michroma", "Eurostile", sans-serif`;
+  const setTrack = (c: CanvasRenderingContext2D, v: string) => {
+    (c as unknown as { letterSpacing: string }).letterSpacing = v;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-flyer]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const stage = root.querySelector<HTMLElement>(".nb__stage")!;
+    const guidesBtn = root.querySelector<HTMLButtonElement>("[data-guides]")!;
+    const approx = root.querySelector<HTMLElement>("[data-approx]")!;
+    const sizeOut = form.querySelector<HTMLElement>("[data-size-out]")!;
+    const thickHelp = form.querySelector<HTMLElement>("[data-thick-help]")!;
+    const tabsSeg = form.querySelector<HTMLElement>("[data-tabs]")!;
+    const imageSeg = form.querySelector<HTMLElement>("[data-image]")!;
+    const backSeg = form.querySelector<HTMLElement>("[data-back]")!;
+    const backHelp = form.querySelector<HTMLElement>("[data-back-help]")!;
+    const accentName = form.querySelector<HTMLElement>("[data-accent-name]")!;
+    const qtyEl = form.querySelector<HTMLInputElement>("input[name='cantidad']")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    let guides = false;
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const stock = () => cfg.stocks.find((s) => s.id === val("papel")) ?? cfg.stocks[0];
+    const accent = () => cfg.accents.find((a) => a.id === val("acento")) ?? cfg.accents[0];
+    const vertical = () => val("orientacion") === "vertical";
+    const twoSided = () => val("caras") === "dos";
+    // Los flecos se arrancan de abajo: en un volante acostado no tienen sentido
+    const canTabs = () => vertical();
+    const tabs = () => canTabs() && val("flecos") === "si";
+    // En el diseño de solo texto no hay hueco de imagen que elegir
+    const hasPhoto = () => val("plantilla") !== "tipografica";
+    const qty = () => Math.max(25, Math.min(100000, Math.round(Number(qtyEl.value) || 500)));
+    const dims = () => {
+      const s = SHAPES[val("formato")] ?? SHAPES.carta;
+      return vertical() ? { w: s.w, h: s.h } : { w: s.h, h: s.w };
+    };
+    const texts = () => ({
+      titular: text("titular"),
+      sub: text("subtitulo"),
+      oferta: text("oferta"),
+      d1: text("detalle1"),
+      d2: text("detalle2"),
+      d3: text("detalle3"),
+      negocio: text("negocio"),
+      tel: text("tel"),
+      web: text("web"),
+    });
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const RADIOS = ["formato", "orientacion", "papel", "grosor", "caras", "flecos", "plantilla", "fondo", "tipografia", "acento", "imagen", "reverso"];
+    const FIELDS: Array<[string, number]> = [
+      ["titular", 38],
+      ["subtitulo", 40],
+      ["oferta", 26],
+      ["detalle1", 34],
+      ["detalle2", 34],
+      ["detalle3", 34],
+      ["negocio", 34],
+      ["tel", 24],
+      ["web", 34],
+    ];
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const params = new URLSearchParams(location.search);
+    if (params.has("plantilla") && params.has("formato")) {
+      RADIOS.forEach((n) => setRadio(n, params.get(n)));
+      FIELDS.forEach(([n, max]) => {
+        const v = params.get(n);
+        if (v !== null) (form.elements.namedItem(n) as HTMLInputElement).value = v.slice(0, max);
+      });
+      const q = Number(params.get("cantidad"));
+      if (q >= 25 && q <= 100000) qtyEl.value = String(Math.round(q));
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams();
+      RADIOS.forEach((n) => p.set(n, val(n)));
+      FIELDS.forEach(([n]) => p.set(n, text(n)));
+      p.set("cantidad", String(qty()));
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Dibujo ----------
+    // Textura del papel
+    const paper = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, st: Stock, s: number) => {
+      c.fillStyle = st.base;
+      c.fillRect(x, y, w, h);
+      const r = rng(st.id.charCodeAt(0) * 131 + st.id.length * 17);
+      if (st.tex === "brillo") {
+        const g = c.createLinearGradient(x, y + h, x + w, y);
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.44, "rgba(255,255,255,0)");
+        g.addColorStop(0.5, "rgba(255,255,255,0.6)");
+        g.addColorStop(0.56, "rgba(255,255,255,0)");
+        g.addColorStop(1, "rgba(180,200,215,0.16)");
+        c.fillStyle = g;
+        c.fillRect(x, y, w, h);
+      }
+      if (st.tex === "fibra" || st.tex === "reciclado") {
+        const n = Math.round((w * h) / 110);
+        const dots = st.tex === "reciclado" ? ["rgba(84,70,44,0.3)", "rgba(255,252,240,0.6)"] : ["rgba(90,84,70,0.13)", "rgba(255,255,255,0.6)"];
+        for (let i = 0; i < n; i++) {
+          c.fillStyle = dots[r() > 0.5 ? 1 : 0];
+          const dw = Math.max(0.6, s * (0.004 + r() * 0.008));
+          c.fillRect(x + r() * w, y + r() * h, dw, dw * (r() > 0.7 ? 2.2 : 1));
+        }
+      }
+      const sh = c.createLinearGradient(x, y, x, y + h);
+      sh.addColorStop(0, "rgba(255,255,255,0.12)");
+      sh.addColorStop(0.5, "rgba(255,255,255,0)");
+      sh.addColorStop(1, "rgba(11,12,14,0.06)");
+      c.fillStyle = sh;
+      c.fillRect(x, y, w, h);
+    };
+
+    // Dibuja una cara del volante. Devuelve el alto que ocupa el contenido,
+    // que es menos que la hoja cuando lleva flecos recortables.
+    const drawFace = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Face, back: string | null) => {
+      const { w, h } = o;
+      const X = (v: number) => x0 + v * s;
+      const Y = (v: number) => y0 + v * s;
+      const P = (v: number) => v * s;
+      const st = o.stock;
+      const acc = o.accent;
+      // Franja de flecos: se lleva la parte de abajo de la hoja
+      const tabH = o.tabs ? Math.min(h * 0.17, 1.6) : 0;
+      const hL = h - tabH; // alto útil para el diseño
+      const fu = Math.min(hL, w * 1.3); // unidad de texto: manda el lado corto
+      const m = 0.055 * fu;
+      // Caja de contenido: en una hoja muy alargada el diseño no se estira
+      const box = Math.min(hL, w * 1.45);
+      const boxY = (hL - box) / 2;
+      const V = (k: number) => boxY + k * box;
+
+      // ---- Fondo de la hoja ----
+      paper(c, X(0), Y(0), P(w), P(h), st, s);
+      const dark = o.bg === "oscuro";
+      const colored = o.bg === "color";
+      if (dark || colored) {
+        c.fillStyle = dark ? "#14161A" : acc;
+        c.fillRect(X(0), Y(0), P(w), P(h));
+        c.save();
+        c.globalAlpha = 0.12;
+        c.globalCompositeOperation = "overlay";
+        paper(c, X(0), Y(0), P(w), P(h), st, s);
+        c.restore();
+      }
+      const ink = dark ? "#FFFFFF" : colored ? onColor(acc) : st.ink;
+      const sub = dark ? "#AEB5BD" : colored ? mix(onColor(acc), onColor(acc) === "#FFFFFF" ? -0.2 : 0.35) : st.sub;
+      // Sobre un fondo de color, las franjas de acento no se verían: van en el color del texto
+      const mark = colored ? ink : acc;
+      // Sobre una franja, el texto va del color del fondo de la hoja: en un
+      // volante de color, franja blanca y letra del color de acento.
+      const onMark = colored ? acc : onColor(acc);
+
+      const fam = () => FAMS[o.type] ?? FAMS.moderna;
+      const make = (kind: "title" | "body" | "label", px: number) =>
+        kind === "label" ? LABEL(px) : fam()[kind].replace("{px}", String(px));
+
+      // Un renglón de texto; en las miniaturas se sustituye por una barra
+      const put = (
+        txt: string,
+        kind: "title" | "body" | "label",
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string,
+        align: CanvasTextAlign = "left",
+        upper = false
+      ) => {
+        if (!txt) return 0;
+        const px = Math.max(1, P(sizeIn));
+        const maxPx = P(maxIn);
+        const t = upper ? txt.toLocaleUpperCase() : txt;
+        setTrack(c, kind === "label" ? "0.1em" : fam().track);
+        c.font = make(kind, px);
+        let wd = c.measureText(t).width;
+        if (wd > maxPx && wd > 0) {
+          c.font = make(kind, px * (maxPx / wd));
+          wd = maxPx;
+        }
+        c.fillStyle = color;
+        c.textAlign = align;
+        c.textBaseline = "alphabetic";
+        if (o.mini) {
+          const bh = Math.max(1, px * 0.6);
+          const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+          c.fillRect(bx, Y(yIn) - bh, wd, bh);
+        } else {
+          c.fillText(t, X(xIn), Y(yIn));
+        }
+        setTrack(c, "0px");
+        return wd;
+      };
+
+      // Titular: parte en dos renglones antes que achicarse hasta no leerse.
+      // Con mid, yIn es el centro del bloque: así un titular de dos renglones
+      // no se sale por abajo de la franja que lo lleva.
+      const headline = (
+        txt: string,
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string,
+        align: CanvasTextAlign = "left",
+        mid = false,
+        maxHIn = 0 // alto máximo del bloque: con dos renglones la letra se achica
+      ) => {
+        if (!txt) return yIn;
+        const maxPx = P(maxIn);
+        let px = Math.max(1, P(sizeIn));
+        c.font = make("title", px);
+        const words = txt.split(/\s+/);
+        let lines = [txt];
+        if (words.length > 1 && c.measureText(txt).width > maxPx) {
+          // El corte que deja los dos renglones más parejos
+          let best = 1;
+          let diff = Infinity;
+          for (let i = 1; i < words.length; i++) {
+            const a = c.measureText(words.slice(0, i).join(" ")).width;
+            const b = c.measureText(words.slice(i).join(" ")).width;
+            if (Math.abs(a - b) < diff) {
+              diff = Math.abs(a - b);
+              best = i;
+            }
+          }
+          lines = [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+        }
+        const widest = Math.max(...lines.map((l) => c.measureText(l).width));
+        if (widest > maxPx) px *= maxPx / widest;
+        c.font = make("title", px);
+        if (maxHIn && lines.length * px * 1.06 > P(maxHIn)) {
+          px *= P(maxHIn) / (lines.length * px * 1.06);
+          c.font = make("title", px);
+        }
+        const lh = px * 1.06;
+        const baseY = Y(yIn) - (mid ? ((lines.length - 1) * lh) / 2 : 0);
+        lines.forEach((l, i) => {
+          const ly = baseY + i * lh;
+          c.fillStyle = color;
+          c.textAlign = align;
+          c.textBaseline = "alphabetic";
+          if (o.mini) {
+            const wd = c.measureText(l).width;
+            const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+            c.fillRect(bx, ly - px * 0.62, wd, px * 0.62);
+          } else {
+            c.fillText(l, X(xIn), ly);
+          }
+        });
+        return (baseY + (lines.length - 1) * lh - y0) / s; // dónde quedó el último renglón
+      };
+
+      const band = (xIn: number, yIn: number, wIn: number, hIn: number, color = mark) => {
+        c.fillStyle = color;
+        c.fillRect(X(xIn), Y(yIn), P(wIn), P(hIn));
+      };
+      // Hueco de la foto: rayado en diagonal con su rótulo, o un bloque de color
+      const image = (xIn: number, yIn: number, wIn: number, hIn: number) => {
+        const bx = X(xIn);
+        const by = Y(yIn);
+        const bw = P(wIn);
+        const bh = P(hIn);
+        if (!o.photo) {
+          c.fillStyle = mark;
+          c.fillRect(bx, by, bw, bh);
+          return;
+        }
+        c.save();
+        c.beginPath();
+        c.rect(bx, by, bw, bh);
+        c.clip();
+        c.fillStyle = dark ? "#23262B" : colored ? mix(acc, onColor(acc) === "#FFFFFF" ? -0.18 : 0.2) : "#E4E7EA";
+        c.fillRect(bx, by, bw, bh);
+        c.strokeStyle = dark ? "rgba(255,255,255,0.1)" : "rgba(11,12,14,0.09)";
+        c.lineWidth = Math.max(1, P(0.02));
+        const step = Math.max(6, P(0.26));
+        c.beginPath();
+        for (let i = -bh; i < bw; i += step) {
+          c.moveTo(bx + i, by + bh);
+          c.lineTo(bx + i + bh, by);
+        }
+        c.stroke();
+        c.restore();
+        if (!o.mini) {
+          const lbl = Math.min(hIn * 0.1, wIn * 0.055);
+          put(cfg.copy.photoBox, "label", lbl, xIn + wIn / 2, yIn + hIn / 2 + lbl * 0.4, wIn * 0.7, dark ? "#8D949C" : colored ? sub : "#8A9099", "center");
+        }
+      };
+      // Lista con marca de verificación en el color de acento
+      const ticks = (rows: string[], xIn: number, yIn: number, stepIn: number, sizeIn: number, maxIn: number) => {
+        rows.forEach((r, i) => {
+          const ty = yIn + i * stepIn;
+          const rad = sizeIn * 0.34;
+          c.fillStyle = mark;
+          c.beginPath();
+          c.arc(X(xIn + rad), Y(ty) - P(sizeIn * 0.26), P(rad), 0, Math.PI * 2);
+          c.fill();
+          if (!o.mini) {
+            c.strokeStyle = onMark;
+            c.lineWidth = Math.max(1, P(rad * 0.26));
+            c.lineCap = "round";
+            c.lineJoin = "round";
+            c.beginPath();
+            c.moveTo(X(xIn + rad * 0.55), Y(ty) - P(sizeIn * 0.26));
+            c.lineTo(X(xIn + rad * 0.88), Y(ty) - P(sizeIn * 0.26) + P(rad * 0.38));
+            c.lineTo(X(xIn + rad * 1.45), Y(ty) - P(sizeIn * 0.26) - P(rad * 0.45));
+            c.stroke();
+          }
+          put(r, "body", sizeIn, xIn + rad * 2.6, ty, maxIn - rad * 2.6, sub);
+        });
+      };
+
+      // ---- Reverso ----
+      if (back) {
+        if (back === "logo") {
+          if (!colored && !dark) {
+            c.fillStyle = acc;
+            c.fillRect(X(0), Y(0), P(w), P(h));
+          }
+          const bgInk = colored || dark ? ink : onColor(acc);
+          headline(o.t.negocio, 0.075 * fu, w / 2, V(0.46), w - m * 2, bgInk, "center", true, box * 0.18);
+          if (o.t.web) put(o.t.web, "body", 0.026 * fu, w / 2, V(0.58), w - m * 2, bgInk, "center");
+          if (o.t.tel) put(o.t.tel, "body", 0.032 * fu, w / 2, V(0.65), w - m * 2, bgInk, "center");
+        } else if (back === "cupon") {
+          put(o.t.negocio, "label", 0.022 * fu, w / 2, V(0.16), w - m * 2, sub, "center");
+          // Recuadro troquelado del cupón
+          c.save();
+          c.setLineDash([P(0.14), P(0.1)]);
+          c.lineWidth = Math.max(1, P(0.025));
+          c.strokeStyle = mark;
+          c.strokeRect(X(m), Y(V(0.26)), P(w - m * 2), P(box * 0.42));
+          c.restore();
+          headline(o.t.oferta, 0.1 * fu, w / 2, V(0.44), w - m * 3, mark, "center", true, box * 0.2);
+          put(cfg.copy.coupon, "body", 0.026 * fu, w / 2, V(0.58), w - m * 3, sub, "center");
+          const rows = [o.t.d1, o.t.d2, o.t.d3].filter(Boolean);
+          rows.forEach((r, i) => put(r, "body", 0.024 * fu, w / 2, V(0.76 + i * 0.07), w - m * 2, sub, "center"));
+          put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "body", 0.026 * fu, w / 2, V(0.96), w - m * 2, ink, "center");
+        } else {
+          headline(o.t.titular, 0.055 * fu, m, V(0.16), w - m * 2, ink);
+          band(m, V(0.21), w * 0.14, 0.014 * fu);
+          const rows = [o.t.d1, o.t.d2, o.t.d3].filter(Boolean);
+          ticks(rows, m, V(0.36), 0.1 * fu, 0.03 * fu, w - m * 2);
+          if (o.t.sub) put(o.t.sub, "body", 0.028 * fu, m, V(0.72), w - m * 2, sub);
+          band(0, hL - 0.13 * fu, w, 0.13 * fu);
+          put(o.t.negocio, "title", 0.04 * fu, m, hL - 0.075 * fu, w - m * 2, onMark);
+          put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "body", 0.028 * fu, m, hL - 0.03 * fu, w - m * 2, onMark);
+        }
+        return;
+      }
+
+      // ---- Frente: cinco diseños ----
+      const details = [o.t.d1, o.t.d2, o.t.d3].filter(Boolean);
+
+      if (o.tpl === "evento") {
+        image(0, 0, w, hL * 0.4);
+        const last = headline(o.t.titular, 0.095 * fu, w / 2, V(0.52), w - m * 2, ink, "center");
+        if (o.t.sub) put(o.t.sub, "body", 0.034 * fu, w / 2, last + 0.07 * fu, w - m * 2, sub, "center");
+        if (o.t.oferta) {
+          const bw = Math.min(w * 0.68, w - m * 2);
+          band(w / 2 - bw / 2, V(0.66), bw, 0.1 * fu);
+          put(o.t.oferta, "title", 0.05 * fu, w / 2, V(0.66) + 0.071 * fu, bw - m, onMark, "center");
+        }
+        details.forEach((d, i) => put(d, "body", 0.028 * fu, w / 2, V(0.79 + i * 0.035), w - m * 2, sub, "center"));
+        band(0, hL - 0.11 * fu, w, 0.11 * fu);
+        put(o.t.negocio, "title", 0.038 * fu, m, hL - 0.062 * fu, w * 0.5, onMark);
+        put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "body", 0.027 * fu, w - m, hL - 0.04 * fu, w * 0.44, onMark, "right");
+      } else if (o.tpl === "oferta") {
+        band(0, 0, w, hL * 0.34);
+        put(o.t.negocio, "label", 0.022 * fu, w / 2, hL * 0.09, w - m * 2, onMark, "center");
+        headline(o.t.oferta, 0.145 * fu, w / 2, hL * 0.22, w - m * 2, onMark, "center", true, hL * 0.19);
+        image(m, V(0.4), w - m * 2, box * 0.24);
+        const last = headline(o.t.titular, 0.06 * fu, w / 2, V(0.72), w - m * 2, ink, "center");
+        if (o.t.sub) put(o.t.sub, "body", 0.03 * fu, w / 2, last + 0.055 * fu, w - m * 2, sub, "center");
+        details.forEach((d, i) => put(d, "body", 0.026 * fu, w / 2, V(0.84 + i * 0.038), w - m * 2, sub, "center"));
+        put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "title", 0.036 * fu, w / 2, hL - m * 0.7, w - m * 2, ink, "center");
+      } else if (o.tpl === "servicios") {
+        put(o.t.negocio, "title", 0.042 * fu, m, V(0.07), w * 0.62, ink);
+        band(m, V(0.09), w * 0.12, 0.016 * fu);
+        image(0, V(0.14), w, box * 0.26);
+        const last = headline(o.t.titular, 0.07 * fu, m, V(0.48), w - m * 2, ink);
+        if (o.t.sub) put(o.t.sub, "body", 0.03 * fu, m, last + 0.05 * fu, w - m * 2, sub);
+        ticks(details, m, V(0.62), 0.06 * fu, 0.03 * fu, w - m * 2);
+        if (o.t.oferta) {
+          band(m, V(0.76), w - m * 2, 0.085 * fu);
+          put(o.t.oferta, "title", 0.042 * fu, w / 2, V(0.76) + 0.06 * fu, w - m * 3, onMark, "center");
+        }
+        band(0, hL - 0.14 * fu, w, 0.14 * fu, dark ? "#23262B" : colored ? ink : mix(acc, -0.25));
+        const footInk = colored ? acc : "#FFFFFF";
+        put(o.t.tel, "title", 0.055 * fu, w / 2, hL - 0.075 * fu, w - m * 2, footInk, "center");
+        put(o.t.web, "body", 0.026 * fu, w / 2, hL - 0.032 * fu, w - m * 2, footInk, "center");
+      } else if (o.tpl === "foto") {
+        image(0, 0, w, hL);
+        // Franja oscura para que el titular se lea encima de la foto
+        c.fillStyle = dark || colored ? "rgba(0,0,0,0.42)" : "rgba(11,12,14,0.55)";
+        c.fillRect(X(0), Y(V(0.42)), P(w), P(box * 0.3));
+        const last = headline(o.t.titular, 0.1 * fu, w / 2, V(0.53), w - m * 2, "#FFFFFF", "center", true, box * 0.19);
+        if (o.t.sub) put(o.t.sub, "body", 0.032 * fu, w / 2, last + 0.07 * fu, w - m * 2, "rgba(255,255,255,0.82)", "center");
+        if (o.t.oferta) {
+          const r = Math.min(w * 0.19, box * 0.13);
+          c.fillStyle = mark;
+          c.beginPath();
+          c.arc(X(w - m - r), Y(V(0.14) + r), P(r), 0, Math.PI * 2);
+          c.fill();
+          headline(o.t.oferta, 0.038 * fu, w - m - r, V(0.14) + r + 0.012 * fu, r * 1.6, onMark, "center");
+        }
+        band(0, hL - 0.12 * fu, w, 0.12 * fu);
+        put(o.t.negocio, "title", 0.04 * fu, m, hL - 0.068 * fu, w * 0.5, onMark);
+        put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "body", 0.027 * fu, w - m, hL - 0.042 * fu, w * 0.44, onMark, "right");
+      } else {
+        // tipografica: sin imagen, todo el peso lo lleva el texto
+        band(0, 0, w, 0.1 * fu);
+        put(o.t.negocio, "label", 0.024 * fu, m, 0.065 * fu, w - m * 2, onMark);
+        const last = headline(o.t.titular, 0.13 * fu, m, V(0.3), w - m * 2, ink);
+        if (o.t.sub) put(o.t.sub, "body", 0.036 * fu, m, last + 0.085 * fu, w - m * 2, sub);
+        band(m, V(0.52), w * 0.2, 0.016 * fu);
+        ticks(details, m, V(0.63), 0.07 * fu, 0.032 * fu, w - m * 2);
+        if (o.t.oferta) {
+          band(0, V(0.8), w, 0.11 * fu);
+          put(o.t.oferta, "title", 0.055 * fu, w / 2, V(0.8) + 0.077 * fu, w - m * 2, onMark, "center");
+        }
+        put([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), "body", 0.03 * fu, m, hL - m * 0.8, w - m * 2, ink);
+      }
+    };
+
+    // Flecos recortables: perforación y el teléfono girado en cada uno
+    const drawTabs = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Face, printed: boolean) => {
+      const tabH = Math.min(o.h * 0.17, 1.6);
+      const top = y0 + (o.h - tabH) * s;
+      const n = Math.max(5, Math.round(o.w / 1.1));
+      const tw = (o.w / n) * s;
+      c.save();
+      c.strokeStyle = "rgba(11,12,14,0.3)";
+      c.lineWidth = 1;
+      c.setLineDash([3, 3]);
+      c.beginPath();
+      c.moveTo(x0, top);
+      c.lineTo(x0 + o.w * s, top);
+      for (let i = 1; i < n; i++) {
+        c.moveTo(x0 + i * tw, top);
+        c.lineTo(x0 + i * tw, y0 + o.h * s);
+      }
+      c.stroke();
+      c.restore();
+      if (!printed || o.mini) return;
+      // El teléfono, girado, en cada fleco
+      const px = Math.min(tw * 0.42, tabH * s * 0.16);
+      c.save();
+      c.font = (FAMS[o.type] ?? FAMS.moderna).body.replace("{px}", String(px));
+      c.fillStyle = o.bg === "oscuro" ? "#FFFFFF" : o.bg === "color" ? onColor(o.accent) : o.stock.ink;
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      for (let i = 0; i < n; i++) {
+        c.save();
+        c.translate(x0 + (i + 0.5) * tw, top + (tabH * s) / 2);
+        c.rotate(-Math.PI / 2);
+        c.fillText(o.t.tel, 0, 0, tabH * s * 0.86);
+        c.restore();
+      }
+      c.restore();
+    };
+
+    // Una hoja completa: sombra, papel, diseño, flecos y guías de corte
+    const drawSheet = (x0: number, y0: number, s: number, o: Face, back: string | null) => {
+      const wPx = o.w * s;
+      const hPx = o.h * s;
+      ctx.save();
+      ctx.shadowColor = "rgba(18,26,36,0.4)";
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 12;
+      ctx.fillStyle = o.stock.edge;
+      ctx.fillRect(x0, y0, wPx, hPx);
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0, y0, wPx, hPx);
+      ctx.clip();
+      drawFace(ctx, x0, y0, s, o, back);
+      ctx.restore();
+      if (o.tabs) drawTabs(ctx, x0, y0, s, o, !back);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(11,12,14,0.26)";
+      ctx.strokeRect(x0, y0, wPx, hPx);
+
+      if (guides) {
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = "#ED1B24";
+        ctx.strokeRect(x0 - BLEED * s, y0 - BLEED * s, wPx + BLEED * 2 * s, hPx + BLEED * 2 * s);
+        ctx.strokeStyle = "#0094DA";
+        ctx.strokeRect(x0 + SAFE * s, y0 + SAFE * s, wPx - SAFE * 2 * s, hPx - SAFE * 2 * s);
+        ctx.restore();
+      }
+    };
+
+    const face = (mini: boolean, tpl?: string): Face => ({
+      ...dims(),
+      stock: stock(),
+      accent: accent().hex,
+      type: val("tipografia"),
+      tpl: tpl ?? val("plantilla"),
+      bg: val("fondo"),
+      photo: val("imagen") === "foto",
+      tabs: tabs(),
+      t: texts(),
+      mini,
+    });
+
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const o = face(false);
+      const { w, h } = o;
+      const two = twoSided();
+      const gap = w * 0.09;
+      const gapV = h * 0.1;
+      const pad = guides ? 0.4 : 0.06;
+      // Las dos caras se ponen una al lado de otra o una encima de otra, lo que
+      // deje la hoja más grande: en el móvil lo que cabe es apilarlas.
+      const fit = (cols: number, rows: number) => {
+        const tw = w * cols + gap * (cols - 1);
+        const keep = 58 + (approx.offsetParent ? 34 : 0) + (rows - 1) * 26 + (two ? 18 : 0);
+        return Math.min((cw - 44) / (tw + pad * 2), (ch - keep) / (h * rows + gapV * (rows - 1) + pad * 2));
+      };
+      const [cols, rows] = !two ? [1, 1] : fit(2, 1) >= fit(1, 2) ? [2, 1] : [1, 2];
+      const s = fit(cols, rows);
+      const groupW = w * cols + gap * (cols - 1);
+      const groupH = h * rows + gapV * (rows - 1);
+      const x0 = (cw - groupW * s) / 2;
+      const y0 = Math.max(two ? 22 : 10, (ch - groupH * s) * 0.34);
+      const at = (i: number) => ({
+        x: x0 + (i % cols) * (w + gap) * s,
+        y: y0 + Math.floor(i / cols) * (h + gapV) * s,
+      });
+
+      for (let i = 0; i < (two ? 2 : 1); i++) {
+        const p = at(i);
+        drawSheet(p.x, p.y, s, o, i === 0 ? null : val("reverso"));
+      }
+      // Los rótulos van debajo de cada hoja: arriba a la izquierda está el botón
+      // de las guías, y en una pantalla estrecha taparía el del frente
+      ctx.fillStyle = "rgba(11,12,14,0.6)";
+      ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "center";
+      if (two)
+        for (let i = 0; i < 2; i++) {
+          const p = at(i);
+          ctx.fillText(i === 0 ? cfg.copy.front : cfg.copy.backLbl, p.x + (w * s) / 2, p.y + h * s + 15);
+        }
+
+      // Cota del ancho, debajo de la última fila
+      const gy = y0 + groupH * s + (two ? 32 : 20);
+      const tick = 5;
+      ctx.strokeStyle = "rgba(11,12,14,0.5)";
+      ctx.fillStyle = "rgba(11,12,14,0.66)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x0, gy);
+      ctx.lineTo(x0 + w * s, gy);
+      ctx.moveTo(x0, gy - tick);
+      ctx.lineTo(x0, gy + tick);
+      ctx.moveTo(x0 + w * s, gy - tick);
+      ctx.lineTo(x0 + w * s, gy + tick);
+      ctx.stroke();
+      ctx.textBaseline = "top";
+      ctx.fillText(`${fmtIn(w)} × ${fmtIn(h)} in · ${cfg.thicks[val("grosor")]}`, x0 + (w * s) / 2, gy + 7);
+
+      canvas.setAttribute(
+        "aria-label",
+        `${cfg.copy.preview}: ${fmtIn(w)} × ${fmtIn(h)} in · ${stock().name} · ${cfg.tpls[o.tpl]} · ${accent().name}${o.t.titular ? ` · "${o.t.titular}"` : ""}`
+      );
+    };
+
+    // Miniaturas de los diseños, con el mismo dibujo que la vista previa
+    const renderTpls = () => {
+      const ids = Object.keys(cfg.tpls);
+      form.querySelectorAll<HTMLCanvasElement>(".fl__tpl canvas").forEach((cv, i) => {
+        const c2 = cv.getContext("2d")!;
+        const o: Face = { ...face(true, ids[i] ?? ids[0]), w: 8.5, h: 11, tabs: false };
+        c2.setTransform(1, 0, 0, 1, 0, 0);
+        c2.clearRect(0, 0, cv.width, cv.height);
+        const s = Math.min((cv.width - 12) / o.w, (cv.height - 12) / o.h);
+        const x = (cv.width - o.w * s) / 2;
+        const y = (cv.height - o.h * s) / 2;
+        c2.save();
+        c2.beginPath();
+        c2.rect(x, y, o.w * s, o.h * s);
+        c2.clip();
+        drawFace(c2, x, y, s, o, null);
+        c2.restore();
+        c2.lineWidth = 1;
+        c2.strokeStyle = "rgba(11,12,14,0.2)";
+        c2.strokeRect(x, y, o.w * s, o.h * s);
+      });
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const { w, h } = dims();
+      const t = texts();
+      const words = [t.titular, t.sub, t.oferta, t.d1, t.d2, t.d3].filter(Boolean).map((x) => `"${x}"`).join(" / ");
+      const out = [
+        `${k.summary}:`,
+        `• ${k.sFormat}: ${cfg.shapes[val("formato")]} ${fmtIn(w)} × ${fmtIn(h)} in (${cfg.orients[val("orientacion")].toLocaleLowerCase()})`,
+        `• ${k.sPaper}: ${stock().name}`,
+        `• ${k.sThick}: ${cfg.thicks[val("grosor")]}`,
+        `• ${k.sSides}: ${cfg.sides[val("caras")]}`,
+      ];
+      if (canTabs()) out.push(`• ${k.sTabs}: ${tabs() ? k.yes : k.no}`);
+      out.push(
+        `• ${k.sDesign}: ${cfg.tpls[val("plantilla")]}`,
+        `• ${k.sBg}: ${cfg.bgs[val("fondo")]}`,
+        `• ${k.sType}: ${cfg.types[val("tipografia")]}`,
+        `• ${k.sAccent}: ${accent().name}`
+      );
+      if (hasPhoto()) out.push(`• ${k.sImage}: ${cfg.images[val("imagen")]}`);
+      out.push(`• ${k.sWords}: ${words}`, `• ${k.sBiz}: ${[t.negocio, t.tel, t.web].filter(Boolean).join(" / ")}`);
+      if (twoSided()) out.push(`• ${k.sBack}: ${cfg.backs[val("reverso")]}`);
+      out.push(`• ${k.sQty}: ${qty()}`, `• ${k.sLink}: ${shareUrl()}`);
+      return out.join("\n");
+    };
+
+    const syncUI = () => {
+      const { w, h } = dims();
+      stage.toggleAttribute("data-wide", w > h);
+      tabsSeg.querySelectorAll("input").forEach((i) => (i.disabled = !canTabs()));
+      tabsSeg.toggleAttribute("data-off", !canTabs());
+      imageSeg.querySelectorAll("input").forEach((i) => (i.disabled = !hasPhoto()));
+      imageSeg.toggleAttribute("data-off", !hasPhoto());
+      backSeg.querySelectorAll("input").forEach((i) => (i.disabled = !twoSided()));
+      backSeg.toggleAttribute("data-off", !twoSided());
+      backHelp.hidden = twoSided();
+      thickHelp.textContent = cfg.thickHelp[val("grosor")] ?? "";
+      accentName.textContent = accent().name;
+      sizeOut.textContent = `${fmtIn(w)} × ${fmtIn(h)} in`;
+      approx.textContent = guides ? cfg.copy.guidesOn : cfg.copy.approx;
+      guidesBtn.setAttribute("aria-pressed", String(guides));
+      const q = qty();
+      root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.qty) === q)));
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+    const render = () => {
+      syncUI();
+      draw();
+      renderTpls();
+      update();
+    };
+
+    // ---------- Eventos ----------
+    const onEdit = (e: Event) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      render();
+    };
+    form.addEventListener("change", onEdit);
+    form.addEventListener("input", onEdit);
+    root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) =>
+      b.addEventListener("click", () => {
+        qtyEl.value = b.dataset.qty!;
+        touched = true;
+        render();
+      })
+    );
+    guidesBtn.addEventListener("click", () => {
+      guides = !guides;
+      syncUI();
+      draw();
+    });
+
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    Promise.all(
+      [`800 40px "Saira"`, `700 40px "Playfair Display"`, `400 40px "Michroma"`, `500 40px "Instrument Sans"`].map((f) =>
+        document.fonts.load(f).catch(() => [])
+      )
+    ).then(() => render());
+    render();
+  }
+</script>

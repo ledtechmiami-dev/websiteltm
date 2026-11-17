@@ -1,0 +1,59 @@
+{
+  "nombre": "Manteles individuales",
+  "linea": "graficos",
+  "orden": 16,
+  "padre": "marketing-digital",
+  "nameEn": "Placemats",
+  "slugEn": "placemats",
+  "short": {
+    "es": "Manteles individuales impresos de un solo uso, en papel mate o brillante, con el diseño que armas aquí mismo.",
+    "en": "Printed single-use placemats in matte or glossy paper, with the design you build right here."
+  },
+  "intro": {
+    "es": "El mantel individual es el único impreso que el cliente tiene delante toda la comida, y eso hace que se lea más que cualquier volante. Lo que casi nadie piensa es que el plato y los cubiertos tapan el centro: lo que importa va en el marco, alrededor del servicio. Lo diseñas aquí mismo y el constructor te pone el plato encima para que lo veas antes de imprimir.",
+    "en": "A placemat is the only printed piece a customer has in front of them for the whole meal, and that makes it get read more than any flyer. What almost nobody thinks about is that the plate and the cutlery cover the middle: what matters goes in the frame, around the setting. You design it right here and the builder puts the plate on top so you can see it before printing."
+  },
+  "includes": {
+    "es": [
+      "Medidas de 14 × 10, 17 × 11 y 18 × 12 in",
+      "Papel mate o brillante, de un solo uso",
+      "Por una cara o por las dos, con los juegos al reverso",
+      "Casillas de anuncio en el borde, para vendérselas a los vecinos",
+      "Juegos para niños: gato, unir los puntos y estrellas para colorear",
+      "Cinco diseños: marco, especiales, anuncios, para niños y con foto"
+    ],
+    "en": [
+      "14 × 10, 17 × 11 and 18 × 12 in sizes",
+      "Matte or glossy paper, single use",
+      "Single- or double-sided, with the games on the back",
+      "Ad boxes along the border, to sell to the businesses around you",
+      "Kids' games: tic-tac-toe, dot-to-dot and stars to color",
+      "Five layouts: frame, specials, ads, for kids and with photo"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Restaurantes y cafeterías",
+      "Food trucks y comida para llevar",
+      "Bandejas de cafetería",
+      "Desayunos de hotel",
+      "Salones de eventos",
+      "Mesas de niños"
+    ],
+    "en": [
+      "Restaurants and cafés",
+      "Food trucks and takeout",
+      "Cafeteria trays",
+      "Hotel breakfast service",
+      "Event venues",
+      "Kids' tables"
+    ]
+  },
+  "note": {
+    "es": "El mantel es de un solo uso: uno por comensal, y se tira con el mantel sucio. Laminamos, pero no a esta medida: el laminado sale más caro que el mantel. Y si los niños van a pintar encima, dínoslo al cotizar: el crayón solo agarra en papel sin estucar y ese hay que pedirlo aparte.",
+    "en": "The placemat is single use: one per guest, and it goes in the bin with the mess. We do laminate, just not at this size: the lamination costs more than the placemat. And if kids are going to draw on it, tell us when you ask for the quote: crayon only takes on uncoated paper, and that one has to be ordered in."
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

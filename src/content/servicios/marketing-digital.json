@@ -1,0 +1,56 @@
+{
+  "nombre": "Marketing Digital",
+  "linea": "graficos",
+  "orden": 6,
+  "nameEn": "Marketing materials",
+  "slugEn": "marketing-materials",
+  "short": {
+    "es": "Tarjetas de presentación, volantes, folletos, menús, imanes y más, a todo color.",
+    "en": "Business cards, flyers, brochures, menus, magnets and more, in full color."
+  },
+  "intro": {
+    "es": "Todo el material impreso con que un negocio se da a conocer: tarjetas de presentación, volantes, folletos, carpetas, menús, imanes, boletos, etiquetas y exhibidores de mesa. A todo color, en las medidas estándar del oficio o a la medida que necesites.",
+    "en": "Every printed piece a business uses to get known: business cards, flyers, brochures, folders, menus, magnets, tickets, labels and tabletop displays. Full color, in standard trade sizes or cut to the size you need."
+  },
+  "includes": {
+    "es": [
+      "Impresión a todo color, por una cara o por las dos",
+      "Cartulina, papel brillante, mate u opaco",
+      "Acabados: laminado, esquinas redondeadas, doblez y troquelado",
+      "Diseño o adaptación de tu logo",
+      "Medidas estándar o a la medida"
+    ],
+    "en": [
+      "Full-color printing, single- or double-sided",
+      "Card stock, glossy, matte or uncoated paper",
+      "Finishes: lamination, rounded corners, folding and die-cutting",
+      "Design or adaptation of your logo",
+      "Standard or custom sizes"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Restaurantes",
+      "Bienes raíces",
+      "Salones y spas",
+      "Eventos",
+      "Contratistas",
+      "Tiendas"
+    ],
+    "en": [
+      "Restaurants",
+      "Real estate",
+      "Salons and spas",
+      "Events",
+      "Contractors",
+      "Retail"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

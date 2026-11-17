@@ -1,0 +1,11 @@
+---
+import ProductView from "../../../views/ProductView.astro";
+import { PRODUCTS } from "../../../data/shop";
+
+export function getStaticPaths() {
+  return PRODUCTS.map((product) => ({ params: { slug: product.slug.en }, props: { product } }));
+}
+
+const { product } = Astro.props;
+---
+<ProductView lang="en" product={product} />

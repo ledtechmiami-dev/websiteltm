@@ -1,0 +1,204 @@
+---
+import Layout from "../layouts/Layout.astro";
+import LineArt from "../components/LineArt.astro";
+import PhotoSlot from "../components/PhotoSlot.astro";
+import Strip from "../components/Strip.astro";
+import Marquee from "../components/Marquee.astro";
+import Steps from "../components/Steps.astro";
+import Pending from "../components/Pending.astro";
+import TrustPanels from "../components/TrustPanels.astro";
+import QuoteSection from "../components/QuoteSection.astro";
+import type { Lang } from "../data/site";
+import { SITE, waLink } from "../data/site";
+import { LINES, lineByKey, lineUrl, servicesOf, topServicesOf, serviceUrl, type LineKey } from "../data/catalog";
+import { FEATURED_WORK } from "../data/work";
+import { HOME, type Bi } from "../data/content";
+import { ROUTES } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = UI[lang];
+// Texto del panel en el idioma de la página (si falta el inglés, usa el español)
+const tr = (b: Bi) => b[lang] || b.es;
+
+const COPY = {
+  es: { pack: "Paquete", from: "Desde", pricePending: "precio desde", packCta: "Cotizar este paquete", workLink: "Ver proyectos" },
+  en: { pack: "Package", from: "From", pricePending: "starting price", packCta: "Get a quote for this package", workLink: "See projects" },
+};
+const c = COPY[lang];
+
+const heroTiles: { area: string; key: LineKey }[] = [
+  { area: "a", key: "letreros" },
+  { area: "b", key: "iluminacion" },
+  { area: "c", key: "graficos" },
+  { area: "e", key: "marino" },
+  { area: "f", key: "fabricacion" },
+];
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: SITE.name,
+  url: new URL(ROUTES.home[lang], SITE.url).href,
+  logo: new URL("/pictures/logo.png", SITE.url).href,
+  image: new URL("/pictures/og-image.png", SITE.url).href,
+  telephone: `+${SITE.phoneIntl}`,
+  email: SITE.email,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: SITE.address.street,
+    addressLocality: SITE.address.city,
+    addressRegion: SITE.address.state,
+    postalCode: SITE.address.zip,
+    addressCountry: "US",
+  },
+  openingHoursSpecification: {
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    opens: "08:00",
+    closes: "17:00",
+  },
+  sameAs: SITE.social.map((s) => s.url),
+  hasOfferCatalog: {
+    "@type": "OfferCatalog",
+    name: lang === "es" ? "Servicios" : "Services",
+    itemListElement: LINES.map((l) => ({
+      "@type": "OfferCatalog",
+      name: l[lang].name,
+      itemListElement: servicesOf(l).map((s) => ({
+        "@type": "Offer",
+        itemOffered: { "@type": "Service", name: s[lang].name, url: new URL(serviceUrl(s, lang), SITE.url).href },
+      })),
+    })),
+  },
+};
+---
+<Layout lang={lang} page="home" title={tr(HOME.seo.title)} description={tr(HOME.seo.description)} alternates={ROUTES.home} schema={schema}>
+  <section class="hero container">
+    <div class="bento">
+      <div class="promo">
+        <div class="ledbar" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <h1>{tr(HOME.hero.h1)}</h1>
+        <p class="promo__lead">{tr(HOME.hero.lead)}</p>
+        <div class="promo__actions">
+          <a class="btn btn--yellow" href={ROUTES.quote[lang]}>{t.requestQuote}</a>
+          <a class="promo__wa" href={waLink(t.waText)} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>WhatsApp {SITE.phone}
+          </a>
+        </div>
+        {tr(HOME.hero.note) && <p class="promo__note">{tr(HOME.hero.note)}</p>}
+      </div>
+
+      {heroTiles.map(({ area, key }) => {
+        const l = lineByKey(key);
+        return (
+          <a class={`tile bento__${area}`} href={lineUrl(l, lang)} style={`--ground:${l.ground}`}>
+            <LineArt type={key} />
+            <span class="tile__label">
+              <span class="chip" style={`--c:${l.color}`}></span>{l[lang].name}
+              <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
+            </span>
+          </a>
+        );
+      })}
+    </div>
+  </section>
+
+  <Strip lang={lang} />
+  <Marquee lang={lang} />
+
+  <section class="section">
+    <div class="container">
+      <div class="sec-head">
+        <div>
+          <h2>{tr(HOME.lines.title)}</h2>
+          {tr(HOME.lines.text) && <p>{tr(HOME.lines.text)}</p>}
+        </div>
+        <a class="more" href={ROUTES.services[lang]}>{t.allServices}<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+      </div>
+
+      <ul class="lines">
+        {LINES.map((l, i) => (
+          <li class:list={["line-card", i < 2 && "line-card--wide"]} style={`--tint:${l.tint};--ground:${l.ground}`}>
+            <a class="line-card__art" href={lineUrl(l, lang)} tabindex="-1" aria-hidden="true"><LineArt type={l.key} /></a>
+            <div class="line-card__box">
+              <h3><a href={lineUrl(l, lang)}>{l[lang].name}</a></h3>
+              <p>{l[lang].short}</p>
+              <ul class="line-card__list">
+                {topServicesOf(l).map((s) => <li><a href={serviceUrl(s, lang)}>{s[lang].name}</a></li>)}
+              </ul>
+              <a class="more" href={lineUrl(l, lang)}>{t.seeLine}: {l[lang].name}<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  {HOME.packs.items.length > 0 && (
+    <section class="section section--flush">
+      <div class="container">
+        <div class="sec-head">
+          <div>
+            <h2>{tr(HOME.packs.title)}</h2>
+            {tr(HOME.packs.text) && <p>{tr(HOME.packs.text)}</p>}
+          </div>
+        </div>
+        <ul class="packs">
+          {HOME.packs.items.map((p) => {
+            const l = lineByKey(p.line);
+            const name = tr(p.name);
+            const items = p.items[lang].length ? p.items[lang] : p.items.es;
+            return (
+              <li class="pack">
+                <div class="pack__art" style={`--ground:${l.ground}`}><LineArt type={l.key} /></div>
+                <div class="pack__body">
+                  <p class="pack__kicker"><span class="chip" style={`--c:${l.color}`}></span>{c.pack}</p>
+                  <h3>{name}</h3>
+                  <ul class="ticks ticks--compact" style={`--svc:${l.color}`}>
+                    {items.map((item) => <li>{item}</li>)}
+                  </ul>
+                  <p class="pack__price">
+                    <b>{c.from}</b>
+                    {p.price ? <span class="pack__amount">{p.price}</span> : <Pending lang={lang}>{c.pricePending}</Pending>}
+                  </p>
+                  <a class="btn btn--small" href={`${ROUTES.quote[lang]}?paquete=${encodeURIComponent(name)}#cotizar`}>{c.packCta}</a>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  <section class="section">
+    <div class="container">
+      <div class="sec-head">
+        <div><h2>{tr(HOME.work.title)}</h2></div>
+        <a class="more" href={ROUTES.projects[lang]}>{c.workLink}<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+      </div>
+      <div class="work">
+        {FEATURED_WORK.map((w) => (
+          <PhotoSlot lang={lang} line={w.line} src={w.src} alt={w[lang].alt} caption={w[lang].caption} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--flush">
+    <div class="container">
+      <div class="sec-head"><div><h2>{tr(HOME.steps.title)}</h2></div></div>
+      <Steps lang={lang} />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <TrustPanels lang={lang} logosTitle={tr(HOME.trust.title)} reviewsTitle={tr(HOME.trust.reviewsTitle)} />
+    </div>
+  </section>
+
+  <QuoteSection lang={lang} />
+</Layout>

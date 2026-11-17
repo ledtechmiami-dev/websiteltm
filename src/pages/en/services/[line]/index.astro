@@ -1,0 +1,11 @@
+---
+import LineView from "../../../../views/LineView.astro";
+import { LINES } from "../../../../data/catalog";
+
+export function getStaticPaths() {
+  return LINES.map((line) => ({ params: { line: line.slug.en }, props: { line } }));
+}
+
+const { line } = Astro.props;
+---
+<LineView lang="en" line={line} />

@@ -1,0 +1,52 @@
+{
+  "nombre": "Letreros de aluminio",
+  "linea": "letreros",
+  "orden": 4,
+  "nameEn": "Aluminum signs",
+  "slugEn": "aluminum-signs",
+  "short": {
+    "es": "Letreros resistentes para exteriores, obras, parqueos y direcciones.",
+    "en": "Durable signs for outdoors, job sites, parking and addresses."
+  },
+  "intro": {
+    "es": "Letreros de aluminio impresos o con vinil, pensados para aguantar sol y lluvia. Sirven para exteriores, señalización y avisos.",
+    "en": "Printed or vinyl aluminum signs built to handle sun and rain. For outdoor signage, wayfinding and notices."
+  },
+  "includes": {
+    "es": [
+      "Aluminio compuesto o en lámina",
+      "Impresión o vinil de corte",
+      "Montaje en postes o en pared",
+      "Tamaños a la medida"
+    ],
+    "en": [
+      "Aluminum composite or sheet",
+      "Print or cut vinyl",
+      "Post or wall mounting",
+      "Custom sizes"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Exteriores",
+      "Parqueos",
+      "Obras",
+      "Direcciones",
+      "Señalización"
+    ],
+    "en": [
+      "Outdoors",
+      "Parking lots",
+      "Job sites",
+      "Addresses",
+      "Wayfinding"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

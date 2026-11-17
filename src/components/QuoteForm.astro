@@ -1,0 +1,240 @@
+---
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import { LINES, servicesOf, formValue, lineFormValue } from "../data/catalog";
+
+interface Props {
+  lang: Lang;
+  preset?: string;
+}
+
+const { lang, preset = "" } = Astro.props;
+
+const COPY = {
+  es: {
+    name: "Nombre *",
+    phone: "Teléfono *",
+    email: "Email *",
+    type: "¿Qué necesitas? *",
+    select: "Selecciona…",
+    notSure: "Otro / no estoy seguro",
+    other: "Otro proyecto",
+    zone: "Ciudad / zona",
+    zonePh: "Ej. Doral",
+    details: "Detalles del proyecto *",
+    detailsPh: "Qué necesitas, medidas aproximadas, dónde va, si necesitas instalación y para cuándo…",
+    required: "* Campos obligatorios",
+    submit: "Enviar solicitud",
+    msgs: {
+      invalid: "Revisa los campos marcados en rojo.",
+      sending: "Enviando…",
+      success: "¡Gracias! Recibimos tu solicitud y te contactaremos en menos de 24 horas.",
+      error: `No pudimos enviar la solicitud. Inténtalo de nuevo o escríbenos por WhatsApp al ${SITE.phone}.`,
+      pkg: "Me interesa el paquete",
+      fields: {
+        nombre: "Escribe tu nombre.",
+        telefono: "Escribe un teléfono de al menos 10 dígitos, ej. 305 555 1234.",
+        email: "Escribe un email válido, ej. nombre@correo.com.",
+        tipo: "Elige qué necesitas.",
+        detalles: "Cuéntanos brevemente qué necesitas.",
+      },
+    },
+  },
+  en: {
+    name: "Name *",
+    phone: "Phone *",
+    email: "Email *",
+    type: "What do you need? *",
+    select: "Select…",
+    notSure: "Other / not sure",
+    other: "Other project",
+    zone: "City / area",
+    zonePh: "E.g. Doral",
+    details: "Project details *",
+    detailsPh: "What you need, approximate size, where it goes, whether you need installation and by when…",
+    required: "* Required fields",
+    submit: "Send request",
+    msgs: {
+      invalid: "Please check the fields marked in red.",
+      sending: "Sending…",
+      success: "Thank you! We received your request and will contact you within 24 hours.",
+      error: `We couldn't send your request. Please try again or message us on WhatsApp at ${SITE.phone}.`,
+      pkg: "I'm interested in the package",
+      fields: {
+        nombre: "Enter your name.",
+        telefono: "Enter a phone number with at least 10 digits, e.g. 305 555 1234.",
+        email: "Enter a valid email, e.g. name@email.com.",
+        tipo: "Choose what you need.",
+        detalles: "Tell us briefly what you need.",
+      },
+    },
+  },
+};
+
+const c = COPY[lang];
+// Ids únicos por formulario (puede haber más de uno en el sitio)
+const uid = `q${Math.random().toString(36).slice(2, 7)}`;
+const id = (name: string) => `${uid}-${name}`;
+const err = (name: string) => `${uid}-${name}-err`;
+// Los valores llegan al correo en español ("Línea: Servicio"); la etiqueta se muestra en el idioma de la página
+const groups = LINES.map((l) => ({
+  label: l[lang].name,
+  options: [
+    ...servicesOf(l).map((s) => ({ value: formValue(s), label: s[lang].name })),
+    { value: lineFormValue(l), label: c.notSure },
+  ],
+}));
+---
+<form class="form" data-quote-form data-lang={lang} data-msgs={JSON.stringify(c.msgs)} novalidate>
+  <div class="form__row">
+    <div class="field">
+      <label for={id("nombre")}>{c.name}</label>
+      <input id={id("nombre")} type="text" name="nombre" autocomplete="name" required aria-describedby={err("nombre")} />
+      <p class="field__error" id={err("nombre")} hidden></p>
+    </div>
+    <div class="field">
+      <label for={id("telefono")}>{c.phone}</label>
+      <input id={id("telefono")} type="tel" name="telefono" autocomplete="tel" required
+        data-min-digits="10" aria-describedby={err("telefono")} />
+      <p class="field__error" id={err("telefono")} hidden></p>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for={id("email")}>{c.email}</label>
+    <input id={id("email")} type="email" name="email" autocomplete="email" required aria-describedby={err("email")} />
+    <p class="field__error" id={err("email")} hidden></p>
+  </div>
+
+  <div class="form__row">
+    <div class="field">
+      <label for={id("tipo")}>{c.type}</label>
+      <select id={id("tipo")} name="tipo" required aria-describedby={err("tipo")}>
+        <option value="" disabled selected={!preset}>{c.select}</option>
+        {groups.map((g) => (
+          <optgroup label={g.label}>
+            {g.options.map((o) => <option value={o.value} selected={o.value === preset}>{o.label}</option>)}
+          </optgroup>
+        ))}
+        <option value="Otro" selected={preset === "Otro"}>{c.other}</option>
+      </select>
+      <p class="field__error" id={err("tipo")} hidden></p>
+    </div>
+    <div class="field">
+      <label for={id("zona")}>{c.zone}</label>
+      <input id={id("zona")} type="text" name="zona" autocomplete="address-level2" placeholder={c.zonePh} />
+    </div>
+  </div>
+
+  <div class="field">
+    <label for={id("detalles")}>{c.details}</label>
+    <textarea id={id("detalles")} name="detalles" rows="5" required placeholder={c.detailsPh} aria-describedby={err("detalles")}></textarea>
+    <p class="field__error" id={err("detalles")} hidden></p>
+  </div>
+
+  <!-- Trampa anti-spam: invisible para personas, los bots la marcan -->
+  <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+  <p class="form__req">{c.required}</p>
+  <button type="submit" class="btn btn--full">{c.submit}</button>
+  <p class="form__status" role="status" aria-live="polite"></p>
+</form>
+
+<script>
+  import { sendQuote, type QuoteData as Data } from "../scripts/quote";
+
+  type Field = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+
+  document.querySelectorAll<HTMLFormElement>("form[data-quote-form]").forEach((form) => {
+    const lang = form.dataset.lang || "es";
+    const msgs = JSON.parse(form.dataset.msgs!);
+    const statusEl = form.querySelector<HTMLElement>(".form__status")!;
+    const submitBtn = form.querySelector<HTMLButtonElement>("button[type='submit']")!;
+    const submitText = submitBtn.textContent;
+    const fields = () => form.querySelectorAll<Field>("input:not(.hp), select, textarea");
+
+    // Viene de "Cotizar este paquete": el paquete queda escrito en los detalles
+    const pkg = new URLSearchParams(location.search).get("paquete");
+    const details = form.querySelector<HTMLTextAreaElement>("textarea[name='detalles']");
+    if (pkg && details && !details.value) details.value = `${msgs.pkg}: ${pkg.slice(0, 80)}.\n`;
+
+    const setStatus = (message: string, type?: "error" | "success") => {
+      statusEl.textContent = message;
+      statusEl.className = "form__status" + (type ? ` is-${type}` : "");
+    };
+
+    // Teléfono: dígitos suficientes y solo caracteres propios de un número
+    const checkDigits = (el: Field) => {
+      const min = Number(el.dataset.minDigits || 0);
+      if (!min) return;
+      const digits = el.value.replace(/\D/g, "").length;
+      const bad = el.value !== "" && (digits < min || /[^\d\s+().-]/.test(el.value));
+      (el as HTMLInputElement).setCustomValidity(bad ? "invalid" : "");
+    };
+
+    // Muestra u oculta el error debajo del campo; devuelve si es válido
+    const checkField = (el: Field) => {
+      checkDigits(el);
+      const ok = el.checkValidity();
+      const errEl = document.getElementById(`${el.id}-err`);
+      el.setAttribute("aria-invalid", String(!ok));
+      if (errEl) {
+        errEl.textContent = ok ? "" : msgs.fields[el.name] || "";
+        errEl.hidden = ok;
+      }
+      return ok;
+    };
+
+    const clearField = (el: Field) => {
+      el.removeAttribute("aria-invalid");
+      const errEl = document.getElementById(`${el.id}-err`);
+      if (errEl) { errEl.textContent = ""; errEl.hidden = true; }
+    };
+
+    // Valida al salir del campo (no mientras se escribe) si ya tiene algo escrito
+    form.addEventListener("focusout", (e) => {
+      const el = e.target as Field;
+      if (!el.matches?.("input:not(.hp), select, textarea")) return;
+      if (el.value || el.getAttribute("aria-invalid") === "true") checkField(el);
+    });
+
+    // Mientras corrige, el error desaparece en cuanto el valor es válido
+    form.addEventListener("input", (e) => {
+      const el = e.target as Field;
+      if (el.getAttribute("aria-invalid") !== "true") return;
+      checkDigits(el);
+      if (el.checkValidity()) clearField(el);
+    });
+    form.addEventListener("change", (e) => {
+      const el = e.target as Field;
+      if (el.tagName === "SELECT" && el.getAttribute("aria-invalid") === "true") checkField(el);
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setStatus("");
+      const invalid = [...fields()].filter((el) => !checkField(el));
+      if (invalid.length) {
+        setStatus(msgs.invalid, "error");
+        invalid[0].focus();
+        return;
+      }
+
+      const data = Object.fromEntries(new FormData(form)) as Data;
+      submitBtn.disabled = true;
+      submitBtn.setAttribute("aria-busy", "true");
+      submitBtn.textContent = msgs.sending;
+
+      if (await sendQuote(data, lang)) {
+        form.reset();
+        fields().forEach(clearField);
+        setStatus(msgs.success, "success");
+      } else {
+        setStatus(msgs.error, "error");
+      }
+      submitBtn.disabled = false;
+      submitBtn.removeAttribute("aria-busy");
+      submitBtn.textContent = submitText;
+    });
+  });
+</script>

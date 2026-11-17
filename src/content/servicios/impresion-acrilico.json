@@ -1,0 +1,52 @@
+{
+  "nombre": "Impresión en acrílico",
+  "linea": "graficos",
+  "orden": 3,
+  "nameEn": "Acrylic prints",
+  "slugEn": "acrylic-prints",
+  "short": {
+    "es": "Fotos, arte y logos impresos sobre acrílico brillante.",
+    "en": "Photos, art and logos printed on glossy acrylic."
+  },
+  "intro": {
+    "es": "Impresión directa sobre acrílico, con colores intensos y acabado brillante. Para decorar, exhibir o señalizar.",
+    "en": "Direct printing on acrylic with vivid color and a glossy finish. For decor, displays or signage."
+  },
+  "includes": {
+    "es": [
+      "Impresión a todo color",
+      "Acrílico transparente o blanco",
+      "Tamaños a la medida",
+      "Separadores para pared"
+    ],
+    "en": [
+      "Full-color printing",
+      "Clear or white acrylic",
+      "Custom sizes",
+      "Wall standoffs"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Decoración",
+      "Oficinas",
+      "Recepciones",
+      "Regalos",
+      "Exhibidores"
+    ],
+    "en": [
+      "Decor",
+      "Offices",
+      "Lobbies",
+      "Gifts",
+      "Displays"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

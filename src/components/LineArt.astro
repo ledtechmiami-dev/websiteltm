@@ -1,0 +1,160 @@
+---
+// Dibujo que representa cada línea de negocio (sustituye fotos hasta tenerlas).
+// Letreros: channel letters con luz de halo · Gráficos: van rotulada con la barra LED ·
+// Marino: bote con letras en el casco · Fabricación: láser cortando una lámina ·
+// Iluminación: lámpara colgante encendida.
+import type { LineKey } from "../data/catalog";
+
+interface Props {
+  type: LineKey;
+  class?: string;
+}
+
+const { type, class: className } = Astro.props;
+const id = `la${Math.random().toString(36).slice(2, 8)}`;
+const INK = "#0B0C0E";
+const LED = ["#0094DA", "#FFCA09", "#99C941", "#ED1B24"];
+
+// Corte de 22°: desplazamiento horizontal = 0.404 × alto
+const van = "M20 68Q20 60 28 60H152Q160 60 166 66L198 102Q214 106 218 116L220 144Q220 154 210 154H30Q20 154 20 144Z";
+const vanStripes = LED.map((c, i) => {
+  const x = 42 + i * 20;
+  return { c, points: `${x},154 ${x + 15},154 ${x + 53},60 ${x + 38},60` };
+});
+
+const hull = "M26 104H212Q228 104 234 94L220 132Q216 140 206 140H42Q32 140 30 132Z";
+let waves = "M0 150";
+// Una ola de más a la derecha: la animación desplaza el patrón 30 unidades sin dejar hueco
+for (let x = 0; x < 270; x += 30) waves += `Q${x + 15} 143 ${x + 30} 150`;
+waves += "V200H0Z";
+
+const slots: { x: number; y: number }[] = [];
+for (let r = 0; r < 3; r++) for (let c = 0; c < 7; c++) slots.push({ x: 48 + c * 22, y: 104 + r * 24 });
+const slotPts = ({ x, y }: { x: number; y: number }) => `${x},${y + 16} ${x + 10},${y + 16} ${x + 16.5},${y} ${x + 6.5},${y}`;
+
+const letters = [
+  { ch: "L", x: 76, c: LED[0] },
+  { ch: "E", x: 121, c: LED[1] },
+  { ch: "D", x: 168, c: LED[3] },
+];
+---
+<svg
+  class:list={["art", `art--${type}`, className]}
+  viewBox="0 0 240 200"
+  preserveAspectRatio={type === "iluminacion" ? "xMidYMin meet" : "xMidYMid meet"}
+  aria-hidden="true"
+  focusable="false"
+>
+  {type === "letreros" && (
+    <g>
+      <defs>
+        <filter id={`${id}-halo`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+      </defs>
+      <rect x="30" y="142" width="180" height="7" rx="1.5" fill="#2E3238" />
+      <g font-family="Saira, 'Arial Black', Arial, sans-serif" font-weight="800" font-size="96" text-anchor="middle">
+        <g class="art__halo">
+          {letters.map((l) => <text x={l.x} y="134" fill={l.c} filter={`url(#${id}-halo)`} opacity="0.95">{l.ch}</text>)}
+        </g>
+        {letters.map((l) => <text x={l.x} y="134" fill="#15171B" stroke={l.c} stroke-width="1.6">{l.ch}</text>)}
+      </g>
+    </g>
+  )}
+
+  {type === "graficos" && (
+    <g>
+      <defs>
+        <clipPath id={`${id}-van`}><path d={van} /></clipPath>
+      </defs>
+      <ellipse cx="120" cy="172" rx="106" ry="6" fill={INK} opacity="0.12" />
+      <g class="art__van">
+        <path d={van} fill="#fff" />
+        <g clip-path={`url(#${id}-van)`}>
+          {vanStripes.map((s) => <polygon points={s.points} fill={s.c} />)}
+        </g>
+        <path d={van} fill="none" stroke={INK} stroke-width="2.5" stroke-linejoin="round" />
+        <path d="M162 70L192 104H162Z" fill="#CFE3EE" stroke={INK} stroke-width="2" stroke-linejoin="round" />
+        <path d="M156 64V150" stroke={INK} stroke-width="1.5" opacity="0.45" />
+      </g>
+      <circle cx="62" cy="154" r="18" fill={INK} />
+      <circle cx="62" cy="154" r="7" fill="#9AA1AA" />
+      <circle cx="180" cy="154" r="18" fill={INK} />
+      <circle cx="180" cy="154" r="7" fill="#9AA1AA" />
+    </g>
+  )}
+
+  {type === "marino" && (
+    <g>
+      <defs>
+        <clipPath id={`${id}-hull`}><path d={hull} /></clipPath>
+      </defs>
+      <path class="art__waves" d={waves} fill="#0094DA" opacity="0.22" />
+      <g class="art__boat">
+        <path d="M112 104V58M150 104V58" stroke={INK} stroke-width="2.5" />
+        <rect x="100" y="52" width="62" height="7" rx="2" fill={INK} />
+        <path d="M120 78L124 70H144L146 78" fill="#CFE3EE" stroke={INK} stroke-width="1.5" stroke-linejoin="round" />
+        <path d="M116 104V84Q116 78 122 78H146L150 104Z" fill="#fff" stroke={INK} stroke-width="2" stroke-linejoin="round" />
+        <rect x="10" y="96" width="18" height="30" rx="3" fill={INK} />
+        <rect x="16" y="124" width="6" height="18" fill={INK} />
+        <path d={hull} fill="#fff" />
+        <g clip-path={`url(#${id}-hull)`}>
+          <rect x="0" y="128" width="240" height="14" fill="#0094DA" />
+        </g>
+        <path d={hull} fill="none" stroke={INK} stroke-width="2.5" stroke-linejoin="round" />
+        <text x="170" y="121" font-family="Saira, Arial, sans-serif" font-weight="700" font-size="13" letter-spacing="2.5" fill="#59626D" text-anchor="middle">MIAMI</text>
+      </g>
+    </g>
+  )}
+
+  {type === "fabricacion" && (
+    <g>
+      <defs>
+        <linearGradient id={`${id}-steel`} x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stop-color="#C9CFD6" />
+          <stop offset="1" stop-color="#8E959E" />
+        </linearGradient>
+        <filter id={`${id}-glow`} x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="4" />
+        </filter>
+      </defs>
+      <rect x="18" y="4" width="204" height="6" rx="2" fill="#9AA1AA" />
+      <rect x="34" y="92" width="172" height="90" rx="3" fill={`url(#${id}-steel)`} stroke={INK} stroke-width="2" />
+      {slots.slice(0, 17).map((s) => <polygon points={slotPts(s)} class="art__hole" />)}
+      <polygon points={slotPts(slots[17])} fill="none" stroke="#FFB066" stroke-width="1.5" />
+      <path d="M110 8H134V36L126 48H118L110 36Z" fill={INK} />
+      <g class="art__beam">
+        <line x1="122" y1="48" x2="122" y2="152" stroke="#ED1B24" stroke-width="6" filter={`url(#${id}-glow)`} opacity="0.8" />
+        <line x1="122" y1="48" x2="122" y2="152" stroke="#FF5A4F" stroke-width="2" />
+      </g>
+      <g class="art__spark">
+        <circle cx="122" cy="152" r="10" fill="#FFCA09" filter={`url(#${id}-glow)`} />
+        <circle cx="122" cy="152" r="3.5" fill="#FFF8E0" />
+      </g>
+    </g>
+  )}
+
+  {type === "iluminacion" && (
+    <g>
+      <defs>
+        <linearGradient id={`${id}-cone`} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#FFB066" stop-opacity="0.75" />
+          <stop offset="1" stop-color="#FFB066" stop-opacity="0" />
+        </linearGradient>
+        <filter id={`${id}-glow`} x="-60%" y="-200%" width="220%" height="500%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+      </defs>
+      <g class="art__lamp">
+        <path class="art__light" d="M68 138H172L236 200H4Z" fill={`url(#${id}-cone)`} />
+        <line x1="120" y1="0" x2="120" y2="48" stroke={INK} stroke-width="2" />
+        <rect x="112" y="46" width="16" height="12" rx="3" fill={INK} />
+        <path d="M120 56C88 56 74 88 66 138H174C166 88 152 56 120 56Z" fill="#ED1B24" />
+        <path d="M120 56C104 56 94 70 88 92" fill="none" stroke="#fff" stroke-opacity="0.3" stroke-width="4" stroke-linecap="round" />
+        <ellipse cx="120" cy="138" rx="54" ry="8" fill="#FFD9A8" />
+        <ellipse cx="120" cy="140" rx="24" ry="5" fill="#FFB066" filter={`url(#${id}-glow)`} />
+        <ellipse cx="120" cy="140" rx="18" ry="4" fill="#FFF6E6" />
+      </g>
+    </g>
+  )}
+</svg>

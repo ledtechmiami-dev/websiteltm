@@ -1,0 +1,59 @@
+{
+  "nombre": "Volantes",
+  "linea": "graficos",
+  "orden": 8,
+  "padre": "marketing-digital",
+  "nameEn": "Flyers",
+  "slugEn": "flyers",
+  "short": {
+    "es": "Volantes a todo color para repartir en la calle, dejar en buzones o tener en el mostrador.",
+    "en": "Full-color flyers to hand out on the street, drop in mailboxes or keep on the counter."
+  },
+  "intro": {
+    "es": "El volante es lo más rápido para anunciar una apertura, una oferta o un evento. Lo diseñas aquí mismo: eliges la medida, el papel y una de cinco maquetas, escribes lo que quieres anunciar y lo ves como va a salir impreso, con flecos recortables si quieres que se lleven tu teléfono.",
+    "en": "A flyer is the fastest way to announce an opening, an offer or an event. You design it right here: pick the size, the paper and one of five layouts, type what you want to announce and see how it will come out printed, with tear-off tabs if you want people to take your phone number with them."
+  },
+  "includes": {
+    "es": [
+      "Medidas carta, media carta, cuarto, postal, legal y tabloide",
+      "Papel brillante, mate, sin recubrir o reciclado",
+      "Papel ligero, papel grueso o cartulina",
+      "Impresión por una cara o por las dos",
+      "Flecos recortables con tu teléfono",
+      "Reverso con más información o con cupón recortable"
+    ],
+    "en": [
+      "Letter, half letter, quarter, postcard, legal and tabloid sizes",
+      "Glossy, matte, uncoated or recycled paper",
+      "Light paper, heavy paper or card stock",
+      "Single- or double-sided printing",
+      "Tear-off tabs with your phone number",
+      "Backs with more information or a tear-off coupon"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Aperturas",
+      "Ofertas y promociones",
+      "Eventos",
+      "Restaurantes",
+      "Bienes raíces",
+      "Servicios a domicilio"
+    ],
+    "en": [
+      "Grand openings",
+      "Offers and promotions",
+      "Events",
+      "Restaurants",
+      "Real estate",
+      "Home services"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

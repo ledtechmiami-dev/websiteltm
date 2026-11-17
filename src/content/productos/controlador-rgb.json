@@ -1,0 +1,23 @@
+{
+  "nombre": "Controlador para tiras RGB",
+  "nameEn": "RGB strip controller",
+  "slugEn": "rgb-strip-controller",
+  "categoria": "led",
+  "orden": 2,
+  "precio": null,
+  "variantes": [],
+  "short": {
+    "es": "Cambia el color y la intensidad de tus tiras LED RGB.",
+    "en": "Change the color and brightness of your RGB LED strips."
+  },
+  "descripcion": {
+    "es": "Controlador con control remoto para tiras LED RGB.",
+    "en": "Controller with remote for RGB LED strips."
+  },
+  "specs": { "es": [], "en": [] },
+  "imagenes": [],
+  "soloLocal": false,
+  "agotado": false,
+  "ejemplo": true,
+  "publicado": true
+}

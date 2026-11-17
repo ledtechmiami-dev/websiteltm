@@ -1,0 +1,89 @@
+---
+// Datos de contacto y envío de los constructores de diseño (neón, pisos EVA).
+// src/scripts/builder-quote.ts valida los campos y manda el diseño directo al correo.
+import type { Lang } from "../data/site";
+
+interface Props {
+  lang: Lang;
+  idp: string; // prefijo de los ids, distinto en cada constructor
+  cta: string;
+  notesPh: string;
+}
+
+const { lang, idp, cta, notesPh } = Astro.props;
+
+const COPY = {
+  es: {
+    contact: "¿A dónde te enviamos el precio?",
+    name: "Nombre *",
+    phone: "Teléfono *",
+    email: "Email *",
+    notes: "Algo más que debamos saber (opcional)",
+    required: "* Campos obligatorios",
+    msgs: {
+      invalid: "Revisa los campos marcados en rojo.",
+      sending: "Enviando…",
+      success: "¡Gracias! Recibimos tu diseño y te enviaremos el precio en menos de 24 horas.",
+      error: "No pudimos enviar el diseño. Inténtalo de nuevo o usa el botón de WhatsApp.",
+      notes: "Notas del cliente",
+      fields: {
+        nombre: "Escribe tu nombre.",
+        telefono: "Escribe un teléfono de al menos 10 dígitos, ej. 305 555 1234.",
+        email: "Escribe un email válido, ej. nombre@correo.com.",
+      },
+    },
+  },
+  en: {
+    contact: "Where should we send the price?",
+    name: "Name *",
+    phone: "Phone *",
+    email: "Email *",
+    notes: "Anything else we should know (optional)",
+    required: "* Required fields",
+    msgs: {
+      invalid: "Please check the fields marked in red.",
+      sending: "Sending…",
+      success: "Thank you! We received your design and will send you the price within 24 hours.",
+      error: "We couldn't send your design. Please try again or use the WhatsApp button.",
+      notes: "Customer notes",
+      fields: {
+        nombre: "Enter your name.",
+        telefono: "Enter a phone number with at least 10 digits, e.g. 305 555 1234.",
+        email: "Enter a valid email, e.g. name@email.com.",
+      },
+    },
+  },
+};
+
+const c = COPY[lang];
+const id = (name: string) => `${idp}-${name}`;
+---
+<fieldset class="nb__group nb__contact" data-msgs={JSON.stringify(c.msgs)}>
+  <legend class="nb__label">{c.contact}</legend>
+  <div class="form__row">
+    <div class="field">
+      <label for={id("nombre")}>{c.name}</label>
+      <input id={id("nombre")} type="text" name="nombre" autocomplete="name" maxlength="100" required aria-describedby={`${id("nombre")}-err`} />
+      <p class="field__error" id={`${id("nombre")}-err`} hidden></p>
+    </div>
+    <div class="field">
+      <label for={id("telefono")}>{c.phone}</label>
+      <input id={id("telefono")} type="tel" name="telefono" autocomplete="tel" maxlength="40" required aria-describedby={`${id("telefono")}-err`} />
+      <p class="field__error" id={`${id("telefono")}-err`} hidden></p>
+    </div>
+  </div>
+  <div class="field">
+    <label for={id("email")}>{c.email}</label>
+    <input id={id("email")} type="email" name="email" autocomplete="email" maxlength="200" required aria-describedby={`${id("email")}-err`} />
+    <p class="field__error" id={`${id("email")}-err`} hidden></p>
+  </div>
+  <div class="field">
+    <label for={id("notas")}>{c.notes}</label>
+    <textarea id={id("notas")} name="notas" rows="3" maxlength="1000" placeholder={notesPh}></textarea>
+  </div>
+  <p class="nb__req">{c.required}</p>
+</fieldset>
+<!-- Trampa anti-spam: invisible para personas, los bots la marcan -->
+<input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+<button type="submit" class="btn btn--full">{cta}</button>
+<p class="nb__status" role="status" aria-live="polite"></p>

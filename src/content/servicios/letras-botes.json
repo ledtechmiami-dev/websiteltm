@@ -1,0 +1,50 @@
+{
+  "nombre": "Letras para botes",
+  "linea": "marino",
+  "orden": 4,
+  "nameEn": "Boat letters",
+  "slugEn": "boat-letters",
+  "short": {
+    "es": "Nombres en acrílico y acero inoxidable para el casco o la popa.",
+    "en": "Acrylic and stainless steel names for the hull or transom."
+  },
+  "intro": {
+    "es": "El nombre de tu bote en letras de acrílico o de acero inoxidable, con relieve y hechas para el sol y el agua salada.",
+    "en": "Your boat's name in acrylic or stainless steel lettering, dimensional and made for sun and salt water."
+  },
+  "includes": {
+    "es": [
+      "Letras de acrílico",
+      "Letras de acero inoxidable",
+      "Tipografía a elección",
+      "Instalación en el casco"
+    ],
+    "en": [
+      "Acrylic letters",
+      "Stainless steel letters",
+      "Your choice of font",
+      "Hull installation"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Popa",
+      "Casco",
+      "Consolas",
+      "Muelles"
+    ],
+    "en": [
+      "Transom",
+      "Hull",
+      "Consoles",
+      "Docks"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

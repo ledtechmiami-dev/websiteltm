@@ -1,0 +1,26 @@
+{
+  "nombre": "Tira LED para interiores",
+  "nameEn": "Indoor LED strip",
+  "slugEn": "indoor-led-strip",
+  "categoria": "led",
+  "orden": 1,
+  "precio": null,
+  "variantes": [
+    { "nombre": { "es": "5 m (16 ft)", "en": "16 ft (5 m)" }, "precio": null },
+    { "nombre": { "es": "10 m (33 ft)", "en": "33 ft (10 m)" }, "precio": null }
+  ],
+  "short": {
+    "es": "Luz LED para cocinas, repisas, techos y muebles.",
+    "en": "LED light for kitchens, shelves, ceilings and furniture."
+  },
+  "descripcion": {
+    "es": "Tira LED para uso en interiores. Se corta a la medida y se instala con cinta adhesiva o en perfil de aluminio.",
+    "en": "LED strip for indoor use. It can be cut to length and mounted with adhesive tape or in an aluminum channel."
+  },
+  "specs": { "es": [], "en": [] },
+  "imagenes": [],
+  "soloLocal": false,
+  "agotado": false,
+  "ejemplo": true,
+  "publicado": true
+}

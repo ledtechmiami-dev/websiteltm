@@ -1,0 +1,60 @@
+{
+  "nombre": "Iluminación exterior",
+  "linea": "iluminacion",
+  "orden": 3,
+  "nameEn": "Outdoor lighting",
+  "slugEn": "outdoor",
+  "short": {
+    "es": "Fachadas, jardines, piscinas y paisajismo, resistentes al clima de Miami.",
+    "en": "Facades, gardens, pools and landscaping, built to handle Miami's weather."
+  },
+  "intro": {
+    "es": "Luz para fachadas, jardines y piscinas que resiste la lluvia, el sol y la sal de Miami, y hace tu propiedad más segura de noche.",
+    "en": "Lighting for facades, gardens and pools that stands up to Miami's rain, sun and salt air, and makes your property safer at night."
+  },
+  "includes": {
+    "es": [
+      "Iluminación de fachadas",
+      "Paisajismo y jardines",
+      "Luces de piscina",
+      "Caminos y escalones",
+      "Reflectores de seguridad con sensor"
+    ],
+    "en": [
+      "Facade lighting",
+      "Landscape and garden lighting",
+      "Pool lights",
+      "Pathways and steps",
+      "Motion-sensor security floodlights"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Fachadas",
+      "Jardines",
+      "Piscinas",
+      "Terrazas",
+      "Estacionamientos"
+    ],
+    "en": [
+      "Facades",
+      "Gardens",
+      "Pools",
+      "Patios",
+      "Parking areas"
+    ]
+  },
+  "note": {
+    "es": "Para jardines y fachadas, 2700 a 3000 K. Para seguridad, 4000 a 5000 K. Siempre con protección contra agua (IP65 o superior).",
+    "en": "For gardens and facades, 2700 to 3000 K. For security, 4000 to 5000 K. Always water-rated (IP65 or higher)."
+  },
+  "kelvin": {
+    "discriminant": true,
+    "value": {
+      "from": 3000,
+      "to": 5000,
+      "label": "3000–5000 K",
+      "rgb": false
+    }
+  }
+}

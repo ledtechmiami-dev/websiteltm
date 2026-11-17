@@ -1,0 +1,12 @@
+{
+  "titulo": "Cocina con iluminación LED",
+  "captionEn": "Kitchen LED lighting",
+  "linea": "iluminacion",
+  "imagen": null,
+  "alt": {
+    "es": "",
+    "en": ""
+  },
+  "destacado": true,
+  "orden": 5
+}

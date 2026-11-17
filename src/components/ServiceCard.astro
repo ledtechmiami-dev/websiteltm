@@ -1,0 +1,22 @@
+---
+import type { Lang } from "../data/site";
+import { lineOf, serviceUrl, type Service } from "../data/catalog";
+import { UI } from "../i18n/ui";
+
+interface Props {
+  lang: Lang;
+  service: Service;
+}
+
+const { lang, service } = Astro.props;
+const s = service[lang];
+---
+<li class="svc-card">
+  <span class="chip" style={`--c:${lineOf(service).color}`}></span>
+  <h3><a href={serviceUrl(service, lang)}>{s.name}</a></h3>
+  <p>{s.short}</p>
+  <span class="svc-card__more" aria-hidden="true">
+    {UI[lang].seeService}
+    <svg class="icon"><use href="#i-arrow"></use></svg>
+  </span>
+</li>

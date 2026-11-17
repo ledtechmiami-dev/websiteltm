@@ -1,0 +1,23 @@
+{
+  "nombre": "Luces LED de cortesía para botes",
+  "nameEn": "Boat courtesy LED lights",
+  "slugEn": "boat-courtesy-led-lights",
+  "categoria": "marino",
+  "orden": 2,
+  "precio": null,
+  "variantes": [],
+  "short": {
+    "es": "Luces LED pequeñas para escalones, consolas y cubiertas.",
+    "en": "Small LED lights for steps, consoles and decks."
+  },
+  "descripcion": {
+    "es": "Luces LED de cortesía para iluminar el paso a bordo de noche.",
+    "en": "Courtesy LED lights to light the way on board at night."
+  },
+  "specs": { "es": [], "en": [] },
+  "imagenes": [],
+  "soloLocal": false,
+  "agotado": false,
+  "ejemplo": true,
+  "publicado": true
+}

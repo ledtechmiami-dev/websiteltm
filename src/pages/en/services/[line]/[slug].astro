@@ -1,0 +1,14 @@
+---
+import ServiceView from "../../../../views/ServiceView.astro";
+import { SERVICES, lineOf } from "../../../../data/catalog";
+
+export function getStaticPaths() {
+  return SERVICES.map((service) => ({
+    params: { line: lineOf(service).slug.en, slug: service.slug.en },
+    props: { service },
+  }));
+}
+
+const { service } = Astro.props;
+---
+<ServiceView lang="en" service={service} />

@@ -1,0 +1,158 @@
+---
+// Portada de la tienda: formas de entrega, filtro por categoría y todos los productos.
+import Layout from "../layouts/Layout.astro";
+import PageHero from "../components/PageHero.astro";
+import ProductCard from "../components/ProductCard.astro";
+import Pending from "../components/Pending.astro";
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import { lineByKey } from "../data/catalog";
+import { paragraphs } from "../data/content";
+import { CATEGORIES, DELIVERY, PRODUCTS, SHOP, money, productsOf } from "../data/shop";
+import { ROUTES } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = UI[lang];
+
+const c = {
+  es: {
+    filter: "Filtrar por categoría",
+    all: "Todo",
+    see: "Ver productos",
+    delivery: "Cómo recibes tu pedido",
+    free: "Gratis",
+    freeFrom: "Gratis desde {x}",
+    cost: "costo",
+    address: "dirección del taller",
+    empty: "Pronto agregaremos productos a esta categoría.",
+    policies: "Cambios, devoluciones y garantía",
+    policiesPending: "políticas de la tienda",
+    customTitle: "¿Buscas algo a la medida?",
+    customText: "Letreros, pisos EVA para botes, tablas grabadas y mucho más: diséñalo en línea o pídenos una cotización.",
+    customCta: "Ver servicios",
+    cart: "Ver carrito",
+  },
+  en: {
+    filter: "Filter by category",
+    all: "All",
+    see: "See products",
+    delivery: "How you get your order",
+    free: "Free",
+    freeFrom: "Free over {x}",
+    cost: "cost",
+    address: "shop address",
+    empty: "We'll add products to this category soon.",
+    policies: "Exchanges, returns and warranty",
+    policiesPending: "shop policies",
+    customTitle: "Looking for something custom?",
+    customText: "Signs, EVA boat decks, engraved boards and much more: design it online or ask us for a quote.",
+    customCta: "See services",
+    cart: "View cart",
+  },
+}[lang];
+
+const head = SHOP.head;
+const tr = (b: { es: string; en: string }) => b[lang] || b.es;
+const policies = paragraphs(tr(SHOP.politicas));
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: tr(head.h1),
+  description: tr(head.lead),
+  url: new URL(ROUTES.shop[lang], SITE.url).href,
+};
+---
+<Layout lang={lang} page="shop" title={tr(head.title)} description={tr(head.lead)} alternates={ROUTES.shop} schema={schema}>
+  <PageHero
+    lang={lang}
+    title={tr(head.h1)}
+    lead={tr(head.lead)}
+    crumbs={[{ label: t.nav.home, href: ROUTES.home[lang] }, { label: t.nav.shop }]}
+    mosaic={["iluminacion", "fabricacion", "marino", "letreros"]}
+  >
+    <div class="hero-actions">
+      <a class="btn" href="#productos">{c.see}</a>
+      <a class="more" href={ROUTES.cart[lang]}>{c.cart}<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+    </div>
+  </PageHero>
+
+  <section class="section section--tight" aria-labelledby="entrega">
+    <div class="container">
+      <h2 class="sr-only" id="entrega">{c.delivery}</h2>
+      <ul class="ship-strip">
+        {DELIVERY.map((d) => (
+          <li>
+            <b>{d.name[lang]}</b>
+            <span>
+              {d.key === "recogida"
+                ? (SITE.address.full || <Pending lang={lang}>{c.address}</Pending>)
+                : tr(d.note)}
+            </span>
+            <span class="ship-strip__price">
+              {d.price === null
+                ? <Pending lang={lang}>{c.cost}</Pending>
+                : d.price === 0
+                  ? c.free
+                  : <>{money(d.price, lang)}{d.freeFrom !== null && <small>{c.freeFrom.replace("{x}", money(d.freeFrom, lang))}</small>}</>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--flush" id="productos" data-filter-root>
+    <div class="container">
+      <div class="filters" role="group" aria-label={c.filter}>
+        <button type="button" data-filter="all" aria-pressed="true">{c.all} <small>{PRODUCTS.length}</small></button>
+        {CATEGORIES.map((cat) => (
+          <button type="button" data-filter={cat.key} aria-pressed="false">
+            <span class="chip" style={`--c:${lineByKey(cat.line).color}`}></span>{cat.name[lang]} <small>{productsOf(cat.key).length}</small>
+          </button>
+        ))}
+      </div>
+      <ul class="shop-grid">
+        {PRODUCTS.map((p) => <ProductCard lang={lang} product={p} />)}
+      </ul>
+      <p class="shop-empty" data-empty hidden>{c.empty}</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container shop-foot">
+      <div class="panel">
+        <h2 class="panel__title">{c.policies}</h2>
+        {policies.length
+          ? <div class="prose">{policies.map((p) => <p>{p}</p>)}</div>
+          : <p><Pending lang={lang}>{c.policiesPending}</Pending></p>}
+      </div>
+      <div class="cta cta--plain">
+        <h2>{c.customTitle}</h2>
+        <p>{c.customText}</p>
+        <a class="btn" href={ROUTES.services[lang]}>{c.customCta}</a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-filter-root]").forEach((root) => {
+    const buttons = root.querySelectorAll<HTMLButtonElement>("[data-filter]");
+    const items = root.querySelectorAll<HTMLElement>("[data-cat]");
+    const empty = root.querySelector<HTMLElement>("[data-empty]")!;
+    buttons.forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const f = btn.dataset.filter;
+        buttons.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+        let shown = 0;
+        items.forEach((it) => {
+          it.hidden = f !== "all" && it.dataset.cat !== f;
+          if (!it.hidden) shown++;
+        });
+        empty.hidden = shown > 0;
+      })
+    );
+  });
+</script>

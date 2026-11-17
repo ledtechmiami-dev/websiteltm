@@ -1,0 +1,27 @@
+---
+// Página no encontrada
+import Layout from "../layouts/Layout.astro";
+import PageHero from "../components/PageHero.astro";
+import { lineByKey } from "../data/catalog";
+import { ROUTES } from "../i18n/routes";
+---
+<Layout
+  lang="es"
+  page="none"
+  title="Página no encontrada | LED Tech Miami"
+  description="Esta página no existe."
+  alternates={ROUTES.home}
+  noindex
+>
+  <PageHero
+    lang="es"
+    line={lineByKey("iluminacion")}
+    title="Esta página se quedó sin luz"
+    lead="Puede que el enlace esté mal escrito o que la página ya no exista."
+  >
+    <div class="hero-actions">
+      <a class="btn" href={ROUTES.home.es}>Ir al inicio</a>
+      <a class="more" href={ROUTES.home.en} lang="en">Go to the English site<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+    </div>
+  </PageHero>
+</Layout>

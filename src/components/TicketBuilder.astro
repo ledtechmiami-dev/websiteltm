@@ -1,0 +1,1525 @@
+---
+// Constructor de boletos (idea tomada de los boletos de evento de Vistaprint,
+// que los hace en dos medidas, tres papeles de 14 pt, con talón perforado y a
+// una o dos caras). OJO: el taller no perfora ni numera; esas dos cosas las
+// hace un taller aliado y suman días. El constructor lo dice donde se eligen,
+// no en la letra chica. Lo propio de este producto son el talón y la numeración:
+// el boleto se parte en dos y cada mitad tiene que llevar el mismo número. El
+// constructor lo enseña arrancado. No muestra precios de imprenta: el precio
+// va en la cotización.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Los tres papeles del oficio, todos en cartulina de 14 pt
+const STOCKS = [
+  { id: "brillante", es: "Brillante", en: "Glossy", base: "#FFFFFF", edge: "#E4E8EB", ink: "#14161A", sub: "#5A616B", tex: "brillo",
+    sw: "linear-gradient(118deg, #FFF 0 26%, #D8E2EA 44%, #FFF 62%, #EDF1F4)" },
+  { id: "mate", es: "Mate", en: "Matte", base: "#FFFFFF", edge: "#E7E8E6", ink: "#14161A", sub: "#5A616B", tex: "mate",
+    sw: "linear-gradient(135deg, #FFF 0 52%, #EFF0EE)" },
+  { id: "natural", es: "Sin recubrir", en: "Uncoated", base: "#FAF8F3", edge: "#E6E1D6", ink: "#1A1A18", sub: "#5E5B52", tex: "fibra",
+    sw: "linear-gradient(135deg, #FBF9F4, #EBE5D9)" },
+];
+
+// La paleta LED del logo más neutros de imprenta
+const ACCENTS = [
+  { id: "azul", es: "Azul LED", en: "LED blue", hex: "#0094DA" },
+  { id: "amarillo", es: "Amarillo LED", en: "LED yellow", hex: "#FFCA09" },
+  { id: "verde", es: "Verde LED", en: "LED green", hex: "#99C941" },
+  { id: "rojo", es: "Rojo LED", en: "LED red", hex: "#ED1B24" },
+  { id: "negro", es: "Negro", en: "Black", hex: "#0B0C0E" },
+  { id: "pizarra", es: "Gris pizarra", en: "Slate grey", hex: "#59626D" },
+  { id: "marino", es: "Azul marino", en: "Navy", hex: "#16304F" },
+  { id: "vino", es: "Vino", en: "Wine", hex: "#7A1F2B" },
+  { id: "oliva", es: "Verde oliva", en: "Olive", hex: "#4F5B32" },
+  { id: "terracota", es: "Terracota", en: "Terracotta", hex: "#B4522E" },
+];
+
+const QTYS = [50, 100, 250, 500, 1000];
+
+const COPY = {
+  es: {
+    title: "Diseña tus boletos",
+    lead: "Elige la medida, el talón y el diseño, escribe lo del evento y mira cómo queda el boleto, incluso arrancado: lo que se queda quien cobra y lo que se lleva quien entra. Mándanos el diseño y te respondemos con el precio.",
+    format: "Medida",
+    shapes: { clasico: "Clásico", grande: "Grande", rifa: "Rifa" },
+    shapeHelp: {
+      clasico: "El de siempre: 5-1/2 × 2 in. Cabe en el bolsillo y se corta rápido.",
+      grande: "6-1/2 × 2-1/8 in. Más sitio para el nombre del evento y para la foto.",
+      rifa: "5-1/2 × 1-3/4 in, el angosto de las rifas: se imprimen muchos y se reparten sueltos.",
+    },
+    stub: "Talón",
+    stubs: { izquierda: "A la izquierda", derecha: "A la derecha", ninguno: "Sin talón" },
+    stubHelp: "El talón va perforado: se arranca al entrar y se queda quien cobra. En las dos mitades va el mismo número.",
+    outsource: "La perforación y la numeración no se hacen aquí: las manda un taller aliado y suman días a la entrega. Dinos la fecha del evento y te confirmamos si llegamos.",
+    inhouse: "Sin talón y sin numerar los imprimimos aquí mismo, y salen antes.",
+    number: "Numeración",
+    numbers: { si: "Numerados", no: "Sin numerar" },
+    numStart: "Empezar en",
+    numHelp: "Cada boleto sale con su número, uno detrás de otro:",
+    numRange: "del {a} al {b}",
+    paper: "Papel",
+    paperHelp: "Los tres van en cartulina de 14 pt: aguanta el bolsillo y se arranca limpio por la perforación.",
+    print: "Impresión",
+    sides: "Caras",
+    sideOpts: { una: "Una cara", dos: "Dos caras" },
+    design: "Diseño",
+    tpls: { evento: "Evento", rifa: "Rifa", cena: "Cena", foto: "Foto", tipografica: "Solo texto" },
+    type: "Tipografía",
+    types: { moderna: "Moderna", clasica: "Clásica", tecnica: "Técnica", sencilla: "Sencilla" },
+    accent: "Color de acento",
+    bg: "Fondo",
+    bgs: { papel: "Papel blanco", color: "Color de acento", oscuro: "Oscuro" },
+    image: "Imagen",
+    images: { foto: "Espacio para foto", color: "Bloque de color" },
+    imageHelp: "Déjanos el espacio marcado y",
+    imageCta: "mándanos la foto por WhatsApp",
+    imageWa: "Hola, quiero imprimir boletos. Les envío la foto y el logo.",
+    photoBox: "TU FOTO",
+    words: "El evento",
+    event: "Nombre del evento",
+    eventPh: "Ej. Noche de Salsa",
+    defEvent: "Noche de Salsa",
+    sub: "Segunda línea",
+    subPh: "Ej. En vivo · Orquesta Miami",
+    defSub: "En vivo · Orquesta Miami",
+    date: "Fecha",
+    datePh: "Ej. Sábado 14 de marzo",
+    defDate: "Sábado 14 de marzo",
+    time: "Hora",
+    timePh: "Ej. 9:00 PM",
+    defTime: "9:00 PM",
+    place: "Lugar",
+    placePh: "Ej. Salón Tropical, Miami",
+    defPlace: "Salón Tropical, Miami",
+    price: "Precio del boleto",
+    pricePh: "Ej. $25",
+    defPrice: "$25",
+    section: "Tipo de entrada",
+    sectionPh: "Ej. Admisión general",
+    defSection: "Admisión general",
+    prize: "Premio de la rifa",
+    prizePh: "Ej. Un fin de semana en Key West",
+    defPrize: "Un fin de semana en Key West",
+    biz: "Quién lo organiza",
+    org: "Organizador",
+    orgPh: "Ej. Tu Negocio",
+    defOrg: "Tu Negocio",
+    phone: "Teléfono",
+    phonePh: "Ej. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    note: "Letra chica",
+    notePh: "Ej. No reembolsable. Entrada sujeta a disponibilidad.",
+    defNote: "No reembolsable. Entrada sujeta a disponibilidad.",
+    back: "Reverso",
+    backs: { condiciones: "Condiciones", info: "Datos del evento", logo: "Logo en color" },
+    backHelp: "El reverso solo se imprime si eliges dos caras.",
+    order: "Tu pedido",
+    qty: "Cantidad",
+    qtyHelp: "Imprime unos cuantos de más: siempre se pierde alguno. Desde 50 en adelante.",
+    guides: "Guías de corte",
+    guidesOn: "Línea roja: sangrado y perforación, por donde pasa la cuchilla. Línea azul: la zona segura, los textos no deben salir de ahí.",
+    tear: "Arrancado",
+    tearOn: "Así queda el boleto al arrancarlo. El número tiene que estar en las dos mitades: es lo que las une.",
+    keepOrg: "Se queda quien cobra",
+    keepGuest: "Se lleva quien entra",
+    nameLine: "Nombre",
+    phoneLine: "Teléfono",
+    raffleLbl: "RIFA",
+    admitLbl: "ENTRADA",
+    views: { ambas: "Ver: las dos caras", frente: "Ver: solo el frente", reverso: "Ver: solo el reverso" },
+    viewHelp: "Cambiar la vista",
+    approx: "Vista aproximada · el color impreso varía un poco del de la pantalla",
+    front: "Frente",
+    backLbl: "Reverso",
+    priceNote: "Precio: te lo enviamos con la cotización, en menos de 24 h. Depende del tiraje, del papel y de si van numerados.",
+    cta: "Cotizar estos boletos",
+    wa: "Enviar por WhatsApp",
+    notesPh: "Para cuándo los necesitas, si los quieres numerados desde otro número, si ya tienes el diseño hecho…",
+    summary: "Diseño del constructor de boletos",
+    sFormat: "Medida",
+    sStub: "Talón",
+    sNumber: "Numeración",
+    sPaper: "Papel",
+    sSides: "Caras",
+    sDesign: "Diseño",
+    sType: "Tipografía",
+    sAccent: "Color de acento",
+    sBg: "Fondo",
+    sImage: "Imagen",
+    sEvent: "Evento",
+    sWhen: "Cuándo",
+    sPlace: "Lugar",
+    sPrice: "Precio",
+    sPrize: "Premio",
+    sOrg: "Organiza",
+    sNote: "Letra chica",
+    sBack: "Reverso",
+    sQty: "Cantidad",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesan estos boletos:",
+    preview: "Vista previa del boleto",
+    numPrefix: "N.º",
+  },
+  en: {
+    title: "Design your tickets",
+    lead: "Pick the size, the stub and the layout, type the event details and see how the ticket looks — including torn in two: what the person at the door keeps and what the guest takes in. Send us the design and we'll reply with the price.",
+    format: "Size",
+    shapes: { clasico: "Classic", grande: "Large", rifa: "Raffle" },
+    shapeHelp: {
+      clasico: "The usual one: 5-1/2 × 2 in. It fits a pocket and cuts fast.",
+      grande: "6-1/2 × 2-1/8 in. More room for the event name and for a photo.",
+      rifa: "5-1/2 × 1-3/4 in, the narrow raffle one: printed by the hundreds and handed out loose.",
+    },
+    stub: "Stub",
+    stubs: { izquierda: "On the left", derecha: "On the right", ninguno: "No stub" },
+    stubHelp: "The stub is perforated: it's torn off at the door and kept by whoever is collecting. Both halves carry the same number.",
+    outsource: "The perforation and the numbering aren't done here: a partner shop handles them, and that adds days to the delivery. Tell us the date of the event and we'll confirm whether we make it.",
+    inhouse: "With no stub and no numbering we print them right here, and they come out sooner.",
+    number: "Numbering",
+    numbers: { si: "Numbered", no: "Not numbered" },
+    numStart: "Start at",
+    numHelp: "Every ticket comes out with its own number, one after the other:",
+    numRange: "from {a} to {b}",
+    paper: "Paper",
+    paperHelp: "All three come in 14 pt card stock: it takes a pocket and tears clean along the perforation.",
+    print: "Printing",
+    sides: "Sides",
+    sideOpts: { una: "Single-sided", dos: "Double-sided" },
+    design: "Layout",
+    tpls: { evento: "Event", rifa: "Raffle", cena: "Dinner", foto: "Photo", tipografica: "Type only" },
+    type: "Typeface",
+    types: { moderna: "Modern", clasica: "Classic", tecnica: "Technical", sencilla: "Simple" },
+    accent: "Accent color",
+    bg: "Background",
+    bgs: { papel: "White stock", color: "Accent color", oscuro: "Dark" },
+    image: "Image",
+    images: { foto: "Space for a photo", color: "Color block" },
+    imageHelp: "We'll leave the space marked and you can",
+    imageCta: "send us the photo on WhatsApp",
+    imageWa: "Hi, I want to print tickets. I'll send you the photo and the logo.",
+    photoBox: "YOUR PHOTO",
+    words: "The event",
+    event: "Event name",
+    eventPh: "E.g. Salsa Night",
+    defEvent: "Salsa Night",
+    sub: "Second line",
+    subPh: "E.g. Live · Orquesta Miami",
+    defSub: "Live · Orquesta Miami",
+    date: "Date",
+    datePh: "E.g. Saturday, March 14",
+    defDate: "Saturday, March 14",
+    time: "Time",
+    timePh: "E.g. 9:00 PM",
+    defTime: "9:00 PM",
+    place: "Venue",
+    placePh: "E.g. Salón Tropical, Miami",
+    defPlace: "Salón Tropical, Miami",
+    price: "Ticket price",
+    pricePh: "E.g. $25",
+    defPrice: "$25",
+    section: "Admission type",
+    sectionPh: "E.g. General admission",
+    defSection: "General admission",
+    prize: "Raffle prize",
+    prizePh: "E.g. A weekend in Key West",
+    defPrize: "A weekend in Key West",
+    biz: "Who's running it",
+    org: "Organizer",
+    orgPh: "E.g. Your Business",
+    defOrg: "Your Business",
+    phone: "Phone",
+    phonePh: "E.g. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    note: "Small print",
+    notePh: "E.g. Non-refundable. Entry subject to availability.",
+    defNote: "Non-refundable. Entry subject to availability.",
+    back: "Back",
+    backs: { condiciones: "Terms", info: "Event details", logo: "Logo in color" },
+    backHelp: "The back is only printed if you choose double-sided.",
+    order: "Your order",
+    qty: "Quantity",
+    qtyHelp: "Print a few extra: one always goes missing. From 50 up.",
+    guides: "Cut guides",
+    guidesOn: "Red line: the bleed and the perforation, where the blade goes. Blue line: the safe area, keep text inside it.",
+    tear: "Torn off",
+    tearOn: "This is the ticket once it's torn. The number has to be on both halves: it's what ties them together.",
+    keepOrg: "Kept at the door",
+    keepGuest: "Taken in by the guest",
+    nameLine: "Name",
+    phoneLine: "Phone",
+    raffleLbl: "RAFFLE",
+    admitLbl: "ADMIT",
+    views: { ambas: "View: both sides", frente: "View: front only", reverso: "View: back only" },
+    viewHelp: "Change the view",
+    approx: "Approximate preview · printed color varies a little from the screen",
+    front: "Front",
+    backLbl: "Back",
+    priceNote: "Price: we send it with your quote, in under 24 hours. It depends on the run, the paper and whether they're numbered.",
+    cta: "Quote these tickets",
+    wa: "Send on WhatsApp",
+    notesPh: "When you need them, whether the numbering should start somewhere else, whether your design is already done…",
+    summary: "Ticket builder design",
+    sFormat: "Size",
+    sStub: "Stub",
+    sNumber: "Numbering",
+    sPaper: "Paper",
+    sSides: "Sides",
+    sDesign: "Layout",
+    sType: "Typeface",
+    sAccent: "Accent color",
+    sBg: "Background",
+    sImage: "Image",
+    sEvent: "Event",
+    sWhen: "When",
+    sPlace: "Venue",
+    sPrice: "Price",
+    sPrize: "Prize",
+    sOrg: "Organizer",
+    sNote: "Small print",
+    sBack: "Back",
+    sQty: "Quantity",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in these tickets:",
+    preview: "Ticket preview",
+    numPrefix: "No.",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  stocks: STOCKS.map((s) => ({ id: s.id, base: s.base, edge: s.edge, ink: s.ink, sub: s.sub, tex: s.tex, name: s[lang] })),
+  accents: ACCENTS.map((a) => ({ id: a.id, hex: a.hex, name: a[lang] })),
+  shapes: c.shapes,
+  shapeHelp: c.shapeHelp,
+  stubs: c.stubs,
+  numbers: c.numbers,
+  numHelp: c.numHelp,
+  outsource: c.outsource,
+  inhouse: c.inhouse,
+  numRange: c.numRange,
+  sides: c.sideOpts,
+  tpls: c.tpls,
+  types: c.types,
+  bgs: c.bgs,
+  images: c.images,
+  backs: c.backs,
+  views: c.views,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    photoBox: c.photoBox,
+    keepOrg: c.keepOrg,
+    keepGuest: c.keepGuest,
+    nameLine: c.nameLine,
+    phoneLine: c.phoneLine,
+    raffleLbl: c.raffleLbl,
+    admitLbl: c.admitLbl,
+    numPrefix: c.numPrefix,
+    front: c.front,
+    backLbl: c.backLbl,
+    approx: c.approx,
+    guidesOn: c.guidesOn,
+    tearOn: c.tearOn,
+    summary: c.summary,
+    sFormat: c.sFormat,
+    sStub: c.sStub,
+    sNumber: c.sNumber,
+    sPaper: c.sPaper,
+    sSides: c.sSides,
+    sDesign: c.sDesign,
+    sType: c.sType,
+    sAccent: c.sAccent,
+    sBg: c.sBg,
+    sImage: c.sImage,
+    sEvent: c.sEvent,
+    sWhen: c.sWhen,
+    sPlace: c.sPlace,
+    sPrice: c.sPrice,
+    sPrize: c.sPrize,
+    sOrg: c.sOrg,
+    sNote: c.sNote,
+    sBack: c.sBack,
+    sQty: c.sQty,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+    preview: c.preview,
+    no: lang === "es" ? "No" : "No",
+  },
+};
+const waPhoto = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.imageWa)}`;
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+const TPLS = Object.keys(c.tpls);
+---
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" />
+
+<section class="section section--flush" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb bl" data-ticket data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage">
+        <canvas class="nb__canvas bl__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-guides aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.guides}
+          </button>
+          <button type="button" class="nb__tool" data-tear aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.tear}
+          </button>
+          <button type="button" class="nb__tool bl__view" data-view title={c.viewHelp}>{c.views.ambas}</button>
+        </div>
+        <p class="nb__approx" data-approx>{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.format}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.format}>
+            {seg("formato", c.shapes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help"><b data-size-out></b> · <span data-shape-help>{c.shapeHelp.clasico}</span></p>
+          <p class="tb__sub">{c.stub}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.stub}>
+            {seg("talon", c.stubs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.stubHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.number}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.number}>
+            {seg("numerado", c.numbers).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <div class="tb__row bl__num" data-num-field>
+            <div class="field">
+              <label for="bl-num">{c.numStart}</label>
+              <input id="bl-num" type="text" name="numInicio" maxlength="6" inputmode="numeric" autocomplete="off" value="001" />
+            </div>
+          </div>
+          <p class="nb__help" data-num-help></p>
+          <p class="nb__help" data-lead-help></p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.paper}</legend>
+          <div class="tb__mats">
+            {STOCKS.map((s) => (
+              <label class="tb__mat">
+                <input type="radio" name="papel" value={s.id} checked={s.id === "brillante"} />
+                <i style={`--c:${s.sw}`} aria-hidden="true"></i>
+                <span>{s[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help">{c.paperHelp}</p>
+          <p class="tb__sub">{c.sides}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.sides}>
+            {seg("caras", c.sideOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.design}</legend>
+          <div class="fb__pats bl__tpls" role="radiogroup" aria-label={c.design}>
+            {TPLS.map((id, i) => (
+              <label class="fb__pat bl__tpl">
+                <input type="radio" name="plantilla" value={id} checked={i === 0} />
+                <canvas width="220" height="90" aria-hidden="true"></canvas>
+                <span>{c.tpls[id as keyof typeof c.tpls]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.bg}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.bg}>
+            {seg("fondo", c.bgs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.type}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.type}>
+            {seg("tipografia", c.types).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.accent} · <span class="eb__picked" data-accent-name>{ACCENTS[0][lang]}</span></p>
+          <div class="eb__sws" role="radiogroup" aria-label={c.accent}>
+            {ACCENTS.map((a, i) => (
+              <label class="eb__sw" title={a[lang]}>
+                <input type="radio" name="acento" value={a.id} checked={i === 0} />
+                <i style={`--c:${a.hex}`} aria-hidden="true"></i>
+                <span class="sr-only">{a[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.image}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.image} data-image>
+            {seg("imagen", c.images).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.imageHelp} <a class="eb__link" href={waPhoto} target="_blank" rel="noopener">{c.imageCta}</a>.</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.words}</legend>
+          <div class="tb__words">
+            <div class="field">
+              <label for="bl-evento">{c.event}</label>
+              <input id="bl-evento" type="text" name="evento" maxlength="30" autocomplete="off" placeholder={c.eventPh} value={c.defEvent} />
+            </div>
+            <div class="field">
+              <label for="bl-sub">{c.sub}</label>
+              <input id="bl-sub" type="text" name="subtitulo" maxlength="30" autocomplete="off" placeholder={c.subPh} value={c.defSub} />
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="bl-fecha">{c.date}</label>
+                <input id="bl-fecha" type="text" name="fecha" maxlength="22" autocomplete="off" placeholder={c.datePh} value={c.defDate} />
+              </div>
+              <div class="field">
+                <label for="bl-hora">{c.time}</label>
+                <input id="bl-hora" type="text" name="hora" maxlength="14" autocomplete="off" placeholder={c.timePh} value={c.defTime} />
+              </div>
+            </div>
+            <div class="field">
+              <label for="bl-lugar">{c.place}</label>
+              <input id="bl-lugar" type="text" name="lugar" maxlength="30" autocomplete="off" placeholder={c.placePh} value={c.defPlace} />
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="bl-precio">{c.price}</label>
+                <input id="bl-precio" type="text" name="precio" maxlength="12" autocomplete="off" placeholder={c.pricePh} value={c.defPrice} />
+              </div>
+              <div class="field">
+                <label for="bl-seccion">{c.section}</label>
+                <input id="bl-seccion" type="text" name="seccion" maxlength="20" autocomplete="off" placeholder={c.sectionPh} value={c.defSection} />
+              </div>
+            </div>
+            <div class="field bl__prize" data-prize-field hidden>
+              <label for="bl-premio">{c.prize}</label>
+              <input id="bl-premio" type="text" name="premio" maxlength="30" autocomplete="off" placeholder={c.prizePh} value={c.defPrize} />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.biz}</legend>
+          <div class="tb__words">
+            <div class="form__row">
+              <div class="field">
+                <label for="bl-org">{c.org}</label>
+                <input id="bl-org" type="text" name="organizador" maxlength="30" autocomplete="off" placeholder={c.orgPh} value={c.defOrg} />
+              </div>
+              <div class="field">
+                <label for="bl-tel">{c.phone}</label>
+                <input id="bl-tel" type="text" name="tel" maxlength="24" autocomplete="off" placeholder={c.phonePh} value={c.defPhone} />
+              </div>
+            </div>
+            <div class="field">
+              <label for="bl-nota">{c.note}</label>
+              <input id="bl-nota" type="text" name="nota" maxlength="60" autocomplete="off" placeholder={c.notePh} value={c.defNote} />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.back}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.back} data-back>
+            {seg("reverso", c.backs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-back-help hidden>{c.backHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="nb__sizes">
+            {QTYS.map((q) => (
+              <button type="button" class="nb__pill" data-qty={q}>{q}</button>
+            ))}
+          </div>
+          <div class="tb__row">
+            <div class="field">
+              <label for="bl-cantidad">{c.qty}</label>
+              <input id="bl-cantidad" type="number" name="cantidad" min="50" max="100000" step="50" value="250" inputmode="numeric" aria-describedby="bl-qty-help" />
+            </div>
+          </div>
+          <p class="nb__help" id="bl-qty-help">{c.qtyHelp}</p>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.priceNote}</p>
+          <BuilderContact lang={lang} idp="bl" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Stock = { id: string; name: string; base: string; edge: string; ink: string; sub: string; tex: string };
+  type Accent = { id: string; name: string; hex: string };
+  type Cfg = {
+    stocks: Stock[];
+    accents: Accent[];
+    shapes: Record<string, string>;
+    shapeHelp: Record<string, string>;
+    stubs: Record<string, string>;
+    numbers: Record<string, string>;
+    numHelp: string;
+    outsource: string;
+    inhouse: string;
+    numRange: string;
+    sides: Record<string, string>;
+    tpls: Record<string, string>;
+    types: Record<string, string>;
+    bgs: Record<string, string>;
+    images: Record<string, string>;
+    backs: Record<string, string>;
+    views: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+  // Lo que hay que dibujar en una cara, ya resuelto desde el formulario
+  type Face = {
+    w: number; // pulgadas
+    h: number;
+    stubW: number; // 0 si no lleva talón
+    stubLeft: boolean;
+    stock: Stock;
+    accent: string;
+    type: string;
+    tpl: string;
+    bg: string;
+    photo: boolean;
+    num: string; // vacío si no van numerados
+    t: Record<string, string>;
+    mini: boolean;
+  };
+
+  // Medidas de boleto, en pulgadas, con el ancho de su talón
+  const SHAPES: Record<string, { w: number; h: number; stub: number }> = {
+    clasico: { w: 5.5, h: 2, stub: 1.6 },
+    grande: { w: 6.5, h: 2.125, stub: 2 },
+    rifa: { w: 5.5, h: 1.75, stub: 1.5 },
+  };
+  const BLEED = 0.125; // sangrado de imprenta
+  const SAFE = 0.125; // margen de seguridad hacia dentro
+  const ROUND = 0.09; // las esquinas van apenas matadas
+  const NOTCH = 0.055; // la media luna del troquel, a cada lado de la perforación
+
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  // Luminancia relativa: decide si sobre ese color el texto va blanco o negro
+  const lum = (hex: string) =>
+    rgb(hex)
+      .map((v) => v / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)))
+      .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const onColor = (hex: string) => (lum(hex) > 0.42 ? "#0B0C0E" : "#FFFFFF");
+  const mix = (hex: string, t: number) => {
+    const to = t < 0 ? 0 : 255;
+    const a = Math.abs(t);
+    const [r, g, b] = rgb(hex).map((v) => Math.round(v + (to - v) * a));
+    return `rgb(${r},${g},${b})`;
+  };
+  // Azar con semilla: la textura del papel no cambia en cada redibujado
+  const rng = (seed: number) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  // Medidas en pulgadas, escritas como en la imprenta: 5-1/2 in
+  const fmtIn = (v: number) => {
+    const whole = Math.floor(v);
+    const fr = +(v - whole).toFixed(3);
+    const frac: Record<string, string> = {
+      "0.125": "-1/8", "0.25": "-1/4", "0.375": "-3/8", "0.5": "-1/2",
+      "0.625": "-5/8", "0.75": "-3/4", "0.875": "-7/8",
+    };
+    const f = frac[String(fr)];
+    if (f) return `${whole}${f}`;
+    return fr ? String(+v.toFixed(2)) : String(whole);
+  };
+
+  const FAMS: Record<string, { title: string; body: string; track: string }> = {
+    moderna: { title: '800 {px}px "Saira", "Arial Narrow", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    clasica: { title: '700 {px}px "Playfair Display", Georgia, serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    tecnica: { title: '400 {px}px "Michroma", "Eurostile", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.02em" },
+    sencilla: { title: '600 {px}px "Instrument Sans", system-ui, sans-serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+  };
+  const LABEL = (px: number) => `400 ${px}px "Michroma", "Eurostile", sans-serif`;
+  const MONO = (px: number) => `700 ${px}px "Saira", "Arial Narrow", sans-serif`;
+  const setTrack = (c: CanvasRenderingContext2D, v: string) => {
+    (c as unknown as { letterSpacing: string }).letterSpacing = v;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-ticket]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const guidesBtn = root.querySelector<HTMLButtonElement>("[data-guides]")!;
+    const tearBtn = root.querySelector<HTMLButtonElement>("[data-tear]")!;
+    const viewBtn = root.querySelector<HTMLButtonElement>("[data-view]")!;
+    const tools = root.querySelector<HTMLElement>(".nb__tools")!;
+    const approx = root.querySelector<HTMLElement>("[data-approx]")!;
+    const sizeOut = form.querySelector<HTMLElement>("[data-size-out]")!;
+    const shapeHelp = form.querySelector<HTMLElement>("[data-shape-help]")!;
+    const numField = form.querySelector<HTMLElement>("[data-num-field]")!;
+    const numHelp = form.querySelector<HTMLElement>("[data-num-help]")!;
+    const leadHelp = form.querySelector<HTMLElement>("[data-lead-help]")!;
+    const prizeField = form.querySelector<HTMLElement>("[data-prize-field]")!;
+    const imageSeg = form.querySelector<HTMLElement>("[data-image]")!;
+    const backSeg = form.querySelector<HTMLElement>("[data-back]")!;
+    const backHelp = form.querySelector<HTMLElement>("[data-back-help]")!;
+    const accentName = form.querySelector<HTMLElement>("[data-accent-name]")!;
+    const qtyEl = form.querySelector<HTMLInputElement>("input[name='cantidad']")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    let guides = false;
+    let torn = false;
+    const VIEWS = ["ambas", "frente", "reverso"] as const;
+    let view: (typeof VIEWS)[number] = "ambas";
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const stock = () => cfg.stocks.find((s) => s.id === val("papel")) ?? cfg.stocks[0];
+    const accent = () => cfg.accents.find((a) => a.id === val("acento")) ?? cfg.accents[0];
+    const twoSided = () => val("caras") === "dos";
+    const hasStub = () => val("talon") !== "ninguno";
+    const numbered = () => val("numerado") === "si";
+    const isRaffle = () => val("plantilla") === "rifa";
+    // El diseño de solo texto no lleva hueco de imagen
+    const hasPhoto = () => val("plantilla") !== "tipografica";
+    const qty = () => Math.max(50, Math.min(100000, Math.round(Number(qtyEl.value) || 250)));
+    const shape = () => SHAPES[val("formato")] ?? SHAPES.clasico;
+    const dims = () => {
+      const sh = shape();
+      return { w: sh.w, h: sh.h, stubW: hasStub() ? sh.stub : 0 };
+    };
+    // El número del primer boleto y el del último, con los mismos dígitos
+    const numRange = () => {
+      const start = text("numInicio");
+      if (!/^\d+$/.test(start)) return { a: start, b: "" };
+      const pad = start.length;
+      const end = String(Number(start) + qty() - 1).padStart(pad, "0");
+      return { a: start, b: end };
+    };
+    const texts = () => ({
+      evento: text("evento"),
+      sub: text("subtitulo"),
+      fecha: text("fecha"),
+      hora: text("hora"),
+      lugar: text("lugar"),
+      precio: text("precio"),
+      seccion: text("seccion"),
+      premio: text("premio"),
+      organizador: text("organizador"),
+      tel: text("tel"),
+      nota: text("nota"),
+    });
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const RADIOS = ["formato", "talon", "numerado", "papel", "caras", "plantilla", "fondo", "tipografia", "acento", "imagen", "reverso"];
+    const FIELDS: Array<[string, number]> = [
+      ["evento", 30],
+      ["subtitulo", 30],
+      ["fecha", 22],
+      ["hora", 14],
+      ["lugar", 30],
+      ["precio", 12],
+      ["seccion", 20],
+      ["premio", 30],
+      ["organizador", 30],
+      ["tel", 24],
+      ["nota", 60],
+      ["numInicio", 6],
+    ];
+    const params = new URLSearchParams(location.search);
+    if (params.has("plantilla") && params.has("formato")) {
+      RADIOS.forEach((n) => setRadio(n, params.get(n)));
+      FIELDS.forEach(([n, max]) => {
+        const v = params.get(n);
+        if (v !== null) (form.elements.namedItem(n) as HTMLInputElement).value = v.slice(0, max);
+      });
+      const q = Number(params.get("cantidad"));
+      if (q >= 50 && q <= 100000) qtyEl.value = String(Math.round(q));
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams();
+      RADIOS.forEach((n) => p.set(n, val(n)));
+      FIELDS.forEach(([n]) => p.set(n, text(n)));
+      p.set("cantidad", String(qty()));
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Dibujo ----------
+    // Textura del papel
+    const paper = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, st: Stock, s: number) => {
+      c.fillStyle = st.base;
+      c.fillRect(x, y, w, h);
+      const r = rng(st.id.charCodeAt(0) * 131 + st.id.length * 17);
+      if (st.tex === "brillo") {
+        const g = c.createLinearGradient(x, y + h, x + w, y);
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.44, "rgba(255,255,255,0)");
+        g.addColorStop(0.5, "rgba(255,255,255,0.5)");
+        g.addColorStop(0.56, "rgba(255,255,255,0)");
+        g.addColorStop(1, "rgba(180,200,215,0.16)");
+        c.fillStyle = g;
+        c.fillRect(x, y, w, h);
+      }
+      if (st.tex === "fibra") {
+        const n = Math.round((w * h) / 110);
+        for (let i = 0; i < n; i++) {
+          c.fillStyle = r() > 0.5 ? "rgba(255,255,255,0.6)" : "rgba(90,84,70,0.13)";
+          const dw = Math.max(0.6, s * (0.004 + r() * 0.008));
+          c.fillRect(x + r() * w, y + r() * h, dw, dw * (r() > 0.7 ? 2.2 : 1));
+        }
+      }
+      const sh = c.createLinearGradient(x, y, x, y + h);
+      sh.addColorStop(0, "rgba(255,255,255,0.12)");
+      sh.addColorStop(0.5, "rgba(255,255,255,0)");
+      sh.addColorStop(1, "rgba(11,12,14,0.06)");
+      c.fillStyle = sh;
+      c.fillRect(x, y, w, h);
+    };
+
+    // El contorno del boleto. Donde cae la perforación se troquela una media
+    // luna a cada lado, como en los boletos de verdad.
+    const outline = (x0: number, y0: number, s: number, o: Face) => {
+      const p = new Path2D();
+      p.roundRect(x0, y0, o.w * s, o.h * s, ROUND * s);
+      if (o.stubW) {
+        const px = x0 + (o.stubLeft ? o.stubW : o.w - o.stubW) * s;
+        p.moveTo(px + NOTCH * s, y0);
+        p.arc(px, y0, NOTCH * s, 0, Math.PI);
+        p.closePath();
+        p.moveTo(px + NOTCH * s, y0 + o.h * s);
+        p.arc(px, y0 + o.h * s, NOTCH * s, Math.PI, 0);
+        p.closePath();
+      }
+      return p;
+    };
+
+    // Dibuja una cara del boleto: el cuerpo y, si lo lleva, el talón
+    const drawFace = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Face, back: string | null) => {
+      const { w, h } = o;
+      const X = (v: number) => x0 + v * s;
+      const Y = (v: number) => y0 + v * s;
+      const P = (v: number) => v * s;
+      const st = o.stock;
+      const acc = o.accent;
+      const fu = h; // el boleto es bajito: la altura manda en todo
+      const m = 0.07 * fu;
+      // El cuerpo: lo que queda al quitar el talón
+      const bx = o.stubW && o.stubLeft ? o.stubW : 0;
+      const bw = w - o.stubW;
+      const sx = o.stubLeft ? 0 : w - o.stubW; // esquina del talón
+      const V = (k: number) => k * h;
+
+      // ---- Fondo ----
+      paper(c, X(0), Y(0), P(w), P(h), st, s);
+      const dark = o.bg === "oscuro";
+      const colored = o.bg === "color";
+      if (dark || colored) {
+        c.fillStyle = dark ? "#14161A" : acc;
+        c.fillRect(X(0), Y(0), P(w), P(h));
+        c.save();
+        c.globalAlpha = 0.12;
+        c.globalCompositeOperation = "overlay";
+        paper(c, X(0), Y(0), P(w), P(h), st, s);
+        c.restore();
+      }
+      const ink = dark ? "#FFFFFF" : colored ? onColor(acc) : st.ink;
+      const sub = dark ? "#AEB5BD" : colored ? mix(onColor(acc), onColor(acc) === "#FFFFFF" ? -0.2 : 0.35) : st.sub;
+      const mark = colored ? ink : acc;
+      // Sobre una franja, el texto va del color del fondo del boleto
+      const onMark = colored ? acc : onColor(acc);
+
+      const fam = () => FAMS[o.type] ?? FAMS.moderna;
+      const make = (kind: "title" | "body" | "label" | "num", px: number) =>
+        kind === "label" ? LABEL(px) : kind === "num" ? MONO(px) : fam()[kind].replace("{px}", String(px));
+
+      // Un renglón de texto; en las miniaturas se sustituye por una barra
+      const put = (
+        txt: string,
+        kind: "title" | "body" | "label" | "num",
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string,
+        align: CanvasTextAlign = "left",
+        upper = false
+      ) => {
+        if (!txt) return 0;
+        const px = Math.max(1, P(sizeIn));
+        const maxPx = P(maxIn);
+        const t = upper ? txt.toLocaleUpperCase() : txt;
+        setTrack(c, kind === "label" ? "0.1em" : fam().track);
+        c.font = make(kind, px);
+        let wd = c.measureText(t).width;
+        if (wd > maxPx && wd > 0) {
+          c.font = make(kind, px * (maxPx / wd));
+          wd = maxPx;
+        }
+        c.fillStyle = color;
+        c.textAlign = align;
+        c.textBaseline = "alphabetic";
+        if (o.mini) {
+          const bh = Math.max(1, px * 0.6);
+          const bxp = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+          c.fillRect(bxp, Y(yIn) - bh, wd, bh);
+        } else {
+          c.fillText(t, X(xIn), Y(yIn));
+        }
+        setTrack(c, "0px");
+        return wd;
+      };
+
+      // Titular: parte en dos renglones antes que achicarse hasta no leerse
+      const headline = (
+        txt: string,
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string,
+        align: CanvasTextAlign = "left",
+        mid = false,
+        maxHIn = 0
+      ) => {
+        if (!txt) return yIn;
+        const maxPx = P(maxIn);
+        let px = Math.max(1, P(sizeIn));
+        c.font = make("title", px);
+        const words = txt.split(/\s+/);
+        let lines = [txt];
+        if (words.length > 1 && c.measureText(txt).width > maxPx) {
+          let best = 1;
+          let diff = Infinity;
+          for (let i = 1; i < words.length; i++) {
+            const a = c.measureText(words.slice(0, i).join(" ")).width;
+            const b = c.measureText(words.slice(i).join(" ")).width;
+            if (Math.abs(a - b) < diff) {
+              diff = Math.abs(a - b);
+              best = i;
+            }
+          }
+          lines = [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+        }
+        const widest = Math.max(...lines.map((l) => c.measureText(l).width));
+        if (widest > maxPx) px *= maxPx / widest;
+        c.font = make("title", px);
+        if (maxHIn && lines.length * px * 1.04 > P(maxHIn)) {
+          px *= P(maxHIn) / (lines.length * px * 1.04);
+          c.font = make("title", px);
+        }
+        const lh = px * 1.04;
+        const baseY = Y(yIn) - (mid ? ((lines.length - 1) * lh) / 2 : 0);
+        lines.forEach((l, i) => {
+          const ly = baseY + i * lh;
+          c.fillStyle = color;
+          c.textAlign = align;
+          c.textBaseline = "alphabetic";
+          if (o.mini) {
+            const wd = c.measureText(l).width;
+            const bxp = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+            c.fillRect(bxp, ly - px * 0.62, wd, px * 0.62);
+          } else {
+            c.fillText(l, X(xIn), ly);
+          }
+        });
+        return (baseY + (lines.length - 1) * lh - y0) / s;
+      };
+
+      const band = (xIn: number, yIn: number, wIn: number, hIn: number, color: string = mark) => {
+        c.fillStyle = color;
+        c.fillRect(X(xIn), Y(yIn), P(wIn), P(hIn));
+      };
+      // Hueco de la foto: rayado en diagonal con su rótulo, o un bloque de color
+      const image = (xIn: number, yIn: number, wIn: number, hIn: number) => {
+        const ix = X(xIn);
+        const iy = Y(yIn);
+        const iw = P(wIn);
+        const ih = P(hIn);
+        if (!o.photo) {
+          c.fillStyle = mark;
+          c.fillRect(ix, iy, iw, ih);
+          return;
+        }
+        c.save();
+        c.beginPath();
+        c.rect(ix, iy, iw, ih);
+        c.clip();
+        c.fillStyle = dark ? "#23262B" : colored ? mix(acc, onColor(acc) === "#FFFFFF" ? -0.18 : 0.2) : "#E4E7EA";
+        c.fillRect(ix, iy, iw, ih);
+        c.strokeStyle = dark ? "rgba(255,255,255,0.1)" : "rgba(11,12,14,0.09)";
+        c.lineWidth = Math.max(1, P(0.02));
+        const step = Math.max(6, P(0.2));
+        c.beginPath();
+        for (let i = -ih; i < iw; i += step) {
+          c.moveTo(ix + i, iy + ih);
+          c.lineTo(ix + i + ih, iy);
+        }
+        c.stroke();
+        c.restore();
+        if (!o.mini) {
+          const lbl = Math.min(hIn * 0.13, wIn * 0.14);
+          put(cfg.copy.photoBox, "label", lbl, xIn + wIn / 2, yIn + hIn / 2 + lbl * 0.4, wIn * 0.78, dark ? "#8D949C" : colored ? sub : "#8A9099", "center");
+        }
+      };
+      // Un renglón para escribir a mano, de los del talón de la rifa
+      const ruled = (lbl: string, xIn: number, yIn: number, wIn: number) => {
+        const size = 0.06 * fu;
+        put(lbl, "body", size, xIn, yIn - 0.03 * fu, wIn, sub);
+        c.strokeStyle = colored || dark ? "rgba(255,255,255,0.45)" : "rgba(11,12,14,0.3)";
+        c.lineWidth = 1;
+        c.beginPath();
+        c.moveTo(X(xIn), Y(yIn));
+        c.lineTo(X(xIn + wIn), Y(yIn));
+        c.stroke();
+      };
+
+      const t = o.t;
+      const when = [t.fecha, t.hora].filter(Boolean).join("   ·   ");
+      // El número se repite en el cuerpo: es lo que lo une con su talón
+      const numTxt = o.num ? `${cfg.copy.numPrefix} ${o.num}` : "";
+
+      // ---- El cuerpo ----
+      if (back) {
+        // El reverso: aquí no hay talón que valga, se usa todo el ancho
+        if (back === "logo") {
+          if (!colored && !dark) {
+            c.fillStyle = acc;
+            c.fillRect(X(0), Y(0), P(w), P(h));
+          }
+          const bgInk = colored || dark ? ink : onColor(acc);
+          headline(t.organizador, 0.2 * fu, w / 2, V(0.5), w * 0.7, bgInk, "center", true, h * 0.4);
+          if (t.tel) put(t.tel, "body", 0.08 * fu, w / 2, V(0.76), w * 0.7, bgInk, "center");
+        } else if (back === "info") {
+          put(t.evento, "title", 0.14 * fu, bx + bw / 2, V(0.26), bw - m * 2, ink, "center");
+          put(when, "body", 0.085 * fu, bx + bw / 2, V(0.45), bw - m * 2, sub, "center");
+          put(t.lugar, "body", 0.085 * fu, bx + bw / 2, V(0.6), bw - m * 2, sub, "center");
+          band(bx + bw / 2 - bw * 0.08, V(0.68), bw * 0.16, 0.014 * fu);
+          put([t.organizador, t.tel].filter(Boolean).join("   ·   "), "body", 0.075 * fu, bx + bw / 2, V(0.88), bw - m * 2, ink, "center");
+        } else {
+          put(t.evento, "label", 0.07 * fu, bx + m, V(0.18), bw - m * 2, sub);
+          const words = (t.nota || "").split(/\s+/);
+          // La letra chica, repartida en dos renglones
+          const half = Math.ceil(words.length / 2);
+          put(words.slice(0, half).join(" "), "body", 0.082 * fu, bx + m, V(0.42), bw - m * 2, ink);
+          put(words.slice(half).join(" "), "body", 0.082 * fu, bx + m, V(0.56), bw - m * 2, ink);
+          band(bx + m, V(0.66), bw * 0.1, 0.014 * fu);
+          put([t.organizador, t.tel].filter(Boolean).join("   ·   "), "body", 0.075 * fu, bx + m, V(0.86), bw - m * 2, sub);
+        }
+        // Por detrás, el talón también lleva su número
+        if (o.stubW && o.num && back !== "logo") {
+          put(`${cfg.copy.numPrefix} ${o.num}`, "num", 0.085 * fu, sx + o.stubW / 2, V(0.56), o.stubW * 0.7, sub, "center");
+        }
+        return;
+      }
+
+      if (o.tpl === "evento") {
+        band(bx, 0, bw, 0.2 * h);
+        put(t.organizador, "label", 0.07 * fu, bx + m, V(0.135), bw * 0.55, onMark);
+        put(t.seccion, "label", 0.06 * fu, bx + bw - m, V(0.135), bw * 0.4, onMark, "right");
+        const pw = bw * 0.22;
+        const last = headline(t.evento, 0.21 * fu, bx + m, V(0.46), bw - pw - m * 2, ink, "left", false, h * 0.26);
+        if (t.sub) put(t.sub, "body", 0.082 * fu, bx + m, last + 0.1 * fu, bw - pw - m * 2, sub);
+        put(when, "title", 0.1 * fu, bx + m, V(0.82), bw - pw - m * 2, mark);
+        put(t.lugar, "body", 0.072 * fu, bx + m, V(0.94), bw - pw - m * 2, sub);
+        if (t.precio) {
+          c.fillStyle = mark;
+          c.beginPath();
+          c.roundRect(X(bx + bw - pw - m * 0.4), Y(V(0.3)), P(pw), P(h * 0.36), P(0.06 * fu));
+          c.fill();
+          put(t.precio, "title", 0.13 * fu, bx + bw - pw / 2 - m * 0.4, V(0.56), pw * 0.84, onMark, "center");
+        }
+      } else if (o.tpl === "rifa") {
+        band(bx, 0, bw, 0.22 * h);
+        put(cfg.copy.raffleLbl, "label", 0.08 * fu, bx + m, V(0.145), bw * 0.3, onMark);
+        put(t.organizador, "label", 0.065 * fu, bx + bw - m, V(0.145), bw * 0.6, onMark, "right");
+        put(t.evento, "body", 0.08 * fu, bx + m, V(0.38), bw - m * 2, sub);
+        const last = headline(t.premio, 0.17 * fu, bx + m, V(0.6), bw * 0.68, ink, "left", false, h * 0.3);
+        put(when, "body", 0.072 * fu, bx + m, Math.max(last + 0.1 * fu, V(0.86)), bw * 0.68, sub);
+        if (t.precio) {
+          put(t.precio, "title", 0.16 * fu, bx + bw - m, V(0.62), bw * 0.26, mark, "right");
+          put(t.lugar, "body", 0.068 * fu, bx + bw - m, V(0.86), bw * 0.3, sub, "right");
+        }
+      } else if (o.tpl === "cena") {
+        // Un boleto formal: el filete doble hace el trabajo
+        c.strokeStyle = mark;
+        c.lineWidth = Math.max(1, P(0.016));
+        c.strokeRect(X(bx + m * 0.6), Y(V(0.08)), P(bw - m * 1.2), P(h * 0.84));
+        c.lineWidth = 1;
+        c.strokeStyle = colored || dark ? "rgba(255,255,255,0.5)" : mix(acc, 0.45);
+        c.strokeRect(X(bx + m * 0.9), Y(V(0.12)), P(bw - m * 1.8), P(h * 0.76));
+        put(t.organizador, "label", 0.062 * fu, bx + bw / 2, V(0.26), bw * 0.7, sub, "center");
+        headline(t.evento, 0.17 * fu, bx + bw / 2, V(0.5), bw * 0.78, ink, "center", true, h * 0.22);
+        put([when, t.lugar].filter(Boolean).join("   ·   "), "body", 0.07 * fu, bx + bw / 2, V(0.7), bw * 0.8, sub, "center");
+        put([t.seccion, t.precio, numTxt].filter(Boolean).join("   ·   "), "body", 0.07 * fu, bx + bw / 2, V(0.82), bw * 0.8, mark, "center");
+      } else if (o.tpl === "foto") {
+        const iw = bw * 0.38;
+        image(bx, 0, iw, h);
+        const tx = bx + iw + m;
+        const tw = bw - iw - m * 2;
+        put(t.organizador, "label", 0.062 * fu, tx, V(0.2), tw, sub);
+        const last = headline(t.evento, 0.17 * fu, tx, V(0.45), tw, ink, "left", false, h * 0.24);
+        if (t.sub) put(t.sub, "body", 0.075 * fu, tx, last + 0.09 * fu, tw, sub);
+        put(when, "title", 0.085 * fu, tx, V(0.84), tw * 0.68, mark);
+        put(t.precio, "title", 0.1 * fu, tx + tw, V(0.84), tw * 0.28, ink, "right");
+        put([t.lugar, numTxt].filter(Boolean).join("   ·   "), "body", 0.065 * fu, tx, V(0.96), tw, sub);
+      } else {
+        // tipografica: sin imagen, todo el peso lo lleva el texto
+        put(t.organizador, "label", 0.065 * fu, bx + m, V(0.17), bw * 0.5, sub);
+        put(t.seccion, "label", 0.06 * fu, bx + bw - m, V(0.17), bw * 0.4, mark, "right");
+        band(bx + m, V(0.22), bw - m * 2, 0.012 * fu, colored || dark ? "rgba(255,255,255,0.35)" : "rgba(11,12,14,0.18)");
+        const last = headline(t.evento, 0.24 * fu, bx + m, V(0.52), bw - m * 2, ink, "left", false, h * 0.3);
+        if (t.sub) put(t.sub, "body", 0.08 * fu, bx + m, last + 0.1 * fu, bw - m * 2, sub);
+        band(bx + m, V(0.78), bw - m * 2, 0.012 * fu, colored || dark ? "rgba(255,255,255,0.35)" : "rgba(11,12,14,0.18)");
+        put([when, t.lugar, numTxt].filter(Boolean).join("   ·   "), "body", 0.075 * fu, bx + m, V(0.93), bw - m * 2 - bw * 0.16, sub);
+        put(t.precio, "title", 0.1 * fu, bx + bw - m, V(0.93), bw * 0.16, mark, "right");
+      }
+
+      // En estos dos diseños el número tiene su propio sitio en el cuerpo
+      if (numTxt && o.tpl === "evento") put(numTxt, "num", 0.07 * fu, bx + bw - m, V(0.94), bw * 0.22, sub, "right");
+      if (numTxt && o.tpl === "rifa") put(numTxt, "num", 0.08 * fu, bx + bw - m, V(0.38), bw * 0.25, mark, "right");
+
+      // ---- El talón ----
+      if (!o.stubW) return;
+      const sw = o.stubW;
+      const sm = 0.06 * fu;
+      // Una línea de aire para que el talón se lea como otra pieza
+      c.fillStyle = colored || dark ? "rgba(255,255,255,0.08)" : "rgba(11,12,14,0.035)";
+      c.fillRect(X(sx), Y(0), P(sw), P(h));
+      if (o.tpl === "rifa") {
+        put(cfg.copy.raffleLbl, "label", 0.06 * fu, sx + sm, V(0.16), sw - sm * 2, mark);
+        if (o.num) put(`${cfg.copy.numPrefix} ${o.num}`, "num", 0.11 * fu, sx + sw - sm, V(0.17), sw * 0.6, ink, "right");
+        ruled(cfg.copy.nameLine, sx + sm, V(0.56), sw - sm * 2);
+        ruled(cfg.copy.phoneLine, sx + sm, V(0.86), sw - sm * 2);
+      } else {
+        put(t.evento, "label", 0.058 * fu, sx + sm, V(0.2), sw - sm * 2, sub);
+        if (o.num) {
+          put(`${cfg.copy.numPrefix} ${o.num}`, "num", 0.16 * fu, sx + sm, V(0.56), sw - sm * 2, mark);
+        } else {
+          put(cfg.copy.admitLbl, "label", 0.09 * fu, sx + sm, V(0.56), sw - sm * 2, mark);
+        }
+        put(when, "body", 0.062 * fu, sx + sm, V(0.76), sw - sm * 2, sub);
+        put([t.seccion, t.precio].filter(Boolean).join(" · "), "body", 0.062 * fu, sx + sm, V(0.9), sw - sm * 2, ink);
+      }
+    };
+
+    // La perforación: la raya de puntos entre el talón y el cuerpo
+    const perf = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Face) => {
+      if (!o.stubW) return;
+      const px = x0 + (o.stubLeft ? o.stubW : o.w - o.stubW) * s;
+      c.save();
+      c.strokeStyle = "rgba(11,12,14,0.38)";
+      c.lineWidth = 1;
+      c.setLineDash([3, 3]);
+      c.beginPath();
+      c.moveTo(px, y0 + NOTCH * s);
+      c.lineTo(px, y0 + (o.h - NOTCH) * s);
+      c.stroke();
+      c.restore();
+    };
+
+    // Un boleto entero: sombra, papel, diseño, perforación y guías
+    const drawTicket = (x0: number, y0: number, s: number, o: Face, back: string | null) => {
+      const shape = outline(x0, y0, s, o);
+      ctx.save();
+      ctx.shadowColor = "rgba(18,26,36,0.4)";
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 8;
+      ctx.fillStyle = o.stock.edge;
+      ctx.fill(shape, "evenodd");
+      ctx.restore();
+
+      ctx.save();
+      ctx.clip(shape, "evenodd");
+      drawFace(ctx, x0, y0, s, o, back);
+      ctx.restore();
+      perf(ctx, x0, y0, s, o);
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(11,12,14,0.26)";
+      ctx.stroke(shape);
+
+      if (guides) {
+        const wPx = o.w * s;
+        const hPx = o.h * s;
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = "#ED1B24";
+        ctx.beginPath();
+        ctx.roundRect(x0 - BLEED * s, y0 - BLEED * s, wPx + BLEED * 2 * s, hPx + BLEED * 2 * s, ROUND * s + BLEED * s);
+        ctx.stroke();
+        if (o.stubW) {
+          const px = x0 + (o.stubLeft ? o.stubW : o.w - o.stubW) * s;
+          ctx.beginPath();
+          ctx.moveTo(px, y0 - BLEED * s);
+          ctx.lineTo(px, y0 + hPx + BLEED * s);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = "#0094DA";
+        ctx.beginPath();
+        ctx.roundRect(x0 + SAFE * s, y0 + SAFE * s, wPx - SAFE * 2 * s, hPx - SAFE * 2 * s, Math.max(0, ROUND * s - SAFE * s));
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+
+    // El borde roto, con sus dientes, por donde se separó la perforación
+    const ragged = (x: number, y0: number, y1: number, s: number) => {
+      const step = Math.max(3, 0.035 * s);
+      ctx.save();
+      ctx.strokeStyle = "rgba(11,12,14,0.35)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y0);
+      let i = 0;
+      for (let y = y0; y < y1; y += step, i++) {
+        ctx.lineTo(x + (i % 2 ? Math.max(1.2, 0.016 * s) : -Math.max(1.2, 0.016 * s)), Math.min(y + step, y1));
+      }
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    // El boleto ya arrancado: cada mitad por su lado, con su rótulo
+    const drawTorn = (x0: number, y0: number, s: number, o: Face, gap: number) => {
+      const stubPx = o.stubW * s;
+      const bodyPx = (o.w - o.stubW) * s;
+      const r = ROUND * s;
+      const sxPx = o.stubLeft ? x0 : x0 + bodyPx + gap;
+      const bxPx = o.stubLeft ? x0 + stubPx + gap : x0;
+      // Cada mitad se dibuja recortando el boleto entero y moviéndolo aparte
+      const stubRect = new Path2D();
+      const stubAt = o.stubLeft ? x0 : x0 + bodyPx;
+      stubRect.roundRect(stubAt, y0, stubPx, o.h * s, o.stubLeft ? [r, 0, 0, r] : [0, r, r, 0]);
+      const bodyRect = new Path2D();
+      const bodyAt = o.stubLeft ? x0 + stubPx : x0;
+      bodyRect.roundRect(bodyAt, y0, bodyPx, o.h * s, o.stubLeft ? [0, r, r, 0] : [r, 0, 0, r]);
+
+      const half = (rect: Path2D, dx: number) => {
+        ctx.save();
+        ctx.translate(dx, 0);
+        ctx.save();
+        ctx.shadowColor = "rgba(18,26,36,0.4)";
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 7;
+        ctx.fillStyle = o.stock.edge;
+        ctx.fill(rect);
+        ctx.restore();
+        ctx.save();
+        ctx.clip(rect);
+        drawFace(ctx, x0, y0, s, o, null);
+        ctx.restore();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(11,12,14,0.26)";
+        ctx.stroke(rect);
+        ctx.restore();
+      };
+      half(stubRect, sxPx - stubAt);
+      half(bodyRect, bxPx - bodyAt);
+      // Los dientes del papel en los dos cantos rotos
+      ragged(o.stubLeft ? sxPx + stubPx : sxPx, y0 + 1, y0 + o.h * s - 1, s);
+      ragged(o.stubLeft ? bxPx : bxPx + bodyPx, y0 + 1, y0 + o.h * s - 1, s);
+
+      // Quién se queda con cada mitad
+      ctx.fillStyle = "rgba(11,12,14,0.62)";
+      ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      const ly = y0 + o.h * s + 14;
+      ctx.fillText(cfg.copy.keepOrg, sxPx + stubPx / 2, ly);
+      ctx.fillText(cfg.copy.keepGuest, bxPx + bodyPx / 2, ly);
+    };
+
+    const face = (mini: boolean, tpl?: string): Face => ({
+      ...dims(),
+      stubLeft: val("talon") !== "derecha",
+      stock: stock(),
+      accent: accent().hex,
+      type: val("tipografia"),
+      tpl: tpl ?? val("plantilla"),
+      bg: val("fondo"),
+      photo: val("imagen") === "foto",
+      num: numbered() ? numRange().a || "001" : "",
+      t: texts(),
+      mini,
+    });
+
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const o = face(false);
+      const { w, h } = o;
+      const top = tools.offsetHeight + 24;
+      const keep = top + 54 + (approx.offsetParent ? 34 : 0);
+
+      // ---- Arrancado: las dos mitades, separadas ----
+      if (torn && o.stubW) {
+        const gapIn = 0.45;
+        const totalW = w + gapIn;
+        const s = Math.min((cw - 44) / (totalW + 0.12), (ch - keep) / (h + 0.12));
+        const x0 = (cw - totalW * s) / 2;
+        const y0 = Math.max(top, 16 + (ch - h * s - 54) / 2);
+        drawTorn(x0, y0, s, o, gapIn * s);
+        canvas.setAttribute("aria-label", `${cfg.copy.preview}: ${cfg.copy.tearOn}`);
+        return;
+      }
+
+      const two = twoSided();
+      const faces: Array<string | null> = !two ? [null] : view === "frente" ? [null] : view === "reverso" ? [val("reverso")] : [null, val("reverso")];
+      const n = faces.length;
+      const gap = h * 0.4;
+      const pad = guides ? 0.3 : 0.06;
+      // Dos caras caben mejor una debajo de otra que una al lado de la otra
+      const fit = (cols: number, rows: number) =>
+        Math.min((cw - 44) / (w * cols + gap * (cols - 1) + pad * 2), (ch - keep - (rows > 1 ? 26 : 0)) / (h * rows + gap * (rows - 1) + pad * 2));
+      const side = n > 1 ? fit(2, 1) : fit(1, 1);
+      const stack = n > 1 ? fit(1, 2) : side;
+      const rows = stack >= side ? n : 1;
+      const cols = rows === 1 ? n : 1;
+      const s = Math.max(side, stack);
+      const groupW = w * cols + gap * (cols - 1);
+      const groupH = h * rows + gap * (rows - 1);
+      const x0 = (cw - groupW * s) / 2;
+      const y0 = Math.max(top, 16 + (ch - groupH * s - 54) / 2);
+      const at = (i: number) => ({
+        x: x0 + (cols > 1 ? i * (w + gap) * s : 0),
+        y: y0 + (rows > 1 ? i * (h + gap) * s : 0),
+      });
+
+      faces.forEach((back, i) => {
+        const p = at(i);
+        drawTicket(p.x, p.y, s, o, back);
+      });
+
+      // Rótulo de cada cara, debajo
+      if (n > 1 || view !== "ambas") {
+        ctx.fillStyle = "rgba(11,12,14,0.6)";
+        ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        faces.forEach((back, i) => {
+          const p = at(i);
+          ctx.fillText(back ? cfg.copy.backLbl : cfg.copy.front, p.x + (w * s) / 2, p.y + h * s + 7);
+        });
+      }
+
+      // Cota del ancho, debajo del grupo
+      const gy = y0 + groupH * s + (n > 1 || view !== "ambas" ? 30 : 20);
+      const tick = 5;
+      ctx.strokeStyle = "rgba(11,12,14,0.5)";
+      ctx.fillStyle = "rgba(11,12,14,0.66)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x0, gy);
+      ctx.lineTo(x0 + w * s, gy);
+      ctx.moveTo(x0, gy - tick);
+      ctx.lineTo(x0, gy + tick);
+      ctx.moveTo(x0 + w * s, gy - tick);
+      ctx.lineTo(x0 + w * s, gy + tick);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.font = `500 12px "Instrument Sans", system-ui, sans-serif`;
+      const txt = `${fmtIn(w)} × ${fmtIn(h)} in · 14 pt`;
+      const half = ctx.measureText(txt).width / 2;
+      ctx.fillText(txt, Math.min(Math.max(x0 + (w * s) / 2, half + 8), cw - half - 8), gy + 7);
+
+      canvas.setAttribute(
+        "aria-label",
+        `${cfg.copy.preview}: ${fmtIn(w)} × ${fmtIn(h)} in · ${stock().name} · ${cfg.tpls[o.tpl]} · ${accent().name}${o.t.evento ? ` · "${o.t.evento}"` : ""}`
+      );
+    };
+
+    // Miniaturas de los diseños, con el mismo dibujo que la vista previa
+    const renderTpls = () => {
+      const ids = Object.keys(cfg.tpls);
+      form.querySelectorAll<HTMLCanvasElement>(".bl__tpl canvas").forEach((cv, i) => {
+        const c2 = cv.getContext("2d")!;
+        const o: Face = face(true, ids[i] ?? ids[0]);
+        c2.setTransform(1, 0, 0, 1, 0, 0);
+        c2.clearRect(0, 0, cv.width, cv.height);
+        const s = Math.min((cv.width - 10) / o.w, (cv.height - 10) / o.h);
+        const x = (cv.width - o.w * s) / 2;
+        const y = (cv.height - o.h * s) / 2;
+        const shape = outline(x, y, s, o);
+        c2.save();
+        c2.clip(shape, "evenodd");
+        drawFace(c2, x, y, s, o, null);
+        c2.restore();
+        perf(c2, x, y, s, o);
+        c2.lineWidth = 1;
+        c2.strokeStyle = "rgba(11,12,14,0.22)";
+        c2.stroke(shape);
+      });
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const { w, h } = dims();
+      const t = texts();
+      const r = numRange();
+      const out = [
+        `${k.summary}:`,
+        `• ${k.sFormat}: ${cfg.shapes[val("formato")]} ${fmtIn(w)} × ${fmtIn(h)} in · 14 pt`,
+        `• ${k.sStub}: ${cfg.stubs[val("talon")]}`,
+        `• ${k.sNumber}: ${numbered() ? (r.b ? `${cfg.numbers.si} ${cfg.numRange.replace("{a}", r.a).replace("{b}", r.b)}` : `${cfg.numbers.si} · ${r.a}`) : cfg.numbers.no}`,
+        `• ${k.sPaper}: ${stock().name}`,
+        `• ${k.sSides}: ${cfg.sides[val("caras")]}`,
+        `• ${k.sDesign}: ${cfg.tpls[val("plantilla")]}`,
+        `• ${k.sBg}: ${cfg.bgs[val("fondo")]}`,
+        `• ${k.sType}: ${cfg.types[val("tipografia")]}`,
+        `• ${k.sAccent}: ${accent().name}`,
+      ];
+      if (hasPhoto()) out.push(`• ${k.sImage}: ${cfg.images[val("imagen")]}`);
+      out.push(`• ${k.sEvent}: "${t.evento}"${t.sub ? ` / "${t.sub}"` : ""}`);
+      out.push(`• ${k.sWhen}: ${[t.fecha, t.hora].filter(Boolean).join(" · ")}`, `• ${k.sPlace}: ${t.lugar}`);
+      if (t.precio || t.seccion) out.push(`• ${k.sPrice}: ${[t.precio, t.seccion].filter(Boolean).join(" · ")}`);
+      if (isRaffle() && t.premio) out.push(`• ${k.sPrize}: ${t.premio}`);
+      out.push(`• ${k.sOrg}: ${[t.organizador, t.tel].filter(Boolean).join(" / ")}`);
+      if (t.nota) out.push(`• ${k.sNote}: "${t.nota}"`);
+      if (twoSided()) out.push(`• ${k.sBack}: ${cfg.backs[val("reverso")]}`);
+      out.push(`• ${k.sQty}: ${qty()}`, `• ${k.sLink}: ${shareUrl()}`);
+      return out.join("\n");
+    };
+
+    const syncUI = () => {
+      const { w, h } = dims();
+      imageSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = !hasPhoto()));
+      imageSeg.toggleAttribute("data-off", !hasPhoto());
+      backSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = !twoSided()));
+      backSeg.toggleAttribute("data-off", !twoSided());
+      backHelp.hidden = twoSided();
+      numField.hidden = !numbered();
+      prizeField.hidden = !isRaffle();
+      const r = numRange();
+      numHelp.textContent = numbered() && r.b ? `${cfg.numHelp} ${cfg.numRange.replace("{a}", r.a).replace("{b}", r.b)}.` : "";
+      numHelp.hidden = !numbered() || !r.b;
+      // El talón y la numeración los hace otro taller: hay que decirlo al elegirlos
+      leadHelp.textContent = hasStub() || numbered() ? cfg.outsource : cfg.inhouse;
+      accentName.textContent = accent().name;
+      sizeOut.textContent = `${fmtIn(w)} × ${fmtIn(h)} in`;
+      shapeHelp.textContent = cfg.shapeHelp[val("formato")] ?? "";
+      approx.textContent = guides ? cfg.copy.guidesOn : torn && hasStub() ? cfg.copy.tearOn : cfg.copy.approx;
+      guidesBtn.setAttribute("aria-pressed", String(guides));
+      tearBtn.setAttribute("aria-pressed", String(torn && hasStub()));
+      // Sin talón no hay nada que arrancar
+      tearBtn.hidden = !hasStub();
+      viewBtn.textContent = cfg.views[view];
+      viewBtn.hidden = !twoSided() || (torn && hasStub());
+      const q = qty();
+      root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.qty) === q)));
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+    const render = () => {
+      syncUI();
+      draw();
+      renderTpls();
+      update();
+    };
+
+    // ---------- Eventos ----------
+    const onEdit = (e: Event) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      render();
+    };
+    form.addEventListener("change", onEdit);
+    form.addEventListener("input", onEdit);
+    root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) =>
+      b.addEventListener("click", () => {
+        qtyEl.value = b.dataset.qty!;
+        touched = true;
+        render();
+      })
+    );
+    guidesBtn.addEventListener("click", () => {
+      guides = !guides;
+      syncUI();
+      draw();
+    });
+    tearBtn.addEventListener("click", () => {
+      torn = !torn;
+      syncUI();
+      draw();
+    });
+    viewBtn.addEventListener("click", () => {
+      view = VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length];
+      syncUI();
+      draw();
+    });
+
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    Promise.all(
+      [`800 40px "Saira"`, `700 40px "Playfair Display"`, `400 40px "Michroma"`, `500 40px "Instrument Sans"`].map((f) =>
+        document.fonts.load(f).catch(() => [])
+      )
+    ).then(() => render());
+    render();
+  }
+</script>

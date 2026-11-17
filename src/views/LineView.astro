@@ -1,0 +1,114 @@
+---
+// Página de una línea de negocio: portada, sus servicios, trabajos y cotización.
+import Layout from "../layouts/Layout.astro";
+import PageHero from "../components/PageHero.astro";
+import ServiceCard from "../components/ServiceCard.astro";
+import PhotoSlot from "../components/PhotoSlot.astro";
+import QuoteSection from "../components/QuoteSection.astro";
+import LineArt from "../components/LineArt.astro";
+import type { Lang } from "../data/site";
+import { SITE, waLink } from "../data/site";
+import { LINES, lineUrl, topServicesOf, lineFormValue, type Line } from "../data/catalog";
+import { WORK } from "../data/work";
+import { ROUTES } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props {
+  lang: Lang;
+  line: Line;
+}
+
+const { lang, line } = Astro.props;
+const l = line[lang];
+const t = UI[lang];
+// Los impresos de marketing se enseñan dentro de su servicio, no suelto en la línea
+const list = topServicesOf(line);
+const work = WORK.filter((w) => w.line === line.key);
+const others = LINES.filter((x) => x.key !== line.key);
+
+const COPY = {
+  es: { services: "Qué hacemos", work: "Trabajos", others: "Otras líneas", quote: "Cotiza tu proyecto" },
+  en: { services: "What we do", work: "Our work", others: "Other lines", quote: "Get a quote for your project" },
+};
+const c = COPY[lang];
+const cols = list.length === 4 ? 4 : list.length === 2 ? 2 : 3;
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: t.nav.home, item: new URL(ROUTES.home[lang], SITE.url).href },
+    { "@type": "ListItem", position: 2, name: t.nav.services, item: new URL(ROUTES.services[lang], SITE.url).href },
+    { "@type": "ListItem", position: 3, name: l.name, item: new URL(lineUrl(line, lang), SITE.url).href },
+  ],
+};
+---
+<Layout
+  lang={lang}
+  page="services"
+  title={`${l.h1} | LED Tech Miami`}
+  description={l.intro}
+  alternates={{ es: lineUrl(line, "es"), en: lineUrl(line, "en") }}
+  schema={schema}
+>
+  <PageHero
+    lang={lang}
+    line={line}
+    title={l.h1}
+    lead={l.intro}
+    crumbs={[
+      { label: t.nav.home, href: ROUTES.home[lang] },
+      { label: t.nav.services, href: ROUTES.services[lang] },
+      { label: l.name },
+    ]}
+  >
+    <div class="hero-actions">
+      <a class="btn" href="#cotizar">{t.requestQuote}</a>
+      <a class="wa-link" href={waLink(`${t.waService} ${l.name}.`)} target="_blank" rel="noopener">
+        <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>WhatsApp {SITE.phone}
+      </a>
+    </div>
+  </PageHero>
+
+  <section class="section">
+    <div class="container">
+      <div class="sec-head"><div><h2>{c.services}</h2></div></div>
+      <ul class="svc-grid" style={`--cols:${cols}`}>
+        {list.map((s) => <ServiceCard lang={lang} service={s} />)}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--flush">
+    <div class="container">
+      <div class="sec-head">
+        <div><h2>{c.work}</h2></div>
+        <a class="more" href={ROUTES.projects[lang]}>{UI[lang].nav.projects}<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+      </div>
+      <ul class="gallery gallery--2">
+        {work.map((w) => (
+          <li><PhotoSlot lang={lang} line={w.line} src={w.src} alt={w[lang].alt} caption={w[lang].caption} class="slot--ratio" /></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="sec-head"><div><h2>{c.others}</h2></div></div>
+      <ul class="mini-lines">
+        {others.map((o) => (
+          <li>
+            <a href={lineUrl(o, lang)} style={`--tint:${o.tint};--ground:${o.ground}`}>
+              <span class="mini-lines__art"><LineArt type={o.key} /></span>
+              <b>{o[lang].name}</b>
+              <span>{o[lang].short}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <QuoteSection lang={lang} heading={c.quote} preset={lineFormValue(line)} waText={`${t.waService} ${l.name}.`} />
+</Layout>

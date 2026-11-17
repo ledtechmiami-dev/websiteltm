@@ -1,0 +1,1272 @@
+---
+// Constructor de tarjetas de presentación (idea tomada del estudio de diseño de
+// Vistaprint): el cliente elige formato, papel, grosor, acabado y un diseño, escribe
+// sus datos y ve el frente y el reverso como salen impresos. El diseño se envía
+// directo al correo. No muestra precios: el precio va en la cotización, porque
+// depende del tiraje, del papel y del acabado.
+// El dueño confirmó estas opciones tal como están: los papeles, los grosores,
+// los acabados y los mínimos.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Papeles. base: color del papel; edge: el canto; ink / sub: los dos tonos de texto
+// que se leen sobre ese papel. tex: cómo se dibuja la textura en la vista previa.
+const STOCKS = [
+  { id: "mate", es: "Mate", en: "Matte", base: "#FFFFFF", edge: "#E7E8E6", ink: "#14161A", sub: "#5A616B", tex: "mate",
+    sw: "linear-gradient(135deg, #FFF 0 52%, #EFF0EE)" },
+  { id: "brillante", es: "Brillante", en: "Glossy", base: "#FFFFFF", edge: "#E4E8EB", ink: "#14161A", sub: "#5A616B", tex: "brillo",
+    sw: "linear-gradient(118deg, #FFF 0 26%, #D8E2EA 44%, #FFF 62%, #EDF1F4)" },
+  { id: "natural", es: "Sin recubrir", en: "Uncoated", base: "#FAF8F3", edge: "#E6E1D6", ink: "#1A1A18", sub: "#5E5B52", tex: "fibra",
+    sw: "linear-gradient(135deg, #FBF9F4, #EBE5D9)" },
+  { id: "lino", es: "Lino", en: "Linen", base: "#FCFBF7", edge: "#E8E4DA", ink: "#17181A", sub: "#5C5F63", tex: "lino",
+    sw: "repeating-linear-gradient(45deg, #FAF8F3 0 3px, #ECE7DC 3px 5px)" },
+  { id: "kraft", es: "Kraft reciclado", en: "Recycled kraft", base: "#C9A67B", edge: "#A9875B", ink: "#36271A", sub: "#6B543A", tex: "kraft",
+    sw: "linear-gradient(135deg, #CFAC81, #AE8A5C)" },
+  { id: "perlado", es: "Perlado", en: "Pearl", base: "#F7F3EC", edge: "#E3DFD6", ink: "#17181A", sub: "#5C5F63", tex: "perla",
+    sw: "linear-gradient(118deg, #F8F3EA, #E6E7F2 36%, #FDF9F1 56%, #E7EEF2)" },
+];
+
+// Colores de acento: la paleta LED del logo más neutros y metálicos de imprenta
+const ACCENTS = [
+  { id: "azul", es: "Azul LED", en: "LED blue", hex: "#0094DA" },
+  { id: "amarillo", es: "Amarillo LED", en: "LED yellow", hex: "#FFCA09" },
+  { id: "verde", es: "Verde LED", en: "LED green", hex: "#99C941" },
+  { id: "rojo", es: "Rojo LED", en: "LED red", hex: "#ED1B24" },
+  { id: "negro", es: "Negro", en: "Black", hex: "#0B0C0E" },
+  { id: "pizarra", es: "Gris pizarra", en: "Slate grey", hex: "#59626D" },
+  { id: "marino", es: "Azul marino", en: "Navy", hex: "#16304F" },
+  { id: "vino", es: "Vino", en: "Wine", hex: "#7A1F2B" },
+  { id: "oliva", es: "Verde oliva", en: "Olive", hex: "#4F5B32" },
+  { id: "terracota", es: "Terracota", en: "Terracotta", hex: "#B4522E" },
+];
+
+// Tiradas habituales de imprenta
+const QTYS = [100, 250, 500, 1000, 2500];
+
+const COPY = {
+  es: {
+    title: "Diseña tus tarjetas de presentación",
+    lead: "Elige el formato, el papel y el diseño, escribe tus datos y mira cómo quedan el frente y el reverso. Mándanos el diseño y te respondemos con el precio.",
+    format: "Formato",
+    shapes: { estandar: "Estándar", cuadrada: "Cuadrada", delgada: "Delgada" },
+    orient: "Orientación",
+    orients: { horizontal: "Horizontal", vertical: "Vertical" },
+    corners: "Esquinas",
+    cornerOpts: { rectas: "Rectas", redondas: "Redondeadas" },
+    cornerHelp: "Las redondeadas se troquelan con radio de 1/8 in.",
+    paper: "Papel",
+    thick: "Grosor",
+    thicks: { t14: "14 pt", t16: "16 pt", t32: "32 pt" },
+    thickHelp: "El punto (pt) es la milésima de pulgada: 14 pt es el grosor normal de tarjeta, 32 pt es el doble de rígido.",
+    edge: "Canto pintado",
+    edgeOpts: { no: "Sin pintar", si: "Pintado" },
+    edgeHelp: "El canto se pinta del color de acento. Solo en 32 pt, que es el único grosor que deja ver el borde.",
+    print: "Impresión y acabado",
+    sides: "Caras",
+    sideOpts: { una: "Una cara", dos: "Dos caras" },
+    finish: "Acabado",
+    finishes: { ninguno: "Ninguno", barniz: "Barniz por zonas", oro: "Lámina dorada", plata: "Lámina plateada" },
+    finishHelp: {
+      ninguno: "Solo la tinta, sin relieve ni brillos.",
+      barniz: "Una capa brillante sobre el logo y las franjas de color; el resto queda mate.",
+      oro: "El logo y el nombre del negocio van estampados en lámina dorada.",
+      plata: "El logo y el nombre del negocio van estampados en lámina plateada.",
+    },
+    design: "Diseño",
+    tpls: { clasica: "Clásica", centrada: "Centrada", barra: "Barra lateral", bloque: "Bloque de color", minimal: "Minimal" },
+    type: "Tipografía",
+    types: { moderna: "Moderna", clasica: "Clásica", tecnica: "Técnica", sencilla: "Sencilla" },
+    accent: "Color de acento",
+    words: "Tus datos",
+    business: "Nombre del negocio",
+    businessPh: "Ej. Tu Negocio",
+    defBusiness: "Tu Negocio",
+    person: "Nombre y apellido",
+    personPh: "Ej. Nombre Apellido",
+    defPerson: "Nombre Apellido",
+    role: "Cargo",
+    rolePh: "Ej. Gerente",
+    defRole: "Gerente",
+    phone: "Teléfono",
+    phonePh: "Ej. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    mail: "Email",
+    mailPh: "Ej. hola@tunegocio.com",
+    defMail: "hola@tunegocio.com",
+    web: "Sitio web o red social",
+    webPh: "Ej. tunegocio.com",
+    defWeb: "tunegocio.com",
+    slogan: "Lema (va en el reverso)",
+    sloganPh: "Ej. Lo hacemos en Miami",
+    defSlogan: "Lo hacemos en Miami",
+    logo: "Logo",
+    logoOpts: { inicial: "Usar la inicial", archivo: "Tengo mi logo" },
+    logoHelp: "Si ya tienes el logo, déjanos el espacio marcado y",
+    logoCta: "mándanoslo por WhatsApp",
+    logoWa: "Hola, quiero imprimir tarjetas de presentación con mi logo. Les envío el archivo.",
+    logoBox: "TU LOGO",
+    back: "Reverso",
+    backs: { logo: "Logo en color", datos: "Datos de contacto", sellos: "Tarjeta de sellos", citas: "Para citas" },
+    backHelp: "El reverso solo se imprime si eliges dos caras.",
+    order: "Tu pedido",
+    qty: "Cantidad",
+    qtyHelp: "Lo normal es empezar con 250 o 500. Desde 50 en adelante.",
+    guides: "Guías de corte",
+    guidesOn: "Línea roja: sangrado, por donde pasa la cuchilla. Línea azul: zona segura, los textos no deben salir de ahí.",
+    approx: "Vista aproximada · el color impreso varía un poco del de la pantalla",
+    front: "Frente",
+    backLbl: "Reverso",
+    stamps: "JUNTA 10 SELLOS",
+    appt: "TU PRÓXIMA CITA",
+    date: "Fecha",
+    time: "Hora",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h. Depende del tiraje, del papel y del acabado.",
+    cta: "Cotizar estas tarjetas",
+    wa: "Enviar por WhatsApp",
+    notesPh: "Para cuándo las necesitas, si quieres varias versiones con nombres distintos, si tienes el diseño ya hecho…",
+    summary: "Diseño del constructor de tarjetas de presentación",
+    sFormat: "Formato",
+    sCorners: "Esquinas",
+    sPaper: "Papel",
+    sThick: "Grosor",
+    sEdge: "Canto pintado",
+    sSides: "Caras",
+    sFinish: "Acabado",
+    sDesign: "Diseño",
+    sType: "Tipografía",
+    sAccent: "Color de acento",
+    sWords: "Datos",
+    sLogo: "Logo",
+    sBack: "Reverso",
+    sQty: "Cantidad",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesan estas tarjetas de presentación:",
+    preview: "Vista previa de la tarjeta",
+  },
+  en: {
+    title: "Design your business cards",
+    lead: "Pick the format, the paper and the layout, type your details and see how the front and back come out. Send us the design and we'll reply with the price.",
+    format: "Format",
+    shapes: { estandar: "Standard", cuadrada: "Square", delgada: "Slim" },
+    orient: "Orientation",
+    orients: { horizontal: "Landscape", vertical: "Portrait" },
+    corners: "Corners",
+    cornerOpts: { rectas: "Square", redondas: "Rounded" },
+    cornerHelp: "Rounded corners are die-cut with a 1/8 in radius.",
+    paper: "Paper",
+    thick: "Thickness",
+    thicks: { t14: "14 pt", t16: "16 pt", t32: "32 pt" },
+    thickHelp: "A point (pt) is a thousandth of an inch: 14 pt is standard card thickness, 32 pt is twice as stiff.",
+    edge: "Painted edge",
+    edgeOpts: { no: "Not painted", si: "Painted" },
+    edgeHelp: "The edge is painted in your accent color. Only on 32 pt, the one thickness where the edge shows.",
+    print: "Printing and finish",
+    sides: "Sides",
+    sideOpts: { una: "Single-sided", dos: "Double-sided" },
+    finish: "Finish",
+    finishes: { ninguno: "None", barniz: "Spot gloss", oro: "Gold foil", plata: "Silver foil" },
+    finishHelp: {
+      ninguno: "Ink only, no raised areas or shine.",
+      barniz: "A glossy coat over the logo and the color bands; the rest stays matte.",
+      oro: "The logo and the business name are stamped in gold foil.",
+      plata: "The logo and the business name are stamped in silver foil.",
+    },
+    design: "Layout",
+    tpls: { clasica: "Classic", centrada: "Centered", barra: "Side bar", bloque: "Color block", minimal: "Minimal" },
+    type: "Typeface",
+    types: { moderna: "Modern", clasica: "Classic", tecnica: "Technical", sencilla: "Simple" },
+    accent: "Accent color",
+    words: "Your details",
+    business: "Business name",
+    businessPh: "E.g. Your Business",
+    defBusiness: "Your Business",
+    person: "Full name",
+    personPh: "E.g. Name Surname",
+    defPerson: "Name Surname",
+    role: "Title",
+    rolePh: "E.g. Owner",
+    defRole: "Owner",
+    phone: "Phone",
+    phonePh: "E.g. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    mail: "Email",
+    mailPh: "E.g. hello@yourbusiness.com",
+    defMail: "hello@yourbusiness.com",
+    web: "Website or social handle",
+    webPh: "E.g. yourbusiness.com",
+    defWeb: "yourbusiness.com",
+    slogan: "Tagline (goes on the back)",
+    sloganPh: "E.g. Made in Miami",
+    defSlogan: "Made in Miami",
+    logo: "Logo",
+    logoOpts: { inicial: "Use the initial", archivo: "I have my logo" },
+    logoHelp: "If you already have your logo, we'll leave the space marked and you can",
+    logoCta: "send it to us on WhatsApp",
+    logoWa: "Hi, I want to print business cards with my logo. I'll send you the file.",
+    logoBox: "YOUR LOGO",
+    back: "Back",
+    backs: { logo: "Logo in color", datos: "Contact details", sellos: "Stamp card", citas: "Appointment card" },
+    backHelp: "The back is only printed if you choose double-sided.",
+    order: "Your order",
+    qty: "Quantity",
+    qtyHelp: "Most people start with 250 or 500. From 50 up.",
+    guides: "Cut guides",
+    guidesOn: "Red line: the bleed, where the blade cuts. Blue line: the safe area, keep text inside it.",
+    approx: "Approximate preview · printed color varies a little from the screen",
+    front: "Front",
+    backLbl: "Back",
+    stamps: "COLLECT 10 STAMPS",
+    appt: "YOUR NEXT APPOINTMENT",
+    date: "Date",
+    time: "Time",
+    price: "Price: we send it with your quote, in under 24 hours. It depends on the run, the paper and the finish.",
+    cta: "Quote these cards",
+    wa: "Send on WhatsApp",
+    notesPh: "When you need them, whether you want several versions with different names, whether your design is already done…",
+    summary: "Business card builder design",
+    sFormat: "Format",
+    sCorners: "Corners",
+    sPaper: "Paper",
+    sThick: "Thickness",
+    sEdge: "Painted edge",
+    sSides: "Sides",
+    sFinish: "Finish",
+    sDesign: "Layout",
+    sType: "Typeface",
+    sAccent: "Accent color",
+    sWords: "Details",
+    sLogo: "Logo",
+    sBack: "Back",
+    sQty: "Quantity",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in these business cards:",
+    preview: "Card preview",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  stocks: STOCKS.map((s) => ({ id: s.id, base: s.base, edge: s.edge, ink: s.ink, sub: s.sub, tex: s.tex, name: s[lang] })),
+  accents: ACCENTS.map((a) => ({ id: a.id, hex: a.hex, name: a[lang] })),
+  shapes: c.shapes,
+  orients: c.orients,
+  corners: c.cornerOpts,
+  thicks: c.thicks,
+  edges: c.edgeOpts,
+  sides: c.sideOpts,
+  finishes: c.finishes,
+  finishHelp: c.finishHelp,
+  tpls: c.tpls,
+  types: c.types,
+  backs: c.backs,
+  logos: c.logoOpts,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    logoBox: c.logoBox,
+    front: c.front,
+    backLbl: c.backLbl,
+    stamps: c.stamps,
+    appt: c.appt,
+    date: c.date,
+    time: c.time,
+    approx: c.approx,
+    guidesOn: c.guidesOn,
+    summary: c.summary,
+    sFormat: c.sFormat,
+    sCorners: c.sCorners,
+    sPaper: c.sPaper,
+    sThick: c.sThick,
+    sEdge: c.sEdge,
+    sSides: c.sSides,
+    sFinish: c.sFinish,
+    sDesign: c.sDesign,
+    sType: c.sType,
+    sAccent: c.sAccent,
+    sWords: c.sWords,
+    sLogo: c.sLogo,
+    sBack: c.sBack,
+    sQty: c.sQty,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+    preview: c.preview,
+    yes: lang === "es" ? "Sí" : "Yes",
+    no: lang === "es" ? "No" : "No",
+  },
+};
+const waLogo = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.logoWa)}`;
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+const TPLS = Object.keys(c.tpls);
+---
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" />
+
+<section class="section section--flush" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb cd" data-card data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage">
+        <canvas class="nb__canvas cd__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-guides aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.guides}
+          </button>
+        </div>
+        <p class="nb__approx" data-approx>{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.format}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.format}>
+            {seg("formato", c.shapes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-size-out></p>
+          <p class="tb__sub" data-orient-sub>{c.orient}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.orient} data-orient>
+            {seg("orientacion", c.orients).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.corners}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.corners} aria-describedby="cd-corner-help">
+            {seg("esquinas", c.cornerOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="cd-corner-help">{c.cornerHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.paper}</legend>
+          <div class="tb__mats">
+            {STOCKS.map((s) => (
+              <label class="tb__mat">
+                <input type="radio" name="papel" value={s.id} checked={s.id === "mate"} />
+                <i style={`--c:${s.sw}`} aria-hidden="true"></i>
+                <span>{s[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.thick}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.thick} aria-describedby="cd-thick-help">
+            {seg("grosor", c.thicks).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="cd-thick-help">{c.thickHelp}</p>
+          <p class="tb__sub">{c.edge}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.edge} data-edge>
+            {seg("canto", c.edgeOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.edgeHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.print}</legend>
+          <p class="tb__sub">{c.sides}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.sides}>
+            {seg("caras", c.sideOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.id === "dos"} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.finish}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.finish}>
+            {seg("acabado", c.finishes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-finish-help>{c.finishHelp.ninguno}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.design}</legend>
+          <div class="fb__pats" role="radiogroup" aria-label={c.design}>
+            {TPLS.map((id, i) => (
+              <label class="fb__pat cd__tpl">
+                <input type="radio" name="plantilla" value={id} checked={i === 0} />
+                <canvas width="208" height="118" aria-hidden="true"></canvas>
+                <span>{c.tpls[id as keyof typeof c.tpls]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.type}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.type}>
+            {seg("tipografia", c.types).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.accent} · <span class="eb__picked" data-accent-name>{ACCENTS[0][lang]}</span></p>
+          <div class="eb__sws" role="radiogroup" aria-label={c.accent}>
+            {ACCENTS.map((a, i) => (
+              <label class="eb__sw" title={a[lang]}>
+                <input type="radio" name="acento" value={a.id} checked={i === 0} />
+                <i style={`--c:${a.hex}`} aria-hidden="true"></i>
+                <span class="sr-only">{a[lang]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.words}</legend>
+          <div class="tb__words">
+            <div class="field">
+              <label for="cd-negocio">{c.business}</label>
+              <input id="cd-negocio" type="text" name="negocio" maxlength="34" autocomplete="off" placeholder={c.businessPh} value={c.defBusiness} />
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="cd-persona">{c.person}</label>
+                <input id="cd-persona" type="text" name="persona" maxlength="34" autocomplete="off" placeholder={c.personPh} value={c.defPerson} />
+              </div>
+              <div class="field">
+                <label for="cd-cargo">{c.role}</label>
+                <input id="cd-cargo" type="text" name="cargo" maxlength="28" autocomplete="off" placeholder={c.rolePh} value={c.defRole} />
+              </div>
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="cd-tel">{c.phone}</label>
+                <input id="cd-tel" type="text" name="tel" maxlength="24" autocomplete="off" placeholder={c.phonePh} value={c.defPhone} />
+              </div>
+              <div class="field">
+                <label for="cd-web">{c.web}</label>
+                <input id="cd-web" type="text" name="web" maxlength="34" autocomplete="off" placeholder={c.webPh} value={c.defWeb} />
+              </div>
+            </div>
+            <div class="field">
+              <label for="cd-email">{c.mail}</label>
+              <input id="cd-email" type="text" name="correo" maxlength="40" autocomplete="off" placeholder={c.mailPh} value={c.defMail} />
+            </div>
+            <div class="field">
+              <label for="cd-lema">{c.slogan}</label>
+              <input id="cd-lema" type="text" name="lema" maxlength="40" autocomplete="off" placeholder={c.sloganPh} value={c.defSlogan} />
+            </div>
+          </div>
+          <p class="tb__sub">{c.logo}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.logo}>
+            {seg("logo", c.logoOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.logoHelp} <a class="eb__link" href={waLogo} target="_blank" rel="noopener">{c.logoCta}</a>.</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.back}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.back} data-back>
+            {seg("reverso", c.backs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-back-help hidden>{c.backHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="nb__sizes">
+            {QTYS.map((q) => (
+              <button type="button" class="nb__pill" data-qty={q}>{q}</button>
+            ))}
+          </div>
+          <div class="tb__row">
+            <div class="field">
+              <label for="cd-cantidad">{c.qty}</label>
+              <input id="cd-cantidad" type="number" name="cantidad" min="50" max="100000" step="50" value="250" inputmode="numeric" aria-describedby="cd-qty-help" />
+            </div>
+          </div>
+          <p class="nb__help" id="cd-qty-help">{c.qtyHelp}</p>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="cd" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Stock = { id: string; name: string; base: string; edge: string; ink: string; sub: string; tex: string };
+  type Accent = { id: string; name: string; hex: string };
+  type Cfg = {
+    stocks: Stock[];
+    accents: Accent[];
+    shapes: Record<string, string>;
+    orients: Record<string, string>;
+    corners: Record<string, string>;
+    thicks: Record<string, string>;
+    edges: Record<string, string>;
+    sides: Record<string, string>;
+    finishes: Record<string, string>;
+    finishHelp: Record<string, string>;
+    tpls: Record<string, string>;
+    types: Record<string, string>;
+    backs: Record<string, string>;
+    logos: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+  // Lo que hay que dibujar en una cara, ya resuelto desde el formulario
+  type Face = {
+    w: number; // pulgadas
+    h: number;
+    r: number; // radio de la esquina
+    stock: Stock;
+    accent: string;
+    type: string;
+    tpl: string;
+    finish: string;
+    ownLogo: boolean;
+    t: Record<string, string>;
+    mini: boolean;
+  };
+
+  // Formatos de imprenta, en pulgadas
+  const SHAPES: Record<string, { w: number; h: number }> = {
+    estandar: { w: 3.5, h: 2 },
+    cuadrada: { w: 2.5, h: 2.5 },
+    delgada: { w: 3.5, h: 1.5 },
+  };
+  // El punto de cartulina es la milésima de pulgada
+  const THICKS: Record<string, number> = { t14: 0.014, t16: 0.016, t32: 0.032 };
+  const ROUND = 0.125; // radio de la esquina troquelada
+  const BLEED = 0.125; // sangrado de imprenta
+  const SAFE = 0.125; // margen de seguridad hacia dentro
+
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  // Luminancia relativa: decide si sobre ese color el texto va blanco o negro
+  const lum = (hex: string) =>
+    rgb(hex)
+      .map((v) => v / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)))
+      .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const onColor = (hex: string) => (lum(hex) > 0.42 ? "#0B0C0E" : "#FFFFFF");
+  const mix = (hex: string, t: number) => {
+    const to = t < 0 ? 0 : 255;
+    const a = Math.abs(t);
+    const [r, g, b] = rgb(hex).map((v) => Math.round(v + (to - v) * a));
+    return `rgb(${r},${g},${b})`;
+  };
+  // Azar con semilla: la textura del papel no cambia en cada redibujado
+  const rng = (seed: number) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  // Medidas en pulgadas, escritas como en la imprenta: 3-1/2 in
+  const fmtIn = (v: number) => {
+    const whole = Math.floor(v);
+    const fr = +(v - whole).toFixed(3);
+    const frac: Record<string, string> = { "0.5": "-1/2", "0.25": "-1/4", "0.75": "-3/4" };
+    const f = frac[String(fr)];
+    if (f) return `${whole}${f}`;
+    return fr ? String(+v.toFixed(2)) : String(whole);
+  };
+
+  const FAMS: Record<string, { title: string; body: string; track: string }> = {
+    moderna: { title: '800 {px}px "Saira", "Arial Narrow", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    clasica: { title: '700 {px}px "Playfair Display", Georgia, serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    tecnica: { title: '400 {px}px "Michroma", "Eurostile", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.02em" },
+    sencilla: { title: '600 {px}px "Instrument Sans", system-ui, sans-serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+  };
+  const LABEL = (px: number) => `400 ${px}px "Michroma", "Eurostile", sans-serif`;
+  const setTrack = (c: CanvasRenderingContext2D, v: string) => {
+    (c as unknown as { letterSpacing: string }).letterSpacing = v;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-card]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const guidesBtn = root.querySelector<HTMLButtonElement>("[data-guides]")!;
+    const approx = root.querySelector<HTMLElement>("[data-approx]")!;
+    const sizeOut = form.querySelector<HTMLElement>("[data-size-out]")!;
+    const orientSeg = form.querySelector<HTMLElement>("[data-orient]")!;
+    const orientSub = form.querySelector<HTMLElement>("[data-orient-sub]")!;
+    const edgeSeg = form.querySelector<HTMLElement>("[data-edge]")!;
+    const backSeg = form.querySelector<HTMLElement>("[data-back]")!;
+    const backHelp = form.querySelector<HTMLElement>("[data-back-help]")!;
+    const finishHelp = form.querySelector<HTMLElement>("[data-finish-help]")!;
+    const accentName = form.querySelector<HTMLElement>("[data-accent-name]")!;
+    const qtyEl = form.querySelector<HTMLInputElement>("input[name='cantidad']")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    const stage = root.querySelector<HTMLElement>(".nb__stage")!;
+    let guides = false;
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const stock = () => cfg.stocks.find((s) => s.id === val("papel")) ?? cfg.stocks[0];
+    const accent = () => cfg.accents.find((a) => a.id === val("acento")) ?? cfg.accents[0];
+    const square = () => val("formato") === "cuadrada";
+    const twoSided = () => val("caras") === "dos";
+    const ultra = () => val("grosor") === "t32";
+    const painted = () => ultra() && val("canto") === "si";
+    const qty = () => Math.max(50, Math.min(100000, Math.round(Number(qtyEl.value) || 250)));
+    // El formato de la tarjeta, ya girado si va vertical
+    const dims = () => {
+      const s = SHAPES[val("formato")] ?? SHAPES.estandar;
+      const vert = !square() && val("orientacion") === "vertical";
+      return { w: vert ? s.h : s.w, h: vert ? s.w : s.h };
+    };
+    const texts = () => ({
+      negocio: text("negocio"),
+      persona: text("persona"),
+      cargo: text("cargo"),
+      tel: text("tel"),
+      correo: text("correo"),
+      web: text("web"),
+      lema: text("lema"),
+    });
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const RADIOS = ["formato", "orientacion", "esquinas", "papel", "grosor", "canto", "caras", "acabado", "plantilla", "tipografia", "acento", "logo", "reverso"];
+    const FIELDS: Array<[string, number]> = [
+      ["negocio", 34],
+      ["persona", 34],
+      ["cargo", 28],
+      ["tel", 24],
+      ["correo", 40],
+      ["web", 34],
+      ["lema", 40],
+    ];
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const params = new URLSearchParams(location.search);
+    if (params.has("formato")) {
+      RADIOS.forEach((n) => setRadio(n, params.get(n)));
+      FIELDS.forEach(([n, max]) => {
+        const v = params.get(n);
+        if (v !== null) (form.elements.namedItem(n) as HTMLInputElement).value = v.slice(0, max);
+      });
+      const q = Number(params.get("cantidad"));
+      if (q >= 50 && q <= 100000) qtyEl.value = String(Math.round(q));
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams();
+      RADIOS.forEach((n) => p.set(n, val(n)));
+      FIELDS.forEach(([n]) => p.set(n, text(n)));
+      p.set("cantidad", String(qty()));
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Dibujo ----------
+    const cardPath = (x: number, y: number, w: number, h: number, r: number) => {
+      const p = new Path2D();
+      if (r > 0) p.roundRect(x, y, w, h, r);
+      else p.rect(x, y, w, h);
+      return p;
+    };
+
+    // Textura del papel, recortada a la tarjeta
+    const paper = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, st: Stock, s: number) => {
+      c.fillStyle = st.base;
+      c.fillRect(x, y, w, h);
+      const r = rng(st.id.charCodeAt(0) * 131 + st.id.length * 17);
+      if (st.tex === "brillo" || st.tex === "perla") {
+        const g = c.createLinearGradient(x, y + h, x + w, y);
+        if (st.tex === "brillo") {
+          g.addColorStop(0, "rgba(255,255,255,0)");
+          g.addColorStop(0.42, "rgba(255,255,255,0)");
+          g.addColorStop(0.5, "rgba(255,255,255,0.75)");
+          g.addColorStop(0.58, "rgba(255,255,255,0)");
+          g.addColorStop(1, "rgba(180,200,215,0.18)");
+        } else {
+          g.addColorStop(0, "rgba(255,226,196,0.4)");
+          g.addColorStop(0.35, "rgba(226,232,255,0.34)");
+          g.addColorStop(0.6, "rgba(255,248,232,0.5)");
+          g.addColorStop(1, "rgba(208,226,232,0.4)");
+        }
+        c.fillStyle = g;
+        c.fillRect(x, y, w, h);
+      }
+      if (st.tex === "lino") {
+        const step = Math.max(1.6, 0.022 * s);
+        c.lineWidth = Math.max(0.5, step * 0.3);
+        for (const dir of [0, 1]) {
+          c.strokeStyle = dir ? "rgba(255,255,255,0.75)" : "rgba(120,114,100,0.17)";
+          c.beginPath();
+          for (let i = dir ? step / 2 : 0; i < (dir ? h : w); i += step) {
+            if (dir) {
+              c.moveTo(x, y + i);
+              c.lineTo(x + w, y + i);
+            } else {
+              c.moveTo(x + i, y);
+              c.lineTo(x + i, y + h);
+            }
+          }
+          c.stroke();
+        }
+      }
+      if (st.tex === "fibra" || st.tex === "kraft") {
+        const n = Math.round((w * h) / 90);
+        const dots = st.tex === "kraft" ? ["rgba(70,48,24,0.3)", "rgba(255,246,228,0.5)"] : ["rgba(90,84,70,0.14)", "rgba(255,255,255,0.6)"];
+        for (let i = 0; i < n; i++) {
+          c.fillStyle = dots[r() > 0.55 ? 1 : 0];
+          const dw = Math.max(0.6, s * (0.003 + r() * 0.006));
+          c.fillRect(x + r() * w, y + r() * h, dw, dw * (r() > 0.7 ? 2.4 : 1));
+        }
+      }
+      // Un poco de luz hacia el centro: la tarjeta no se ve como un recorte plano
+      const sh = c.createLinearGradient(x, y, x, y + h);
+      sh.addColorStop(0, "rgba(255,255,255,0.14)");
+      sh.addColorStop(0.5, "rgba(255,255,255,0)");
+      sh.addColorStop(1, "rgba(11,12,14,0.07)");
+      c.fillStyle = sh;
+      c.fillRect(x, y, w, h);
+    };
+
+    // Lámina metálica: el degradado que imita el reflejo del estampado
+    const foil = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, kind: string) => {
+      const g = c.createLinearGradient(x, y, x + w, y + h);
+      const stops =
+        kind === "oro"
+          ? ["#8A6A1E", "#F0D98A", "#B5913C", "#FFF6D2", "#A07B22"]
+          : ["#7E858E", "#E9ECF0", "#A4ABB4", "#FFFFFF", "#8A9199"];
+      stops.forEach((s, i) => g.addColorStop(i / (stops.length - 1), s));
+      return g;
+    };
+
+    // Dibuja una cara de la tarjeta. Devuelve el trazo de las zonas de color,
+    // que es lo que lleva barniz cuando el acabado es «barniz por zonas».
+    const drawFace = (
+      c: CanvasRenderingContext2D,
+      x0: number,
+      y0: number,
+      s: number,
+      o: Face,
+      back: string | null
+    ): Path2D => {
+      const { w, h } = o;
+      const X = (v: number) => x0 + v * s;
+      const Y = (v: number) => y0 + v * s;
+      const P = (v: number) => v * s;
+      const marks = new Path2D();
+      // Unidad de texto: manda el ancho de la tarjeta, no su alto. Si no, una
+      // tarjeta vertical saldría con letras enormes.
+      const fu = Math.min(h, w * 0.8);
+      const m = 0.11 * fu;
+      // Caja de contenido: en una tarjeta vertical el diseño se agrupa en el
+      // centro en vez de estirarse de arriba abajo. V(0…1) recorre esa caja.
+      const box = Math.min(h, w * 1.1);
+      const boxY = (h - box) / 2;
+      const V = (k: number) => boxY + k * box;
+      const T = boxY + m; // primer renglón
+      const st = o.stock;
+      const acc = o.accent;
+      const metal = o.finish === "oro" || o.finish === "plata";
+      const accStyle = (bx: number, by: number, bw: number, bh: number) => (metal ? foil(c, bx, by, bw, bh, o.finish) : acc);
+
+      // Texto; en las miniaturas se sustituye por barras, que a ese tamaño se leen mejor
+      const put = (
+        txt: string,
+        kind: "title" | "body" | "label",
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string | CanvasGradient,
+        align: CanvasTextAlign = "left",
+        upper = false
+      ) => {
+        if (!txt) return 0;
+        const px = Math.max(1, P(sizeIn));
+        const maxPx = P(maxIn);
+        const t = upper ? txt.toLocaleUpperCase() : txt;
+        const fam = FAMS[o.type] ?? FAMS.moderna;
+        const make = (p: number) => (kind === "label" ? LABEL(p) : fam[kind].replace("{px}", String(p)));
+        setTrack(c, kind === "label" ? "0.1em" : fam.track);
+        c.font = make(px);
+        let wd = c.measureText(t).width;
+        if (wd > maxPx && wd > 0) {
+          c.font = make(px * (maxPx / wd));
+          wd = maxPx;
+        }
+        c.fillStyle = color;
+        c.textAlign = align;
+        c.textBaseline = "alphabetic";
+        if (o.mini) {
+          // Barra con el alto de la letra y el ancho que ocuparía el texto
+          const bh = Math.max(1, px * 0.6);
+          const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+          c.fillRect(bx, Y(yIn) - bh, wd, bh);
+        } else {
+          c.fillText(t, X(xIn), Y(yIn));
+        }
+        setTrack(c, "0px");
+        return wd;
+      };
+      const band = (xIn: number, yIn: number, wIn: number, hIn: number) => {
+        const bx = X(xIn);
+        const by = Y(yIn);
+        const bw = P(wIn);
+        const bh = P(hIn);
+        c.fillStyle = acc; // las franjas grandes van en tinta, nunca en lámina
+        c.fillRect(bx, by, bw, bh);
+        marks.rect(bx, by, bw, bh);
+      };
+      // Marca del logo: la inicial del negocio o el hueco reservado para el archivo
+      const logoMark = (cxIn: number, cyIn: number, sizeIn: number, over: string) => {
+        const sz = P(sizeIn);
+        const bx = X(cxIn) - sz / 2;
+        const by = Y(cyIn) - sz / 2;
+        if (o.ownLogo) {
+          c.save();
+          c.setLineDash([Math.max(2, sz * 0.09), Math.max(2, sz * 0.07)]);
+          c.lineWidth = Math.max(1, sz * 0.045);
+          c.strokeStyle = over === "accent" ? onColor(acc) : mix(st.sub, 0.3);
+          c.beginPath();
+          c.roundRect(bx, by, sz, sz, sz * 0.14);
+          c.stroke();
+          c.restore();
+          if (!o.mini)
+            put(cfg.copy.logoBox, "label", sizeIn * 0.12, cxIn, cyIn + sizeIn * 0.045, sizeIn * 0.84, over === "accent" ? onColor(acc) : st.sub, "center");
+          return;
+        }
+        const initial = (o.t.negocio.match(/\p{L}/u)?.[0] ?? "A").toLocaleUpperCase();
+        const fill = over === "accent" ? onColor(acc) : accStyle(bx, by, sz, sz);
+        c.fillStyle = fill;
+        c.beginPath();
+        c.roundRect(bx, by, sz, sz, sz * 0.18);
+        c.fill();
+        if (over !== "accent") marks.roundRect(bx, by, sz, sz, sz * 0.18);
+        if (o.mini) return;
+        const fam = FAMS[o.type] ?? FAMS.moderna;
+        c.font = fam.title.replace("{px}", String(sz * 0.56));
+        c.fillStyle = over === "accent" ? acc : onColor(acc);
+        c.textAlign = "center";
+        c.textBaseline = "middle";
+        c.fillText(initial, bx + sz / 2, by + sz / 2 + sz * 0.04);
+      };
+
+      // ---- Fondo de la cara ----
+      paper(c, X(0), Y(0), P(w), P(h), st, s);
+      if (back === "logo") {
+        c.fillStyle = acc;
+        c.fillRect(X(0), Y(0), P(w), P(h));
+        marks.rect(X(0), Y(0), P(w), P(h));
+        // Sobre el color, un poco de la textura del papel para que no se vea plano
+        c.save();
+        c.globalAlpha = 0.14;
+        c.globalCompositeOperation = "overlay";
+        paper(c, X(0), Y(0), P(w), P(h), st, s);
+        c.restore();
+      }
+      const ink = back === "logo" ? onColor(acc) : st.ink;
+      const sub = back === "logo" ? onColor(acc) : st.sub;
+
+      // ---- Reverso ----
+      if (back) {
+        if (back === "logo") {
+          logoMark(w / 2, V(0.4), Math.min(w, box) * 0.3, "accent");
+          put(o.t.negocio, "title", 0.075 * fu, w / 2, V(0.68), w - m * 2, ink, "center");
+          if (o.t.lema) put(o.t.lema, "body", 0.04 * fu, w / 2, V(0.8), w - m * 2, sub, "center");
+        } else if (back === "datos") {
+          put(o.t.negocio, "title", 0.062 * fu, w / 2, V(0.24), w - m * 2, ink, "center");
+          band(w / 2 - 0.1 * w, V(0.3), 0.2 * w, 0.014 * fu);
+          const rows = [o.t.tel, o.t.correo, o.t.web].filter(Boolean);
+          rows.forEach((r, i) => put(r, "body", 0.045 * fu, w / 2, V(0.47 + i * 0.13), w - m * 2, i === 0 ? ink : sub, "center"));
+          if (o.t.lema) put(o.t.lema, "body", 0.035 * fu, w / 2, V(0.92), w - m * 2, sub, "center");
+        } else if (back === "sellos") {
+          put(cfg.copy.stamps, "label", 0.034 * fu, w / 2, V(0.22), w - m * 2, sub, "center");
+          const cols = 5;
+          const rad = Math.min((w - m * 2) / (cols * 2.5), box * 0.095);
+          const gx = (w - rad * 2 * cols - rad * 0.8 * (cols - 1)) / 2;
+          c.lineWidth = Math.max(1, P(0.012));
+          for (let i = 0; i < 10; i++) {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const cx = X(gx + rad + col * (rad * 2 + rad * 0.8));
+            const cy = Y(V(0.44) + row * rad * 2.5);
+            c.strokeStyle = metal ? "#B5913C" : acc;
+            c.beginPath();
+            c.arc(cx, cy, rad * s, 0, Math.PI * 2);
+            c.stroke();
+          }
+          put(o.t.lema || o.t.negocio, "body", 0.033 * fu, w / 2, V(0.95), w - m * 2, sub, "center");
+        } else {
+          put(cfg.copy.appt, "label", 0.032 * fu, m, V(0.2), w - m * 2, sub);
+          c.lineWidth = Math.max(1, P(0.008));
+          c.strokeStyle = mix(st.sub, 0.55);
+          [0, 1].forEach((i) => {
+            const ly = Y(V(0.46 + i * 0.18));
+            c.beginPath();
+            c.moveTo(X(m + 0.22 * w), ly);
+            c.lineTo(X(w - m), ly);
+            c.stroke();
+            put(i === 0 ? cfg.copy.date : cfg.copy.time, "body", 0.038 * fu, m, V(0.46 + i * 0.18) - 0.01 * fu, 0.2 * w, sub);
+          });
+          band(0, h - 0.045 * fu, w, 0.045 * fu);
+          put([o.t.negocio, o.t.tel].filter(Boolean).join("  ·  "), "body", 0.036 * fu, m, V(0.86), w - m * 2, ink);
+        }
+        return marks;
+      }
+
+      // ---- Frente: cinco diseños ----
+      const contact = [o.t.tel, o.t.correo, o.t.web].filter(Boolean);
+      const titleStyle = accStyle(X(0), Y(0), P(w), P(h));
+
+      if (o.tpl === "clasica") {
+        const lg = Math.min(w * 0.2, box * 0.26);
+        logoMark(m + lg / 2, T + lg / 2, lg, "paper");
+        put(o.t.negocio, "title", 0.07 * fu, m + lg + 0.05 * fu, T + lg * 0.62, w - m * 2 - lg - 0.05 * fu, titleStyle);
+        band(m, V(0.45), w * 0.2, 0.016 * fu);
+        put(o.t.persona, "title", 0.055 * fu, m, V(0.7), w * 0.48, ink);
+        put(o.t.cargo, "label", 0.034 * fu, m, V(0.81), w * 0.46, sub, "left", true);
+        contact.forEach((r, i) => put(r, "body", 0.04 * fu, w - m, V(0.62 + i * 0.12), w * 0.46, i === 0 ? ink : sub, "right"));
+        band(0, h - 0.04 * fu, w, 0.04 * fu);
+      } else if (o.tpl === "centrada") {
+        const lg = Math.min(w * 0.16, box * 0.22);
+        logoMark(w / 2, T + lg * 0.55, lg, "paper");
+        put(o.t.negocio, "title", 0.075 * fu, w / 2, V(0.52), w - m * 2, titleStyle, "center");
+        band(w / 2 - w * 0.11, V(0.58), w * 0.22, 0.014 * fu);
+        put(o.t.persona, "title", 0.05 * fu, w / 2, V(0.72), w - m * 2, ink, "center");
+        put(o.t.cargo, "label", 0.028 * fu, w / 2, V(0.81), w * 0.7, sub, "center", true);
+        put(contact.join("   ·   "), "body", 0.036 * fu, w / 2, V(0.94), w - m * 1.4, sub, "center");
+      } else if (o.tpl === "barra") {
+        const bw = w * 0.3;
+        band(0, 0, bw, h);
+        logoMark(bw / 2, V(0.5), Math.min(bw * 0.52, box * 0.3), "accent");
+        const cx = bw + m;
+        const cw = w - bw - m * 2;
+        put(o.t.negocio, "title", 0.064 * fu, cx, V(0.28), cw, metal ? titleStyle : ink);
+        put(o.t.persona, "title", 0.05 * fu, cx, V(0.47), cw, ink);
+        put(o.t.cargo, "label", 0.028 * fu, cx, V(0.57), cw, sub, "left", true);
+        contact.forEach((r, i) => put(r, "body", 0.038 * fu, cx, V(0.73 + i * 0.11), cw, sub));
+      } else if (o.tpl === "bloque") {
+        // La franja llega a los bordes; lo de abajo se reparte en lo que queda
+        const bh = h * 0.42;
+        const A = (k: number) => bh + (h - bh) * k;
+        band(0, 0, w, bh);
+        const lg = Math.min(w * 0.16, bh * 0.56);
+        logoMark(w - m - lg / 2, bh / 2, lg, "accent");
+        put(o.t.negocio, "title", 0.068 * fu, m, bh * 0.52, w - m * 2.4 - lg, onColor(acc));
+        if (o.t.lema) put(o.t.lema, "body", 0.034 * fu, m, bh * 0.76, w - m * 2.4 - lg, onColor(acc));
+        put(o.t.persona, "title", 0.052 * fu, m, A(0.34), w - m * 2, ink);
+        put(o.t.cargo, "label", 0.028 * fu, m, A(0.51), w - m * 2, sub, "left", true);
+        put(contact.join("   ·   "), "body", 0.036 * fu, m, A(0.82), w - m * 2, sub);
+      } else {
+        // minimal
+        const dot = 0.035 * fu;
+        const lg = Math.min(w * 0.13, box * 0.18);
+        band(m, V(0.17) - dot, dot, dot);
+        put(o.t.negocio, "label", 0.032 * fu, m + dot * 1.9, V(0.17), w * 0.52 - lg, sub);
+        logoMark(w - m - lg / 2, V(0.17) - dot / 2, lg, "paper");
+        put(o.t.persona, "title", 0.072 * fu, m, V(0.56), w * 0.64, titleStyle);
+        put(o.t.cargo, "body", 0.038 * fu, m, V(0.68), w * 0.6, sub);
+        contact.forEach((r, i) => put(r, "body", 0.036 * fu, w - m, V(0.76 + i * 0.1), w * 0.52, sub, "right"));
+      }
+      return marks;
+    };
+
+    // Una tarjeta completa: sombra, canto, cara, barniz y guías de corte
+    const drawCard = (x0: number, y0: number, s: number, o: Face, back: string | null, thick: number, edgeColor: string) => {
+      const path = cardPath(x0, y0, o.w * s, o.h * s, o.r * s);
+      const lift = Math.max(1.2, thick * s * 1.6); // el grosor, un poco exagerado para que se note
+
+      ctx.save();
+      ctx.shadowColor = "rgba(18,26,36,0.4)";
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 12;
+      ctx.fillStyle = edgeColor;
+      ctx.fill(cardPath(x0, y0 + lift, o.w * s, o.h * s, o.r * s));
+      ctx.restore();
+      for (let i = Math.ceil(lift); i >= 1; i--) {
+        ctx.fillStyle = i > lift * 0.5 ? edgeColor : mix(edgeColor, -0.08);
+        ctx.fill(cardPath(x0, y0 + i, o.w * s, o.h * s, o.r * s));
+      }
+
+      ctx.save();
+      ctx.clip(path);
+      const marks = drawFace(ctx, x0, y0, s, o, back);
+      // Barniz por zonas: brillo en diagonal, solo sobre las zonas de color
+      if (o.finish === "barniz") {
+        ctx.save();
+        ctx.clip(marks);
+        const g = ctx.createLinearGradient(x0, y0 + o.h * s, x0 + o.w * s, y0);
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.38, "rgba(255,255,255,0.06)");
+        g.addColorStop(0.5, "rgba(255,255,255,0.55)");
+        g.addColorStop(0.62, "rgba(255,255,255,0.06)");
+        g.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(x0, y0, o.w * s, o.h * s);
+        ctx.restore();
+      }
+      ctx.restore();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(11,12,14,0.26)";
+      ctx.stroke(path);
+
+      if (guides) {
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = "#ED1B24";
+        ctx.stroke(cardPath(x0 - BLEED * s, y0 - BLEED * s, (o.w + BLEED * 2) * s, (o.h + BLEED * 2) * s, o.r ? (o.r + BLEED) * s : 0));
+        ctx.strokeStyle = "#0094DA";
+        ctx.stroke(cardPath(x0 + SAFE * s, y0 + SAFE * s, (o.w - SAFE * 2) * s, (o.h - SAFE * 2) * s, o.r ? Math.max(0, (o.r - SAFE) * s) : 0));
+        ctx.restore();
+      }
+    };
+
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const { w, h } = dims();
+      const st = stock();
+      const o: Face = {
+        w,
+        h,
+        r: val("esquinas") === "redondas" ? ROUND : 0,
+        stock: st,
+        accent: accent().hex,
+        type: val("tipografia"),
+        tpl: val("plantilla"),
+        finish: val("acabado"),
+        ownLogo: val("logo") === "archivo",
+        t: texts(),
+        mini: false,
+      };
+      const two = twoSided();
+      const gap = 0.34; // separación entre las dos caras
+      const gapV = 0.6; // apiladas hace falta sitio para el rótulo de la de abajo
+      // Hueco reservado: los rótulos de cada cara arriba y la cota debajo
+      const pad = guides ? 0.3 : 0.06;
+      // Las dos caras se ponen una al lado de la otra o una encima de otra,
+      // lo que deje la tarjeta más grande: en el móvil y con tarjetas
+      // verticales lo que cabe es apilarlas.
+      const fit = (cols: number, rows: number) => {
+        const tw = w * cols + gap * (cols - 1);
+        // Reserva: el rótulo de cada cara, la cota y el aviso de la esquina
+        // —que en el móvil no se enseña—. Una tarjeta vertical casi llena la
+        // escena, así que ahí hace falta un poco más de sitio.
+        const keep = 58 + (approx.offsetParent ? 34 : 0) + (rows - 1) * 22 + (h > w ? 20 : 0);
+        return Math.min((cw - 44) / (tw + pad * 2), (ch - keep) / (h * rows + gapV * (rows - 1) + pad * 2));
+      };
+      const [cols, rows] = !two ? [1, 1] : fit(2, 1) >= fit(1, 2) ? [2, 1] : [1, 2];
+      const s = fit(cols, rows);
+      const groupW = w * cols + gap * (cols - 1);
+      const groupH = h * rows + gapV * (rows - 1);
+      const x0 = (cw - groupW * s) / 2;
+      // Arriba va el rótulo de la cara; abajo, la cota y el aviso: el grupo
+      // se apoya un poco más arriba del centro para que todo eso quepa
+      const y0 = Math.max(two ? 22 : 10, (ch - groupH * s) * 0.34);
+      const thick = THICKS[val("grosor")] ?? 0.014;
+      const edgeColor = painted() ? o.accent : st.edge;
+      const at = (i: number) => ({
+        x: x0 + (i % cols) * (w + gap) * s,
+        y: y0 + Math.floor(i / cols) * (h + gapV) * s,
+      });
+
+      for (let i = 0; i < (two ? 2 : 1); i++) {
+        const p = at(i);
+        drawCard(p.x, p.y, s, o, i === 0 ? null : val("reverso"), thick, edgeColor);
+      }
+      // Los rótulos van después: la sombra de una tarjeta llega hasta el de la siguiente
+      ctx.fillStyle = "rgba(11,12,14,0.6)";
+      ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "center";
+      if (two)
+        for (let i = 0; i < 2; i++) {
+          const p = at(i);
+          ctx.fillText(i === 0 ? cfg.copy.front : cfg.copy.backLbl, p.x + (w * s) / 2, p.y - 13);
+        }
+
+      // Cota del ancho, debajo de la última fila
+      const gy = y0 + groupH * s + Math.max(20, thick * s * 1.6 + 18);
+      const tick = 5;
+      ctx.strokeStyle = "rgba(11,12,14,0.5)";
+      ctx.fillStyle = "rgba(11,12,14,0.66)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x0, gy);
+      ctx.lineTo(x0 + w * s, gy);
+      ctx.moveTo(x0, gy - tick);
+      ctx.lineTo(x0, gy + tick);
+      ctx.moveTo(x0 + w * s, gy - tick);
+      ctx.lineTo(x0 + w * s, gy + tick);
+      ctx.stroke();
+      ctx.textBaseline = "top";
+      ctx.fillText(`${fmtIn(w)} × ${fmtIn(h)} in · ${cfg.thicks[val("grosor")]}`, x0 + (w * s) / 2, gy + 7);
+
+      canvas.setAttribute(
+        "aria-label",
+        `${cfg.copy.preview}: ${fmtIn(w)} × ${fmtIn(h)} in · ${st.name} · ${cfg.tpls[o.tpl]} · ${accent().name}${o.t.negocio ? ` · "${o.t.negocio}"` : ""}`
+      );
+    };
+
+    // Miniaturas de los diseños, con el mismo dibujo que la vista previa
+    const renderTpls = () => {
+      const ids = Object.keys(cfg.tpls);
+      form.querySelectorAll<HTMLCanvasElement>(".cd__tpl canvas").forEach((cv, i) => {
+        const c2 = cv.getContext("2d")!;
+        const o: Face = {
+          w: 3.5,
+          h: 2,
+          r: val("esquinas") === "redondas" ? ROUND : 0,
+          stock: stock(),
+          accent: accent().hex,
+          type: val("tipografia"),
+          tpl: ids[i] ?? ids[0],
+          finish: val("acabado") === "barniz" ? "ninguno" : val("acabado"),
+          ownLogo: val("logo") === "archivo",
+          t: texts(),
+          mini: true,
+        };
+        c2.setTransform(1, 0, 0, 1, 0, 0);
+        c2.clearRect(0, 0, cv.width, cv.height);
+        const s = Math.min((cv.width - 10) / o.w, (cv.height - 10) / o.h);
+        const x = (cv.width - o.w * s) / 2;
+        const y = (cv.height - o.h * s) / 2;
+        c2.save();
+        c2.clip(cardPath(x, y, o.w * s, o.h * s, o.r * s));
+        drawFace(c2, x, y, s, o, null);
+        c2.restore();
+        c2.lineWidth = 1;
+        c2.strokeStyle = "rgba(11,12,14,0.18)";
+        c2.stroke(cardPath(x, y, o.w * s, o.h * s, o.r * s));
+      });
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const { w, h } = dims();
+      const t = texts();
+      const two = twoSided();
+      const lines = [t.negocio, t.persona, t.cargo, t.tel, t.correo, t.web].filter(Boolean).join(" / ");
+      const out = [
+        `${k.summary}:`,
+        `• ${k.sFormat}: ${cfg.shapes[val("formato")]} ${fmtIn(w)} × ${fmtIn(h)} in${square() ? "" : ` (${cfg.orients[val("orientacion")].toLocaleLowerCase()})`}`,
+        `• ${k.sCorners}: ${cfg.corners[val("esquinas")]}`,
+        `• ${k.sPaper}: ${stock().name}, ${cfg.thicks[val("grosor")]}`,
+      ];
+      if (ultra()) out.push(`• ${k.sEdge}: ${painted() ? `${k.yes} (${accent().name})` : k.no}`);
+      out.push(
+        `• ${k.sSides}: ${cfg.sides[val("caras")]}`,
+        `• ${k.sFinish}: ${cfg.finishes[val("acabado")]}`,
+        `• ${k.sDesign}: ${cfg.tpls[val("plantilla")]}`,
+        `• ${k.sType}: ${cfg.types[val("tipografia")]}`,
+        `• ${k.sAccent}: ${accent().name}`,
+        `• ${k.sLogo}: ${cfg.logos[val("logo")]}`,
+        `• ${k.sWords}: ${lines}`
+      );
+      if (two) out.push(`• ${k.sBack}: ${cfg.backs[val("reverso")]}${t.lema ? ` — "${t.lema}"` : ""}`);
+      out.push(`• ${k.sQty}: ${qty()}`, `• ${k.sLink}: ${shareUrl()}`);
+      return out.join("\n");
+    };
+
+    const syncUI = () => {
+      const { w, h } = dims();
+      const sq = square();
+      // Una tarjeta vertical necesita una escena más alta
+      stage.toggleAttribute("data-tall", h > w);
+      orientSub.hidden = sq;
+      orientSeg.hidden = sq;
+      edgeSeg.querySelectorAll("input").forEach((i) => (i.disabled = !ultra()));
+      edgeSeg.toggleAttribute("data-off", !ultra());
+      backSeg.querySelectorAll("input").forEach((i) => (i.disabled = !twoSided()));
+      backSeg.toggleAttribute("data-off", !twoSided());
+      backHelp.hidden = twoSided();
+      finishHelp.textContent = cfg.finishHelp[val("acabado")] ?? "";
+      accentName.textContent = accent().name;
+      sizeOut.textContent = `${fmtIn(w)} × ${fmtIn(h)} in`;
+      approx.textContent = guides ? cfg.copy.guidesOn : cfg.copy.approx;
+      guidesBtn.setAttribute("aria-pressed", String(guides));
+      const q = qty();
+      root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.qty) === q)));
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+    const render = () => {
+      syncUI();
+      draw();
+      renderTpls();
+      update();
+    };
+
+    // ---------- Eventos ----------
+    const onEdit = (e: Event) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      render();
+    };
+    form.addEventListener("change", onEdit);
+    form.addEventListener("input", onEdit);
+    root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) =>
+      b.addEventListener("click", () => {
+        qtyEl.value = b.dataset.qty!;
+        touched = true;
+        render();
+      })
+    );
+    guidesBtn.addEventListener("click", () => {
+      guides = !guides;
+      syncUI();
+      draw();
+    });
+
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    Promise.all(
+      [`800 40px "Saira"`, `700 40px "Playfair Display"`, `400 40px "Michroma"`, `500 40px "Instrument Sans"`].map((f) =>
+        document.fonts.load(f).catch(() => [])
+      )
+    ).then(() => render());
+    render();
+  }
+</script>

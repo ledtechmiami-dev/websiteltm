@@ -1,0 +1,34 @@
+---
+// Espacio para una foto de trabajo. Con `src` muestra la foto; sin ella, el dibujo
+// de la línea y una marca PENDIENTE para que se note qué falta.
+import LineArt from "./LineArt.astro";
+import Pending from "./Pending.astro";
+import type { Lang } from "../data/site";
+import { lineByKey, type LineKey } from "../data/catalog";
+import { UI } from "../i18n/ui";
+
+interface Props {
+  lang: Lang;
+  line: LineKey;
+  src?: string;
+  alt?: string;
+  caption?: string;
+  class?: string;
+}
+
+const { lang, line, src, alt = "", caption, class: className } = Astro.props;
+const l = lineByKey(line);
+---
+<figure class:list={["slot", className]} style={`--ground:${l.ground}`}>
+  {src ? (
+    <img src={src} alt={alt} loading="lazy" decoding="async" />
+  ) : (
+    <div class="slot__ph">
+      <LineArt type={line} />
+      <span class="slot__tag"><Pending lang={lang}>{UI[lang].photo}</Pending></span>
+    </div>
+  )}
+  {caption && (
+    <figcaption class="slot__cap"><span class="chip" style={`--c:${l.color}`}></span>{caption}</figcaption>
+  )}
+</figure>

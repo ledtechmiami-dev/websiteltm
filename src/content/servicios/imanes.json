@@ -1,0 +1,59 @@
+{
+  "nombre": "Imanes",
+  "linea": "graficos",
+  "orden": 12,
+  "padre": "marketing-digital",
+  "nameEn": "Magnets",
+  "slugEn": "magnets",
+  "short": {
+    "es": "Imanes para la nevera, de tarjeta y para la puerta del carro, con el diseño que armas aquí mismo.",
+    "en": "Fridge magnets, card magnets and car door magnets, with the design you build right here."
+  },
+  "intro": {
+    "es": "El imán es el único anuncio que tu cliente guarda: se queda pegado en la nevera con tu teléfono a la vista todo el año, o en la puerta de la camioneta cuando la necesitas rotulada hoy y sin pintar nada. Lo diseñas aquí mismo, eliges medida y grosor, y el constructor te lo enseña a escala pegado donde va a ir.",
+    "en": "A magnet is the one ad your customer keeps: it stays on the fridge with your phone number in plain sight all year, or on the truck door when you need the truck lettered today without painting anything. You design it right here, pick the size and the thickness, and the builder shows it to scale, stuck where it's going to live."
+  },
+  "includes": {
+    "es": [
+      "Medidas de 3-1/2 × 2, 4 × 6 y 5 × 7 in, vertical u horizontal",
+      "Imán de 18 × 12 in para puerta de carro o camioneta",
+      "Esquinas rectas o redondeadas",
+      "Cara impresa laminada brillante o mate",
+      "Grosores de 0.4 y 0.6 mm, y de 0.85 mm el de vehículo",
+      "Diseños de servicio, calendario del año, foto, rótulo o solo texto"
+    ],
+    "en": [
+      "3-1/2 × 2, 4 × 6 and 5 × 7 in sizes, portrait or landscape",
+      "18 × 12 in magnet for a car or truck door",
+      "Square or rounded corners",
+      "Printed face laminated glossy or matte",
+      "0.4 and 0.6 mm thicknesses, and 0.85 mm for the vehicle one",
+      "Service, year calendar, photo, sign or type-only layouts"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Aire acondicionado y plomería",
+      "Cerrajería y servicios de emergencia",
+      "Restaurantes y comida a domicilio",
+      "Clínicas y consultorios",
+      "Bienes raíces",
+      "Camionetas de trabajo"
+    ],
+    "en": [
+      "HVAC and plumbing",
+      "Locksmiths and emergency services",
+      "Restaurants and delivery",
+      "Clinics and practices",
+      "Real estate",
+      "Work trucks"
+    ]
+  },
+  "note": {
+    "es": "El imán agarra en lámina de acero plana. En puertas de aluminio, en fibra de vidrio o encima de una moldura no se pega: si no estás seguro de qué tiene tu camioneta, mándanos una foto y te decimos.",
+    "en": "A magnet grips flat steel. It won't hold on aluminum doors, on fiberglass or over a molding: if you're not sure what your truck has, send us a photo and we'll tell you."
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

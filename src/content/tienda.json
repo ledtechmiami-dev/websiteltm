@@ -1,0 +1,44 @@
+{
+  "head": {
+    "title": {
+      "es": "Tienda online de productos LED y marinos | LED Tech Miami",
+      "en": "Online shop for LED and marine products | LED Tech Miami"
+    },
+    "h1": {
+      "es": "Tienda LED Tech Miami",
+      "en": "LED Tech Miami shop"
+    },
+    "lead": {
+      "es": "Productos LED, piezas hechas en nuestro taller y accesorios marinos. Paga en línea y recoge tu pedido en Miami, te lo llevamos o te lo enviamos.",
+      "en": "LED products, pieces made in our shop and marine accessories. Pay online and pick up in Miami, get it delivered, or have it shipped."
+    }
+  },
+  "recogida": {
+    "activo": true,
+    "nota": {
+      "es": "",
+      "en": ""
+    }
+  },
+  "local": {
+    "activo": true,
+    "precio": null,
+    "nota": {
+      "es": "Miami-Dade y Broward",
+      "en": "Miami-Dade and Broward"
+    }
+  },
+  "envio": {
+    "activo": true,
+    "precio": null,
+    "gratisDesde": null,
+    "nota": {
+      "es": "A todo EE.UU.",
+      "en": "Anywhere in the US"
+    }
+  },
+  "politicas": {
+    "es": "",
+    "en": ""
+  }
+}

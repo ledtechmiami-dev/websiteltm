@@ -1,0 +1,1519 @@
+---
+// Constructor de colgantes de puerta (idea tomada del producto de Vistaprint,
+// que los hace de 3.5 × 8.5 y 4.5 × 11 in, en mate, brillante y plástico, con
+// el agujero de 1.18 in para la perilla y talón perforado a 2 in del borde).
+// El taller corta en plotter de contorno, así que la forma no cuesta matriz;
+// la perforación del talón, en cambio, la hace un taller aliado y suma días.
+// Lo propio de este producto es el corte: el agujero se come la parte de
+// arriba y el constructor enseña dónde empieza lo que sí se lee, y cómo cuelga
+// de la perilla. No muestra precios: el precio va en la cotización.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Los materiales del oficio. tex: cómo se dibuja en la vista previa.
+const STOCKS = [
+  { id: "brillante", es: "Brillante", en: "Glossy", base: "#FFFFFF", edge: "#E4E8EB", ink: "#14161A", sub: "#5A616B", tex: "brillo",
+    sw: "linear-gradient(118deg, #FFF 0 26%, #D8E2EA 44%, #FFF 62%, #EDF1F4)" },
+  { id: "mate", es: "Mate", en: "Matte", base: "#FFFFFF", edge: "#E7E8E6", ink: "#14161A", sub: "#5A616B", tex: "mate",
+    sw: "linear-gradient(135deg, #FFF 0 52%, #EFF0EE)" },
+];
+
+// La paleta LED del logo más neutros de imprenta
+const ACCENTS = [
+  { id: "azul", es: "Azul LED", en: "LED blue", hex: "#0094DA" },
+  { id: "amarillo", es: "Amarillo LED", en: "LED yellow", hex: "#FFCA09" },
+  { id: "verde", es: "Verde LED", en: "LED green", hex: "#99C941" },
+  { id: "rojo", es: "Rojo LED", en: "LED red", hex: "#ED1B24" },
+  { id: "negro", es: "Negro", en: "Black", hex: "#0B0C0E" },
+  { id: "pizarra", es: "Gris pizarra", en: "Slate grey", hex: "#59626D" },
+  { id: "marino", es: "Azul marino", en: "Navy", hex: "#16304F" },
+  { id: "vino", es: "Vino", en: "Wine", hex: "#7A1F2B" },
+  { id: "oliva", es: "Verde oliva", en: "Olive", hex: "#4F5B32" },
+  { id: "terracota", es: "Terracota", en: "Terracotta", hex: "#B4522E" },
+];
+
+// Las tiradas que ofrece Vistaprint para este producto
+const QTYS = [50, 100, 250, 500, 750];
+
+const COPY = {
+  es: {
+    title: "Diseña tu colgante de puerta",
+    lead: "Elige la medida, el papel y el diseño, escribe lo que vas a repartir casa por casa y mira cómo queda, incluso colgado de la perilla. Mándanos el diseño y te respondemos con el precio.",
+    format: "Medida",
+    shapes: { clasico: "Clásico", angosto: "Angosto", grande: "Grande" },
+    shapeHelp: "El clásico de 4-1/4 × 11 in es el que más se reparte: se lee desde la acera.",
+    hole: "Troquel",
+    holes: { redondo: "Agujero y ranura", llave: "Bocallave", ranura: "Muesca" },
+    holeHelp: "El agujero es de 1-3/16 in, la medida que entra en casi toda perilla. La ranura es por donde se mete. Lo cortamos en plotter de contorno: la forma no cuesta matriz, así que si quieres otra, dínoslo.",
+    corners: "Esquinas",
+    cornerOpts: { rectas: "Rectas", redondas: "Redondeadas" },
+    paper: "Material",
+    paperHelp: "Las dos son cartulina: para repartir el mismo día. Si va a quedarse semanas en la puerta, el sol y la lluvia la van a arrugar.",
+    thick: "Grosor",
+    thicks: { grueso: "Cartulina 14 pt", extra: "Cartulina 16 pt" },
+    thickHelp: {
+      grueso: "14 pt. Firme: no se dobla con el viento mientras cuelga.",
+      extra: "16 pt. Más rígida, para el formato grande o si lleva talón.",
+    },
+    print: "Impresión",
+    sides: "Caras",
+    sideOpts: { una: "Una cara", dos: "Dos caras" },
+    sideHelp: "La cara de atrás queda contra la puerta: se lee cuando lo descuelgan.",
+    stub: "Talón recortable",
+    stubOpts: { no: "Sin talón", si: "Con talón" },
+    stubHelp: "El talón va perforado a 2 in del borde: el vecino lo arranca y se queda con tu teléfono o el cupón. La perforación la hace un taller aliado y suma días a la entrega.",
+    stubText: "Lo que dice el talón",
+    stubPh: "Ej. 10% de descuento con este talón",
+    defStub: "10% de descuento con este talón",
+    design: "Diseño",
+    tpls: { oferta: "Oferta", servicios: "Servicios", aviso: "Aviso", foto: "Foto grande", tipografica: "Solo texto" },
+    type: "Tipografía",
+    types: { moderna: "Moderna", clasica: "Clásica", tecnica: "Técnica", sencilla: "Sencilla" },
+    accent: "Color de acento",
+    bg: "Fondo",
+    bgs: { papel: "Papel blanco", color: "Color de acento", oscuro: "Oscuro" },
+    image: "Imagen",
+    images: { foto: "Espacio para foto", color: "Bloque de color" },
+    imageHelp: "Déjanos el espacio marcado y",
+    imageCta: "mándanos la foto por WhatsApp",
+    imageWa: "Hola, quiero imprimir colgantes de puerta. Les envío la foto y el logo.",
+    photoBox: "TU FOTO",
+    noticeLbl: "AVISO",
+    words: "Qué repartes",
+    business: "Nombre del negocio",
+    businessPh: "Ej. Tu Negocio",
+    defBusiness: "Tu Negocio",
+    headline: "Titular",
+    headlinePh: "Ej. Lavado de techos y aceras",
+    defHeadline: "Lavado de techos y aceras",
+    sub: "Segunda línea",
+    subPh: "Ej. Estamos trabajando en tu calle",
+    defSub: "Estamos trabajando en tu calle",
+    offer: "Lo que más destaca",
+    offerPh: "Ej. 20% esta semana",
+    defOffer: "20% esta semana",
+    details: "Tres detalles",
+    d1Ph: "Ej. Presupuesto gratis",
+    defD1: "Presupuesto gratis",
+    d2Ph: "Ej. Trabajo garantizado",
+    defD2: "Trabajo garantizado",
+    d3Ph: "Ej. Servicio en 24 horas",
+    defD3: "Servicio en 24 horas",
+    biz: "Tus datos",
+    phone: "Teléfono",
+    phonePh: "Ej. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Sitio web o red social",
+    webPh: "Ej. tunegocio.com",
+    defWeb: "tunegocio.com",
+    address: "Dirección",
+    addressPh: "Ej. 123 NW 1st St, Miami, FL",
+    defAddress: "123 NW 1st St, Miami, FL",
+    back: "Reverso",
+    backs: { info: "Más información", cupon: "Cupón recortable", logo: "Logo en color" },
+    backHelp: "El reverso solo se imprime si eliges dos caras.",
+    coupon: "Presenta este cupón",
+    order: "Tu pedido",
+    qty: "Cantidad",
+    qtyHelp: "Para repartir un barrio, 250 o 500. Desde 50 en adelante.",
+    guides: "Guías de corte",
+    guidesOn: "Línea roja: el troquel y el sangrado, por donde pasa la cuchilla. Línea azul: la zona segura, y dónde empieza lo que se puede leer debajo del agujero.",
+    door: "En la puerta",
+    doorOn: "Colgado de la perilla, a escala. Lo que queda a la altura de los ojos es la parte de arriba: ahí va el titular.",
+    views: { ambas: "Ver: las dos caras", frente: "Ver: solo el frente", reverso: "Ver: solo el reverso" },
+    viewHelp: "Cambiar la vista",
+    approx: "Vista aproximada · el color impreso varía un poco del de la pantalla",
+    front: "Frente",
+    backLbl: "Reverso",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h. Depende del tiraje, del material y del acabado.",
+    cta: "Cotizar estos colgantes",
+    wa: "Enviar por WhatsApp",
+    notesPh: "Para cuándo los necesitas, en qué zona los vas a repartir, si ya tienes el diseño hecho…",
+    summary: "Diseño del constructor de colgantes de puerta",
+    sFormat: "Medida",
+    sHole: "Troquel",
+    sCorners: "Esquinas",
+    sPaper: "Material",
+    sThick: "Grosor",
+    sSides: "Caras",
+    sStub: "Talón recortable",
+    sDesign: "Diseño",
+    sType: "Tipografía",
+    sAccent: "Color de acento",
+    sBg: "Fondo",
+    sImage: "Imagen",
+    sWords: "Textos",
+    sBiz: "Datos",
+    sBack: "Reverso",
+    sQty: "Cantidad",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesan estos colgantes de puerta:",
+    preview: "Vista previa del colgante de puerta",
+  },
+  en: {
+    title: "Design your door hanger",
+    lead: "Pick the size, the stock and the layout, type what you're taking door to door and see how it looks — including hanging from the doorknob. Send us the design and we'll reply with the price.",
+    format: "Size",
+    shapes: { clasico: "Classic", angosto: "Slim", grande: "Large" },
+    shapeHelp: "The classic 4-1/4 × 11 in is the one most people hand out: it reads from the sidewalk.",
+    hole: "Die cut",
+    holes: { redondo: "Hole and slit", llave: "Keyhole", ranura: "Notch" },
+    holeHelp: "The hole is 1-3/16 in, the size that fits almost any doorknob. The slit is how it goes on. We contour-cut it on a plotter: the shape costs no die, so if you want a different one, tell us.",
+    corners: "Corners",
+    cornerOpts: { rectas: "Square", redondas: "Rounded" },
+    paper: "Material",
+    paperHelp: "Both are card stock: for handing out the same day. If it's going to stay on the door for weeks, the sun and the rain will wrinkle it.",
+    thick: "Thickness",
+    thicks: { grueso: "14 pt card stock", extra: "16 pt card stock" },
+    thickHelp: {
+      grueso: "14 pt. Solid: it won't fold in the wind while it hangs.",
+      extra: "16 pt. Stiffer, for the large size or if it carries a stub.",
+    },
+    print: "Printing",
+    sides: "Sides",
+    sideOpts: { una: "Single-sided", dos: "Double-sided" },
+    sideHelp: "The back faces the door: it's read when someone takes the hanger off.",
+    stub: "Tear-off stub",
+    stubOpts: { no: "No stub", si: "With stub" },
+    stubHelp: "The stub is perforated 2 in from the bottom: your neighbor rips it off and keeps your phone number or the coupon. The perforation is done by a partner shop and adds days to the delivery.",
+    stubText: "What the stub says",
+    stubPh: "E.g. 10% off with this stub",
+    defStub: "10% off with this stub",
+    design: "Layout",
+    tpls: { oferta: "Offer", servicios: "Services", aviso: "Notice", foto: "Big photo", tipografica: "Type only" },
+    type: "Typeface",
+    types: { moderna: "Modern", clasica: "Classic", tecnica: "Technical", sencilla: "Simple" },
+    accent: "Accent color",
+    bg: "Background",
+    bgs: { papel: "White stock", color: "Accent color", oscuro: "Dark" },
+    image: "Image",
+    images: { foto: "Space for a photo", color: "Color block" },
+    imageHelp: "We'll leave the space marked and you can",
+    imageCta: "send us the photo on WhatsApp",
+    imageWa: "Hi, I want to print door hangers. I'll send you the photo and the logo.",
+    photoBox: "YOUR PHOTO",
+    noticeLbl: "NOTICE",
+    words: "What you're handing out",
+    business: "Business name",
+    businessPh: "E.g. Your Business",
+    defBusiness: "Your Business",
+    headline: "Headline",
+    headlinePh: "E.g. Roof and driveway washing",
+    defHeadline: "Roof and driveway washing",
+    sub: "Second line",
+    subPh: "E.g. We're working on your street",
+    defSub: "We're working on your street",
+    offer: "The part that stands out",
+    offerPh: "E.g. 20% off this week",
+    defOffer: "20% off this week",
+    details: "Three details",
+    d1Ph: "E.g. Free estimate",
+    defD1: "Free estimate",
+    d2Ph: "E.g. Work guaranteed",
+    defD2: "Work guaranteed",
+    d3Ph: "E.g. Service within 24 hours",
+    defD3: "Service within 24 hours",
+    biz: "Your details",
+    phone: "Phone",
+    phonePh: "E.g. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Website or social handle",
+    webPh: "E.g. yourbusiness.com",
+    defWeb: "yourbusiness.com",
+    address: "Address",
+    addressPh: "E.g. 123 NW 1st St, Miami, FL",
+    defAddress: "123 NW 1st St, Miami, FL",
+    back: "Back",
+    backs: { info: "More information", cupon: "Tear-off coupon", logo: "Logo in color" },
+    backHelp: "The back is only printed if you choose double-sided.",
+    coupon: "Show this coupon",
+    order: "Your order",
+    qty: "Quantity",
+    qtyHelp: "To cover a neighborhood, 250 or 500. From 50 up.",
+    guides: "Cut guides",
+    guidesOn: "Red line: the die cut and the bleed, where the blade goes. Blue line: the safe area, and where the part people can read starts below the hole.",
+    door: "On the door",
+    doorOn: "Hanging from the knob, to scale. The top half is what sits at eye level: that's where the headline goes.",
+    views: { ambas: "View: both sides", frente: "View: front only", reverso: "View: back only" },
+    viewHelp: "Change the view",
+    approx: "Approximate preview · printed color varies a little from the screen",
+    front: "Front",
+    backLbl: "Back",
+    price: "Price: we send it with your quote, in under 24 hours. It depends on the run, the material and the finish.",
+    cta: "Quote these hangers",
+    wa: "Send on WhatsApp",
+    notesPh: "When you need them, which area you're covering, whether your design is already done…",
+    summary: "Door hanger builder design",
+    sFormat: "Size",
+    sHole: "Die cut",
+    sCorners: "Corners",
+    sPaper: "Material",
+    sThick: "Thickness",
+    sSides: "Sides",
+    sStub: "Tear-off stub",
+    sDesign: "Layout",
+    sType: "Typeface",
+    sAccent: "Accent color",
+    sBg: "Background",
+    sImage: "Image",
+    sWords: "Copy",
+    sBiz: "Details",
+    sBack: "Back",
+    sQty: "Quantity",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in these door hangers:",
+    preview: "Door hanger preview",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  stocks: STOCKS.map((s) => ({ id: s.id, base: s.base, edge: s.edge, ink: s.ink, sub: s.sub, tex: s.tex, name: s[lang] })),
+  accents: ACCENTS.map((a) => ({ id: a.id, hex: a.hex, name: a[lang] })),
+  shapes: c.shapes,
+  holes: c.holes,
+  corners: c.cornerOpts,
+  thicks: c.thicks,
+  thickHelp: c.thickHelp,
+  sides: c.sideOpts,
+  stubOpts: c.stubOpts,
+  tpls: c.tpls,
+  types: c.types,
+  bgs: c.bgs,
+  images: c.images,
+  backs: c.backs,
+  views: c.views,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    photoBox: c.photoBox,
+    noticeLbl: c.noticeLbl,
+    coupon: c.coupon,
+    front: c.front,
+    backLbl: c.backLbl,
+    approx: c.approx,
+    guidesOn: c.guidesOn,
+    doorOn: c.doorOn,
+    summary: c.summary,
+    sFormat: c.sFormat,
+    sHole: c.sHole,
+    sCorners: c.sCorners,
+    sPaper: c.sPaper,
+    sThick: c.sThick,
+    sSides: c.sSides,
+    sStub: c.sStub,
+    sDesign: c.sDesign,
+    sType: c.sType,
+    sAccent: c.sAccent,
+    sBg: c.sBg,
+    sImage: c.sImage,
+    sWords: c.sWords,
+    sBiz: c.sBiz,
+    sBack: c.sBack,
+    sQty: c.sQty,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+    preview: c.preview,
+    yes: lang === "es" ? "Sí" : "Yes",
+    no: lang === "es" ? "No" : "No",
+  },
+};
+const waPhoto = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.imageWa)}`;
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+const TPLS = Object.keys(c.tpls);
+---
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" />
+
+<section class="section section--flush" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb dh" data-hanger data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage">
+        <canvas class="nb__canvas dh__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-guides aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.guides}
+          </button>
+          <button type="button" class="nb__tool" data-door aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.door}
+          </button>
+          <button type="button" class="nb__tool dh__view" data-view title={c.viewHelp}>{c.views.ambas}</button>
+        </div>
+        <p class="nb__approx" data-approx>{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.format}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.format}>
+            {seg("formato", c.shapes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help"><b data-size-out></b> · {c.shapeHelp}</p>
+          <p class="tb__sub">{c.hole}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.hole}>
+            {seg("troquel", c.holes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.holeHelp}</p>
+          <p class="tb__sub">{c.corners}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.corners}>
+            {seg("esquinas", c.cornerOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.paper}</legend>
+          <div class="tb__mats">
+            {STOCKS.map((s) => (
+              <label class="tb__mat">
+                <input type="radio" name="papel" value={s.id} checked={s.id === "brillante"} />
+                <i style={`--c:${s.sw}`} aria-hidden="true"></i>
+                <span>{s[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help">{c.paperHelp}</p>
+          <p class="tb__sub">{c.thick}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.thick} aria-describedby="dh-thick-help" data-thick>
+            {seg("grosor", c.thicks).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="dh-thick-help" data-thick-help>{c.thickHelp.grueso}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.print}</legend>
+          <p class="tb__sub">{c.sides}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.sides}>
+            {seg("caras", c.sideOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.sideHelp}</p>
+          <p class="tb__sub">{c.stub}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.stub}>
+            {seg("talon", c.stubOpts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.stubHelp}</p>
+          <div class="field dh__stub" data-stub-field hidden>
+            <label for="dh-talon">{c.stubText}</label>
+            <input id="dh-talon" type="text" name="textoTalon" maxlength="40" autocomplete="off" placeholder={c.stubPh} value={c.defStub} />
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.design}</legend>
+          <div class="fb__pats dh__tpls" role="radiogroup" aria-label={c.design}>
+            {TPLS.map((id, i) => (
+              <label class="fb__pat dh__tpl">
+                <input type="radio" name="plantilla" value={id} checked={i === 0} />
+                <canvas width="160" height="300" aria-hidden="true"></canvas>
+                <span>{c.tpls[id as keyof typeof c.tpls]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.bg}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.bg}>
+            {seg("fondo", c.bgs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.type}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.type}>
+            {seg("tipografia", c.types).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.accent} · <span class="eb__picked" data-accent-name>{ACCENTS[0][lang]}</span></p>
+          <div class="eb__sws" role="radiogroup" aria-label={c.accent}>
+            {ACCENTS.map((a, i) => (
+              <label class="eb__sw" title={a[lang]}>
+                <input type="radio" name="acento" value={a.id} checked={i === 0} />
+                <i style={`--c:${a.hex}`} aria-hidden="true"></i>
+                <span class="sr-only">{a[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.image}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.image} data-image>
+            {seg("imagen", c.images).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.imageHelp} <a class="eb__link" href={waPhoto} target="_blank" rel="noopener">{c.imageCta}</a>.</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.words}</legend>
+          <div class="tb__words">
+            <div class="field">
+              <label for="dh-negocio">{c.business}</label>
+              <input id="dh-negocio" type="text" name="negocio" maxlength="30" autocomplete="off" placeholder={c.businessPh} value={c.defBusiness} />
+            </div>
+            <div class="field">
+              <label for="dh-titular">{c.headline}</label>
+              <input id="dh-titular" type="text" name="titular" maxlength="34" autocomplete="off" placeholder={c.headlinePh} value={c.defHeadline} />
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="dh-sub">{c.sub}</label>
+                <input id="dh-sub" type="text" name="subtitulo" maxlength="34" autocomplete="off" placeholder={c.subPh} value={c.defSub} />
+              </div>
+              <div class="field">
+                <label for="dh-oferta">{c.offer}</label>
+                <input id="dh-oferta" type="text" name="oferta" maxlength="24" autocomplete="off" placeholder={c.offerPh} value={c.defOffer} />
+              </div>
+            </div>
+            <p class="tb__sub">{c.details}</p>
+            <div class="dh__rows">
+              {[1, 2, 3].map((n) => (
+                <div class="field">
+                  <input
+                    type="text"
+                    name={`detalle${n}`}
+                    maxlength="28"
+                    autocomplete="off"
+                    placeholder={[c.d1Ph, c.d2Ph, c.d3Ph][n - 1]}
+                    value={[c.defD1, c.defD2, c.defD3][n - 1]}
+                    aria-label={`${c.details} ${n}`}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.biz}</legend>
+          <div class="tb__words">
+            <div class="form__row">
+              <div class="field">
+                <label for="dh-tel">{c.phone}</label>
+                <input id="dh-tel" type="text" name="tel" maxlength="24" autocomplete="off" placeholder={c.phonePh} value={c.defPhone} />
+              </div>
+              <div class="field">
+                <label for="dh-web">{c.web}</label>
+                <input id="dh-web" type="text" name="web" maxlength="30" autocomplete="off" placeholder={c.webPh} value={c.defWeb} />
+              </div>
+            </div>
+            <div class="field">
+              <label for="dh-dir">{c.address}</label>
+              <input id="dh-dir" type="text" name="direccion" maxlength="40" autocomplete="off" placeholder={c.addressPh} value={c.defAddress} />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.back}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.back} data-back>
+            {seg("reverso", c.backs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-back-help hidden>{c.backHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="nb__sizes">
+            {QTYS.map((q) => (
+              <button type="button" class="nb__pill" data-qty={q}>{q}</button>
+            ))}
+          </div>
+          <div class="tb__row">
+            <div class="field">
+              <label for="dh-cantidad">{c.qty}</label>
+              <input id="dh-cantidad" type="number" name="cantidad" min="50" max="100000" step="50" value="250" inputmode="numeric" aria-describedby="dh-qty-help" />
+            </div>
+          </div>
+          <p class="nb__help" id="dh-qty-help">{c.qtyHelp}</p>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="dh" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Stock = { id: string; name: string; base: string; edge: string; ink: string; sub: string; tex: string };
+  type Accent = { id: string; name: string; hex: string };
+  type Cfg = {
+    stocks: Stock[];
+    accents: Accent[];
+    shapes: Record<string, string>;
+    holes: Record<string, string>;
+    corners: Record<string, string>;
+    thicks: Record<string, string>;
+    thickHelp: Record<string, string>;
+    sides: Record<string, string>;
+    stubOpts: Record<string, string>;
+    tpls: Record<string, string>;
+    types: Record<string, string>;
+    bgs: Record<string, string>;
+    images: Record<string, string>;
+    backs: Record<string, string>;
+    views: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+  // Lo que hay que dibujar en una cara, ya resuelto desde el formulario
+  type Face = {
+    w: number; // pulgadas
+    h: number;
+    round: boolean;
+    hole: string;
+    stock: Stock;
+    accent: string;
+    type: string;
+    tpl: string;
+    bg: string;
+    photo: boolean;
+    stub: boolean;
+    t: Record<string, string>;
+    mini: boolean;
+  };
+
+  // Medidas de colgante, en pulgadas
+  const SHAPES: Record<string, { w: number; h: number }> = {
+    clasico: { w: 4.25, h: 11 },
+    angosto: { w: 3.5, h: 8.5 },
+    grande: { w: 4.25, h: 14 },
+  };
+  const BLEED = 0.125; // sangrado de imprenta
+  const SAFE = 0.1875; // margen de seguridad hacia dentro
+  const ROUND = 0.125; // radio de las esquinas redondeadas
+  // El troquel: agujero de 1-3/16 in con el centro a 1-1/4 in del borde
+  const HOLE = { d: 1.1875, cy: 1.25 };
+  const SLIT = { redondo: 0.34, llave: 0.72 };
+  const NOTCH = { w: 1.3, h: 1.95 };
+  const STUB = 2; // el talón va perforado a 2 in del borde
+  // La puerta, a escala: un trozo alrededor de la perilla
+  const DOOR = { w: 19, h: 24, knobX: 13.5, knobY: 7.8 };
+
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  // Luminancia relativa: decide si sobre ese color el texto va blanco o negro
+  const lum = (hex: string) =>
+    rgb(hex)
+      .map((v) => v / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)))
+      .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const onColor = (hex: string) => (lum(hex) > 0.42 ? "#0B0C0E" : "#FFFFFF");
+  const mix = (hex: string, t: number) => {
+    const to = t < 0 ? 0 : 255;
+    const a = Math.abs(t);
+    const [r, g, b] = rgb(hex).map((v) => Math.round(v + (to - v) * a));
+    return `rgb(${r},${g},${b})`;
+  };
+  // Azar con semilla: la textura del papel no cambia en cada redibujado
+
+  // Medidas en pulgadas, escritas como en la imprenta: 4-1/4 in
+  const fmtIn = (v: number) => {
+    const whole = Math.floor(v);
+    const fr = +(v - whole).toFixed(3);
+    const frac: Record<string, string> = { "0.5": "-1/2", "0.25": "-1/4", "0.75": "-3/4" };
+    const f = frac[String(fr)];
+    if (f) return `${whole}${f}`;
+    return fr ? String(+v.toFixed(2)) : String(whole);
+  };
+
+  const FAMS: Record<string, { title: string; body: string; track: string }> = {
+    moderna: { title: '800 {px}px "Saira", "Arial Narrow", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    clasica: { title: '700 {px}px "Playfair Display", Georgia, serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    tecnica: { title: '400 {px}px "Michroma", "Eurostile", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.02em" },
+    sencilla: { title: '600 {px}px "Instrument Sans", system-ui, sans-serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+  };
+  const LABEL = (px: number) => `400 ${px}px "Michroma", "Eurostile", sans-serif`;
+  const setTrack = (c: CanvasRenderingContext2D, v: string) => {
+    (c as unknown as { letterSpacing: string }).letterSpacing = v;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-hanger]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const guidesBtn = root.querySelector<HTMLButtonElement>("[data-guides]")!;
+    const doorBtn = root.querySelector<HTMLButtonElement>("[data-door]")!;
+    const viewBtn = root.querySelector<HTMLButtonElement>("[data-view]")!;
+    const tools = root.querySelector<HTMLElement>(".nb__tools")!;
+    const approx = root.querySelector<HTMLElement>("[data-approx]")!;
+    const sizeOut = form.querySelector<HTMLElement>("[data-size-out]")!;
+    const thickSeg = form.querySelector<HTMLElement>("[data-thick]")!;
+    const thickHelp = form.querySelector<HTMLElement>("[data-thick-help]")!;
+    const stubField = form.querySelector<HTMLElement>("[data-stub-field]")!;
+    const imageSeg = form.querySelector<HTMLElement>("[data-image]")!;
+    const backSeg = form.querySelector<HTMLElement>("[data-back]")!;
+    const backHelp = form.querySelector<HTMLElement>("[data-back-help]")!;
+    const accentName = form.querySelector<HTMLElement>("[data-accent-name]")!;
+    const qtyEl = form.querySelector<HTMLInputElement>("input[name='cantidad']")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    let guides = false;
+    let onDoor = false;
+    const VIEWS = ["ambas", "frente", "reverso"] as const;
+    let view: (typeof VIEWS)[number] = "ambas";
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const stock = () => cfg.stocks.find((s) => s.id === val("papel")) ?? cfg.stocks[0];
+    const accent = () => cfg.accents.find((a) => a.id === val("acento")) ?? cfg.accents[0];
+    const plastic = () => val("papel") === "plastico";
+    // El plástico tiene su propio calibre; la cartulina, el que elija el cliente
+    const thick = () => (plastic() ? "plastico" : val("grosor") === "plastico" ? "grueso" : val("grosor"));
+    const twoSided = () => val("caras") === "dos";
+    const stub = () => val("talon") === "si";
+    // El aviso y el diseño de solo texto no llevan hueco de imagen
+    const hasPhoto = () => val("plantilla") !== "aviso" && val("plantilla") !== "tipografica";
+    const qty = () => Math.max(50, Math.min(100000, Math.round(Number(qtyEl.value) || 250)));
+    const dims = () => SHAPES[val("formato")] ?? SHAPES.clasico;
+    const texts = () => ({
+      negocio: text("negocio"),
+      titular: text("titular"),
+      sub: text("subtitulo"),
+      oferta: text("oferta"),
+      d1: text("detalle1"),
+      d2: text("detalle2"),
+      d3: text("detalle3"),
+      tel: text("tel"),
+      web: text("web"),
+      direccion: text("direccion"),
+      talon: text("textoTalon"),
+    });
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const RADIOS = ["formato", "troquel", "esquinas", "papel", "grosor", "caras", "talon", "plantilla", "fondo", "tipografia", "acento", "imagen", "reverso"];
+    const FIELDS: Array<[string, number]> = [
+      ["negocio", 30],
+      ["titular", 34],
+      ["subtitulo", 34],
+      ["oferta", 24],
+      ["detalle1", 28],
+      ["detalle2", 28],
+      ["detalle3", 28],
+      ["tel", 24],
+      ["web", 30],
+      ["direccion", 40],
+      ["textoTalon", 40],
+    ];
+    const params = new URLSearchParams(location.search);
+    if (params.has("plantilla") && params.has("formato")) {
+      RADIOS.forEach((n) => setRadio(n, params.get(n)));
+      FIELDS.forEach(([n, max]) => {
+        const v = params.get(n);
+        if (v !== null) (form.elements.namedItem(n) as HTMLInputElement).value = v.slice(0, max);
+      });
+      const q = Number(params.get("cantidad"));
+      if (q >= 50 && q <= 100000) qtyEl.value = String(Math.round(q));
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams();
+      RADIOS.forEach((n) => p.set(n, val(n)));
+      FIELDS.forEach(([n]) => p.set(n, text(n)));
+      p.set("cantidad", String(qty()));
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Dibujo ----------
+    // Textura del material
+    const paper = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, st: Stock, s: number) => {
+      c.fillStyle = st.base;
+      c.fillRect(x, y, w, h);
+      if (st.tex === "brillo") {
+        const g = c.createLinearGradient(x, y + h, x + w, y);
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.44, "rgba(255,255,255,0)");
+        g.addColorStop(0.5, "rgba(255,255,255,0.55)");
+        g.addColorStop(0.56, "rgba(255,255,255,0)");
+        g.addColorStop(1, "rgba(180,200,215,0.16)");
+        c.fillStyle = g;
+        c.fillRect(x, y, w, h);
+      }
+      const sh = c.createLinearGradient(x, y, x, y + h);
+      sh.addColorStop(0, "rgba(255,255,255,0.12)");
+      sh.addColorStop(0.5, "rgba(255,255,255,0)");
+      sh.addColorStop(1, "rgba(11,12,14,0.06)");
+      c.fillStyle = sh;
+      c.fillRect(x, y, w, h);
+    };
+
+    // El contorno del colgante con el troquel ya restado: se rellena y se
+    // recorta con regla par-impar, así el agujero queda hueco de verdad.
+    const holePath = (x0: number, y0: number, s: number, o: Face) => {
+      const p = new Path2D();
+      const cx = x0 + (o.w / 2) * s;
+      if (o.hole === "ranura") {
+        // Muesca abierta: baja desde el borde y vuelve a subir
+        const hw = (NOTCH.w / 2) * s;
+        const deep = NOTCH.h * s;
+        p.moveTo(cx - hw, y0);
+        p.lineTo(cx - hw, y0 + deep - hw);
+        p.arc(cx, y0 + deep - hw, hw, Math.PI, 0, true);
+        p.lineTo(cx + hw, y0);
+        p.closePath();
+      } else {
+        // Agujero con su ranura: un solo contorno, del borde al círculo
+        const rad = (HOLE.d / 2) * s;
+        const cy = y0 + HOLE.cy * s;
+        const half = ((SLIT[o.hole as "redondo" | "llave"] ?? SLIT.redondo) / 2) * s;
+        const a = Math.asin(Math.min(0.98, half / rad));
+        p.moveTo(cx - half, y0);
+        p.lineTo(cx - half, cy - rad * Math.cos(a));
+        p.arc(cx, cy, rad, -Math.PI / 2 - a, -Math.PI / 2 + a, true);
+        p.lineTo(cx + half, y0);
+        p.closePath();
+      }
+      return p;
+    };
+    // El contorno completo: la tarjeta con el troquel restado
+    const outline = (x0: number, y0: number, s: number, o: Face) => {
+      const p = new Path2D();
+      p.roundRect(x0, y0, o.w * s, o.h * s, o.round ? ROUND * s : 0);
+      p.addPath(holePath(x0, y0, s, o));
+      return p;
+    };
+
+    // Dibuja una cara del colgante. El agujero se lleva la parte de arriba y el
+    // talón la de abajo: lo que queda en medio es lo que de verdad se lee.
+    const drawFace = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Face, back: string | null) => {
+      const { w, h } = o;
+      const X = (v: number) => x0 + v * s;
+      const Y = (v: number) => y0 + v * s;
+      const P = (v: number) => v * s;
+      const st = o.stock;
+      const acc = o.accent;
+      const uTop = o.hole === "ranura" ? NOTCH.h + 0.2 : HOLE.cy + HOLE.d / 2 + 0.2;
+      const stubH = o.stub ? Math.min(h * 0.2, STUB) : 0;
+      const uH = h - uTop - stubH; // la banda útil, debajo del troquel
+      const fu = Math.min(uH, w * 1.3); // unidad de texto: manda el lado corto
+      const m = 0.07 * fu;
+      const V = (k: number) => uTop + k * uH;
+
+      // ---- Fondo ----
+      paper(c, X(0), Y(0), P(w), P(h), st, s);
+      const dark = o.bg === "oscuro";
+      const colored = o.bg === "color";
+      if (dark || colored) {
+        c.fillStyle = dark ? "#14161A" : acc;
+        c.fillRect(X(0), Y(0), P(w), P(h));
+        c.save();
+        c.globalAlpha = 0.12;
+        c.globalCompositeOperation = "overlay";
+        paper(c, X(0), Y(0), P(w), P(h), st, s);
+        c.restore();
+      }
+      const ink = dark ? "#FFFFFF" : colored ? onColor(acc) : st.ink;
+      const sub = dark ? "#AEB5BD" : colored ? mix(onColor(acc), onColor(acc) === "#FFFFFF" ? -0.2 : 0.35) : st.sub;
+      const mark = colored ? ink : acc;
+      // Sobre una franja, el texto va del color del fondo del colgante
+      const onMark = colored ? acc : onColor(acc);
+
+      const fam = () => FAMS[o.type] ?? FAMS.moderna;
+      const make = (kind: "title" | "body" | "label", px: number) =>
+        kind === "label" ? LABEL(px) : fam()[kind].replace("{px}", String(px));
+
+      // Un renglón de texto; en las miniaturas se sustituye por una barra
+      const put = (
+        txt: string,
+        kind: "title" | "body" | "label",
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string,
+        align: CanvasTextAlign = "left",
+        upper = false
+      ) => {
+        if (!txt) return 0;
+        const px = Math.max(1, P(sizeIn));
+        const maxPx = P(maxIn);
+        const t = upper ? txt.toLocaleUpperCase() : txt;
+        setTrack(c, kind === "label" ? "0.1em" : fam().track);
+        c.font = make(kind, px);
+        let wd = c.measureText(t).width;
+        if (wd > maxPx && wd > 0) {
+          c.font = make(kind, px * (maxPx / wd));
+          wd = maxPx;
+        }
+        c.fillStyle = color;
+        c.textAlign = align;
+        c.textBaseline = "alphabetic";
+        if (o.mini) {
+          const bh = Math.max(1, px * 0.6);
+          const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+          c.fillRect(bx, Y(yIn) - bh, wd, bh);
+        } else {
+          c.fillText(t, X(xIn), Y(yIn));
+        }
+        setTrack(c, "0px");
+        return wd;
+      };
+
+      // Titular: parte en dos renglones antes que achicarse hasta no leerse
+      const headline = (
+        txt: string,
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string,
+        align: CanvasTextAlign = "left",
+        mid = false,
+        maxHIn = 0
+      ) => {
+        if (!txt) return yIn;
+        const maxPx = P(maxIn);
+        let px = Math.max(1, P(sizeIn));
+        c.font = make("title", px);
+        const words = txt.split(/\s+/);
+        let lines = [txt];
+        if (words.length > 1 && c.measureText(txt).width > maxPx) {
+          // El corte que deja los renglones más parejos
+          let best = 1;
+          let diff = Infinity;
+          for (let i = 1; i < words.length; i++) {
+            const a = c.measureText(words.slice(0, i).join(" ")).width;
+            const b = c.measureText(words.slice(i).join(" ")).width;
+            if (Math.abs(a - b) < diff) {
+              diff = Math.abs(a - b);
+              best = i;
+            }
+          }
+          lines = [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+        }
+        const widest = Math.max(...lines.map((l) => c.measureText(l).width));
+        if (widest > maxPx) px *= maxPx / widest;
+        c.font = make("title", px);
+        if (maxHIn && lines.length * px * 1.06 > P(maxHIn)) {
+          px *= P(maxHIn) / (lines.length * px * 1.06);
+          c.font = make("title", px);
+        }
+        const lh = px * 1.06;
+        const baseY = Y(yIn) - (mid ? ((lines.length - 1) * lh) / 2 : 0);
+        lines.forEach((l, i) => {
+          const ly = baseY + i * lh;
+          c.fillStyle = color;
+          c.textAlign = align;
+          c.textBaseline = "alphabetic";
+          if (o.mini) {
+            const wd = c.measureText(l).width;
+            const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+            c.fillRect(bx, ly - px * 0.62, wd, px * 0.62);
+          } else {
+            c.fillText(l, X(xIn), ly);
+          }
+        });
+        return (baseY + (lines.length - 1) * lh - y0) / s;
+      };
+
+      const band = (xIn: number, yIn: number, wIn: number, hIn: number, color: string = mark) => {
+        c.fillStyle = color;
+        c.fillRect(X(xIn), Y(yIn), P(wIn), P(hIn));
+      };
+      // Hueco de la foto: rayado en diagonal con su rótulo, o un bloque de color
+      const image = (xIn: number, yIn: number, wIn: number, hIn: number) => {
+        const bx = X(xIn);
+        const by = Y(yIn);
+        const bw = P(wIn);
+        const bh = P(hIn);
+        if (!o.photo) {
+          c.fillStyle = mark;
+          c.fillRect(bx, by, bw, bh);
+          return;
+        }
+        c.save();
+        c.beginPath();
+        c.rect(bx, by, bw, bh);
+        c.clip();
+        c.fillStyle = dark ? "#23262B" : colored ? mix(acc, onColor(acc) === "#FFFFFF" ? -0.18 : 0.2) : "#E4E7EA";
+        c.fillRect(bx, by, bw, bh);
+        c.strokeStyle = dark ? "rgba(255,255,255,0.1)" : "rgba(11,12,14,0.09)";
+        c.lineWidth = Math.max(1, P(0.02));
+        const step = Math.max(6, P(0.26));
+        c.beginPath();
+        for (let i = -bh; i < bw; i += step) {
+          c.moveTo(bx + i, by + bh);
+          c.lineTo(bx + i + bh, by);
+        }
+        c.stroke();
+        c.restore();
+        if (!o.mini) {
+          const lbl = Math.min(hIn * 0.12, wIn * 0.075);
+          put(cfg.copy.photoBox, "label", lbl, xIn + wIn / 2, yIn + hIn / 2 + lbl * 0.4, wIn * 0.74, dark ? "#8D949C" : colored ? sub : "#8A9099", "center");
+        }
+      };
+      // Lista con marca de verificación en el color de acento
+      const ticks = (rows: string[], xIn: number, yIn: number, stepIn: number, sizeIn: number, maxIn: number) => {
+        rows.forEach((r, i) => {
+          const ty = yIn + i * stepIn;
+          const rad = sizeIn * 0.34;
+          c.fillStyle = mark;
+          c.beginPath();
+          c.arc(X(xIn + rad), Y(ty) - P(sizeIn * 0.26), P(rad), 0, Math.PI * 2);
+          c.fill();
+          if (!o.mini) {
+            c.strokeStyle = onMark;
+            c.lineWidth = Math.max(1, P(rad * 0.26));
+            c.lineCap = "round";
+            c.lineJoin = "round";
+            c.beginPath();
+            c.moveTo(X(xIn + rad * 0.55), Y(ty) - P(sizeIn * 0.26));
+            c.lineTo(X(xIn + rad * 0.88), Y(ty) - P(sizeIn * 0.26) + P(rad * 0.38));
+            c.lineTo(X(xIn + rad * 1.45), Y(ty) - P(sizeIn * 0.26) - P(rad * 0.45));
+            c.stroke();
+          }
+          put(r, "body", sizeIn, xIn + rad * 2.6, ty, maxIn - rad * 2.6, sub);
+        });
+      };
+
+      const details = [o.t.d1, o.t.d2, o.t.d3].filter(Boolean);
+      const contact = [o.t.tel, o.t.web].filter(Boolean).join("   ·   ");
+
+      // ---- Reverso: queda contra la puerta, se lee al descolgarlo ----
+      if (back) {
+        if (back === "logo") {
+          if (!colored && !dark) {
+            c.fillStyle = acc;
+            c.fillRect(X(0), Y(0), P(w), P(h));
+          }
+          const bgInk = colored || dark ? ink : onColor(acc);
+          headline(o.t.negocio, 0.095 * fu, w / 2, V(0.4), w - m * 2, bgInk, "center", true, uH * 0.16);
+          if (o.t.sub) put(o.t.sub, "body", 0.03 * fu, w / 2, V(0.52), w - m * 2, bgInk, "center");
+          if (o.t.tel) put(o.t.tel, "title", 0.046 * fu, w / 2, V(0.64), w - m * 2, bgInk, "center");
+          if (o.t.web) put(o.t.web, "body", 0.03 * fu, w / 2, V(0.71), w - m * 2, bgInk, "center");
+        } else if (back === "cupon") {
+          put(o.t.negocio, "label", 0.026 * fu, w / 2, V(0.06), w - m * 2, sub, "center");
+          c.save();
+          c.setLineDash([P(0.12), P(0.09)]);
+          c.lineWidth = Math.max(1, P(0.025));
+          c.strokeStyle = mark;
+          c.strokeRect(X(m), Y(V(0.14)), P(w - m * 2), P(uH * 0.36));
+          c.restore();
+          headline(o.t.oferta, 0.12 * fu, w / 2, V(0.3), w - m * 3, mark, "center", true, uH * 0.16);
+          put(cfg.copy.coupon, "body", 0.028 * fu, w / 2, V(0.44), w - m * 3, sub, "center");
+          details.forEach((d, i) => put(d, "body", 0.028 * fu, w / 2, V(0.62 + i * 0.055), w - m * 2, sub, "center"));
+          put(o.t.direccion, "body", 0.026 * fu, w / 2, V(0.86), w - m * 2, sub, "center");
+          put(contact, "body", 0.028 * fu, w / 2, V(0.94), w - m * 2, ink, "center");
+        } else {
+          headline(o.t.titular, 0.062 * fu, m, V(0.07), w - m * 2, ink, "left", false, uH * 0.12);
+          band(m, V(0.13), w * 0.18, 0.015 * fu);
+          ticks(details, m, V(0.25), 0.1 * fu, 0.03 * fu, w - m * 2);
+          if (o.t.sub) put(o.t.sub, "body", 0.03 * fu, m, V(0.5), w - m * 2, sub);
+          if (o.photo) image(m, V(0.56), w - m * 2, uH * 0.2);
+          put(o.t.direccion, "body", 0.028 * fu, m, V(0.86), w - m * 2, sub);
+          band(0, uTop + uH - 0.14 * fu, w, 0.14 * fu);
+          put(o.t.negocio, "title", 0.042 * fu, m, uTop + uH - 0.082 * fu, w - m * 2, onMark);
+          put(contact, "body", 0.028 * fu, m, uTop + uH - 0.035 * fu, w - m * 2, onMark);
+        }
+        return;
+      }
+
+      // ---- Frente: cinco diseños, todos dentro de la banda útil ----
+      if (o.tpl === "oferta") {
+        put(o.t.negocio, "label", 0.026 * fu, w / 2, V(0.04), w - m * 2, sub, "center");
+        band(0, V(0.08), w, uH * 0.2);
+        headline(o.t.oferta, 0.17 * fu, w / 2, V(0.18), w - m * 2, onMark, "center", true, uH * 0.17);
+        const last = headline(o.t.titular, 0.075 * fu, w / 2, V(0.37), w - m * 2, ink, "center", false, uH * 0.12);
+        if (o.t.sub) put(o.t.sub, "body", 0.03 * fu, w / 2, last + 0.055 * fu, w - m * 2, sub, "center");
+        if (o.photo) image(m, V(0.54), w - m * 2, uH * 0.16);
+        ticks(details, m, V(0.78), 0.06 * fu, 0.028 * fu, w - m * 2);
+        band(0, uTop + uH - 0.13 * fu, w, 0.13 * fu);
+        put(o.t.tel, "title", 0.046 * fu, w / 2, uTop + uH - 0.075 * fu, w - m * 2, onMark, "center");
+        put(o.t.web, "body", 0.028 * fu, w / 2, uTop + uH - 0.03 * fu, w - m * 2, onMark, "center");
+      } else if (o.tpl === "servicios") {
+        put(o.t.negocio, "title", 0.055 * fu, m, V(0.05), w - m * 2, mark);
+        band(m, V(0.08), w * 0.18, 0.016 * fu);
+        const last = headline(o.t.titular, 0.08 * fu, m, V(0.18), w - m * 2, ink, "left", false, uH * 0.14);
+        if (o.t.sub) put(o.t.sub, "body", 0.03 * fu, m, last + 0.05 * fu, w - m * 2, sub);
+        if (o.photo) image(0, V(0.34), w, uH * 0.18);
+        ticks(details, m, V(0.62), 0.075 * fu, 0.03 * fu, w - m * 2);
+        if (o.t.oferta) {
+          band(m, V(0.82), w - m * 2, 0.085 * fu);
+          put(o.t.oferta, "title", 0.04 * fu, w / 2, V(0.82) + 0.06 * fu, w - m * 3, onMark, "center");
+        }
+        band(0, uTop + uH - 0.13 * fu, w, 0.13 * fu, dark ? "#23262B" : colored ? ink : mix(acc, -0.25));
+        const footInk = colored ? acc : "#FFFFFF";
+        put(o.t.tel, "title", 0.046 * fu, w / 2, uTop + uH - 0.075 * fu, w - m * 2, footInk, "center");
+        put(o.t.web, "body", 0.028 * fu, w / 2, uTop + uH - 0.03 * fu, w - m * 2, footInk, "center");
+      } else if (o.tpl === "aviso") {
+        // Un aviso formal: el recuadro hace que se lea como papel oficial
+        c.strokeStyle = mark;
+        c.lineWidth = Math.max(1, P(0.022));
+        c.strokeRect(X(m * 0.7), Y(V(0.02)), P(w - m * 1.4), P(uH * 0.96));
+        band(m * 0.7, V(0.02), w - m * 1.4, 0.1 * fu);
+        put(cfg.copy.noticeLbl, "label", 0.034 * fu, w / 2, V(0.02) + 0.068 * fu, w - m * 3, onMark, "center");
+        const last = headline(o.t.titular, 0.075 * fu, w / 2, V(0.2), w - m * 3, ink, "center", false, uH * 0.14);
+        if (o.t.sub) put(o.t.sub, "body", 0.032 * fu, w / 2, last + 0.06 * fu, w - m * 3, sub, "center");
+        details.forEach((d, i) => {
+          const ty = V(0.46) + i * 0.08 * fu;
+          c.fillStyle = mark;
+          c.fillRect(X(m * 1.6), Y(ty) - P(0.028 * fu), P(0.03 * fu), P(0.03 * fu));
+          put(d, "body", 0.03 * fu, m * 1.6 + 0.055 * fu, ty, w - m * 3.2 - 0.055 * fu, ink);
+        });
+        if (o.t.oferta) put(o.t.oferta, "title", 0.045 * fu, w / 2, V(0.74), w - m * 3, mark, "center");
+        c.strokeStyle = colored || dark ? "rgba(255,255,255,0.4)" : "rgba(11,12,14,0.25)";
+        c.lineWidth = 1;
+        c.beginPath();
+        c.moveTo(X(m * 1.6), Y(V(0.82)));
+        c.lineTo(X(w - m * 1.6), Y(V(0.82)));
+        c.stroke();
+        put(o.t.negocio, "title", 0.045 * fu, w / 2, V(0.88), w - m * 3, ink, "center");
+        put(contact, "body", 0.03 * fu, w / 2, V(0.94), w - m * 3, sub, "center");
+      } else if (o.tpl === "foto") {
+        image(0, uTop, w, uH * 0.46);
+        // Franja oscura al pie de la foto: ahí el titular se lee encima
+        c.fillStyle = dark || colored ? "rgba(0,0,0,0.42)" : "rgba(11,12,14,0.58)";
+        c.fillRect(X(0), Y(V(0.28)), P(w), P(uH * 0.18));
+        put(o.t.negocio, "label", 0.026 * fu, w / 2, V(0.33), w - m * 2, "rgba(255,255,255,0.82)", "center");
+        headline(o.t.titular, 0.085 * fu, w / 2, V(0.4), w - m * 2, "#FFFFFF", "center", true, uH * 0.1);
+        if (o.t.sub) put(o.t.sub, "body", 0.032 * fu, w / 2, V(0.55), w - m * 2, sub, "center");
+        ticks(details, m, V(0.64), 0.07 * fu, 0.03 * fu, w - m * 2);
+        if (o.t.oferta) {
+          band(m, V(0.82), w - m * 2, 0.095 * fu);
+          put(o.t.oferta, "title", 0.045 * fu, w / 2, V(0.82) + 0.068 * fu, w - m * 3, onMark, "center");
+        }
+        band(0, uTop + uH - 0.12 * fu, w, 0.12 * fu);
+        put(contact, "title", 0.04 * fu, w / 2, uTop + uH - 0.045 * fu, w - m * 2, onMark, "center");
+      } else {
+        // tipografica: sin imagen, todo el peso lo lleva el texto
+        band(0, uTop, w, 0.1 * fu);
+        put(o.t.negocio, "label", 0.028 * fu, m, uTop + 0.065 * fu, w - m * 2, onMark);
+        const last = headline(o.t.titular, 0.13 * fu, m, V(0.2), w - m * 2, ink, "left", false, uH * 0.2);
+        if (o.t.sub) put(o.t.sub, "body", 0.034 * fu, m, last + 0.07 * fu, w - m * 2, sub);
+        band(m, V(0.42), w * 0.24, 0.016 * fu);
+        ticks(details, m, V(0.54), 0.08 * fu, 0.032 * fu, w - m * 2);
+        if (o.t.oferta) {
+          band(0, V(0.76), w, 0.1 * fu);
+          put(o.t.oferta, "title", 0.048 * fu, w / 2, V(0.76) + 0.07 * fu, w - m * 2, onMark, "center");
+        }
+        put(o.t.tel, "title", 0.055 * fu, m, V(0.89), w - m * 2, mark);
+        put([o.t.web, o.t.direccion].filter(Boolean).join("   ·   "), "body", 0.026 * fu, m, V(0.95), w - m * 2, sub);
+      }
+    };
+
+    // El talón: la perforación y lo que va impreso en él
+    const drawStub = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Face, printed: boolean) => {
+      const stubH = Math.min(o.h * 0.2, STUB);
+      const top = y0 + (o.h - stubH) * s;
+      const uTop = o.hole === "ranura" ? NOTCH.h + 0.2 : HOLE.cy + HOLE.d / 2 + 0.2;
+      const fu = Math.min(o.h - uTop - stubH, o.w * 1.3);
+      c.save();
+      c.strokeStyle = "rgba(11,12,14,0.32)";
+      c.lineWidth = 1;
+      c.setLineDash([3, 3]);
+      c.beginPath();
+      c.moveTo(x0, top);
+      c.lineTo(x0 + o.w * s, top);
+      c.stroke();
+      c.restore();
+      if (!printed || o.mini) return;
+      const dark = o.bg === "oscuro";
+      const colored = o.bg === "color";
+      const ink = dark ? "#FFFFFF" : colored ? onColor(o.accent) : o.stock.ink;
+      const sub = dark ? "#AEB5BD" : colored ? mix(onColor(o.accent), onColor(o.accent) === "#FFFFFF" ? -0.2 : 0.35) : o.stock.sub;
+      const fam = FAMS[o.type] ?? FAMS.moderna;
+      const line = (txt: string, font: string, px: number, y: number, color: string) => {
+        if (!txt) return;
+        c.font = font.replace("{px}", String(px));
+        c.fillStyle = color;
+        c.textAlign = "center";
+        c.textBaseline = "alphabetic";
+        const max = (o.w - 0.3) * s;
+        const wd = c.measureText(txt).width;
+        if (wd > max) c.font = font.replace("{px}", String(px * (max / wd)));
+        c.fillText(txt, x0 + (o.w * s) / 2, top + y);
+      };
+      const hPx = stubH * s;
+      line(o.t.talon, fam.title, Math.max(7, fu * s * 0.044), hPx * 0.42, ink);
+      line(o.t.negocio, fam.body, Math.max(6, fu * s * 0.03), hPx * 0.64, sub);
+      line([o.t.tel, o.t.web].filter(Boolean).join("   ·   "), fam.body, Math.max(6, fu * s * 0.032), hPx * 0.86, ink);
+    };
+
+    // Un colgante completo: sombra, troquel, diseño, talón y guías
+    const drawHanger = (x0: number, y0: number, s: number, o: Face, back: string | null) => {
+      const shape = outline(x0, y0, s, o);
+
+      ctx.save();
+      ctx.shadowColor = "rgba(18,26,36,0.4)";
+      ctx.shadowBlur = 20;
+      ctx.shadowOffsetY = 9;
+      ctx.fillStyle = o.stock.edge;
+      ctx.fill(shape, "evenodd");
+      ctx.restore();
+
+      ctx.save();
+      ctx.clip(shape, "evenodd");
+      drawFace(ctx, x0, y0, s, o, back);
+      ctx.restore();
+      if (o.stub) drawStub(ctx, x0, y0, s, o, !back);
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(11,12,14,0.26)";
+      ctx.stroke(shape);
+
+      if (guides) {
+        const r = o.round ? ROUND * s : 0;
+        const wPx = o.w * s;
+        const hPx = o.h * s;
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = "#ED1B24";
+        ctx.beginPath();
+        ctx.roundRect(x0 - BLEED * s, y0 - BLEED * s, wPx + BLEED * 2 * s, hPx + BLEED * 2 * s, r ? r + BLEED * s : 0);
+        ctx.stroke();
+        // La línea del troquel, la que lleva la plata del agujero
+        ctx.stroke(holePath(x0, y0, s, o));
+        ctx.strokeStyle = "#0094DA";
+        ctx.beginPath();
+        ctx.roundRect(x0 + SAFE * s, y0 + SAFE * s, wPx - SAFE * 2 * s, hPx - SAFE * 2 * s, r ? Math.max(0, r - SAFE * s) : 0);
+        ctx.stroke();
+        // Dónde empieza lo que se puede leer, debajo del troquel
+        const uTop = o.hole === "ranura" ? NOTCH.h + 0.2 : HOLE.cy + HOLE.d / 2 + 0.2;
+        ctx.beginPath();
+        ctx.moveTo(x0 + SAFE * s, y0 + uTop * s);
+        ctx.lineTo(x0 + wPx - SAFE * s, y0 + uTop * s);
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+
+    // La puerta, a escala: el panel, la perilla y su sombra
+    const drawDoor = (x0: number, y0: number, s: number) => {
+      const W = DOOR.w * s;
+      const H = DOOR.h * s;
+      const g = ctx.createLinearGradient(x0, y0, x0 + W, y0);
+      g.addColorStop(0, "#E8E3D8");
+      g.addColorStop(0.55, "#F4F1E9");
+      g.addColorStop(1, "#DAD4C6");
+      ctx.fillStyle = g;
+      ctx.fillRect(x0, y0, W, H);
+      // El panel rehundido de la puerta
+      ctx.save();
+      ctx.strokeStyle = "rgba(120,110,92,0.45)";
+      ctx.lineWidth = Math.max(1, 0.08 * s);
+      ctx.beginPath();
+      ctx.roundRect(x0 + 1.6 * s, y0 + 1.6 * s, W - 9 * s, H - 3.2 * s, 0.3 * s);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,0.6)";
+      ctx.lineWidth = Math.max(1, 0.06 * s);
+      ctx.beginPath();
+      ctx.roundRect(x0 + 1.9 * s, y0 + 1.9 * s, W - 9.6 * s, H - 3.8 * s, 0.3 * s);
+      ctx.stroke();
+      ctx.restore();
+      // El canto de la puerta y el marco, a la derecha
+      ctx.fillStyle = "rgba(90,82,68,0.18)";
+      ctx.fillRect(x0 + W - 2.6 * s, y0, 0.3 * s, H);
+      ctx.fillStyle = "rgba(42,38,32,0.5)";
+      ctx.fillRect(x0 + W - 2.3 * s, y0, 0.25 * s, H);
+      ctx.fillStyle = "#CFC8B8";
+      ctx.fillRect(x0 + W - 2.05 * s, y0, 2.05 * s, H);
+    };
+    // La perilla va encima del colgante: el papel cuelga del cuello
+    const drawKnob = (x0: number, y0: number, s: number) => {
+      const kx = x0 + DOOR.knobX * s;
+      const ky = y0 + DOOR.knobY * s;
+      ctx.save();
+      ctx.shadowColor = "rgba(30,26,20,0.35)";
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 4;
+      const g = ctx.createRadialGradient(kx - 0.3 * s, ky - 0.35 * s, 0.1 * s, kx, ky, 1.1 * s);
+      g.addColorStop(0, "#FBF6E6");
+      g.addColorStop(0.45, "#D9C48A");
+      g.addColorStop(1, "#9A8148");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(kx, ky, 1.05 * s, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = "rgba(90,72,34,0.5)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(kx, ky, 1.05 * s, 0, Math.PI * 2);
+      ctx.stroke();
+    };
+
+    const face = (mini: boolean, tpl?: string): Face => ({
+      ...dims(),
+      round: val("esquinas") === "redondas",
+      hole: val("troquel"),
+      stock: stock(),
+      accent: accent().hex,
+      type: val("tipografia"),
+      tpl: tpl ?? val("plantilla"),
+      bg: val("fondo"),
+      photo: val("imagen") === "foto",
+      stub: stub(),
+      t: texts(),
+      mini,
+    });
+
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const o = face(false);
+      const { w, h } = o;
+      const two = twoSided();
+      const top = tools.offsetHeight + 24;
+
+      // ---- Colgado de la perilla ----
+      if (onDoor) {
+        const keep = top + 44 + (approx.offsetParent ? 26 : 0);
+        const s = Math.min((cw - 44) / (DOOR.w + 0.4), (ch - keep) / (DOOR.h + 0.4));
+        const dx = (cw - DOOR.w * s) / 2;
+        const dy = Math.max(top, 16 + (ch - DOOR.h * s - 44) / 2);
+        drawDoor(dx, dy, s);
+        // El agujero del colgante queda justo en la perilla
+        const holeCy = o.hole === "ranura" ? NOTCH.h - NOTCH.w / 2 : HOLE.cy;
+        const x0 = dx + (DOOR.knobX - w / 2) * s;
+        const y0 = dy + (DOOR.knobY - holeCy) * s;
+        drawHanger(x0, y0, s, o, null);
+        drawKnob(dx, dy, s);
+        canvas.setAttribute(
+          "aria-label",
+          `${cfg.copy.preview}: ${fmtIn(w)} × ${fmtIn(h)} in · ${cfg.copy.doorOn}`
+        );
+        return;
+      }
+
+      // ---- Las caras, una al lado de la otra ----
+      const faces: Array<string | null> = !two ? [null] : view === "frente" ? [null] : view === "reverso" ? [val("reverso")] : [null, val("reverso")];
+      const n = faces.length;
+      const gap = w * 0.3;
+      const pad = guides ? 0.3 : 0.06;
+      const fit = (cols: number) => {
+        const tw = w * cols + gap * (cols - 1);
+        const keep = top + 54 + (approx.offsetParent ? 34 : 0);
+        return Math.min((cw - 44) / (tw + pad * 2), (ch - keep) / (h + pad * 2));
+      };
+      const s = fit(n);
+      const groupW = w * n + gap * (n - 1);
+      const x0 = (cw - groupW * s) / 2;
+      const y0 = Math.max(top, 18 + (ch - h * s - 54) / 2);
+      const at = (i: number) => x0 + i * (w + gap) * s;
+
+      faces.forEach((back, i) => drawHanger(at(i), y0, s, o, back));
+
+      // Rótulo de cada cara, debajo
+      if (n > 1 || view !== "ambas") {
+        ctx.fillStyle = "rgba(11,12,14,0.6)";
+        ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "alphabetic";
+        faces.forEach((back, i) => ctx.fillText(back ? cfg.copy.backLbl : cfg.copy.front, at(i) + (w * s) / 2, y0 + h * s + 16));
+      }
+
+      // Cota del ancho, debajo del colgante
+      const gy = y0 + h * s + (n > 1 || view !== "ambas" ? 32 : 20);
+      const tick = 5;
+      ctx.strokeStyle = "rgba(11,12,14,0.5)";
+      ctx.fillStyle = "rgba(11,12,14,0.66)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x0, gy);
+      ctx.lineTo(x0 + w * s, gy);
+      ctx.moveTo(x0, gy - tick);
+      ctx.lineTo(x0, gy + tick);
+      ctx.moveTo(x0 + w * s, gy - tick);
+      ctx.lineTo(x0 + w * s, gy + tick);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.font = `500 12px "Instrument Sans", system-ui, sans-serif`;
+      const txt = `${fmtIn(w)} × ${fmtIn(h)} in · ${cfg.thicks[thick()]}`;
+      const half = ctx.measureText(txt).width / 2;
+      ctx.fillText(txt, Math.min(Math.max(x0 + (w * s) / 2, half + 8), cw - half - 8), gy + 7);
+
+      canvas.setAttribute(
+        "aria-label",
+        `${cfg.copy.preview}: ${fmtIn(w)} × ${fmtIn(h)} in · ${stock().name} · ${cfg.tpls[o.tpl]} · ${accent().name}${o.t.titular ? ` · "${o.t.titular}"` : ""}`
+      );
+    };
+
+    // Miniaturas de los diseños, con el mismo dibujo que la vista previa
+    const renderTpls = () => {
+      const ids = Object.keys(cfg.tpls);
+      form.querySelectorAll<HTMLCanvasElement>(".dh__tpl canvas").forEach((cv, i) => {
+        const c2 = cv.getContext("2d")!;
+        const o: Face = { ...face(true, ids[i] ?? ids[0]), w: 4.25, h: 11, stub: false };
+        c2.setTransform(1, 0, 0, 1, 0, 0);
+        c2.clearRect(0, 0, cv.width, cv.height);
+        const s = Math.min((cv.width - 12) / o.w, (cv.height - 12) / o.h);
+        const x = (cv.width - o.w * s) / 2;
+        const y = (cv.height - o.h * s) / 2;
+        const shape = outline(x, y, s, o);
+        c2.save();
+        c2.clip(shape, "evenodd");
+        drawFace(c2, x, y, s, o, null);
+        c2.restore();
+        c2.lineWidth = 1;
+        c2.strokeStyle = "rgba(11,12,14,0.22)";
+        c2.stroke(shape);
+      });
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const { w, h } = dims();
+      const t = texts();
+      const words = [t.titular, t.sub, t.oferta, t.d1, t.d2, t.d3].filter(Boolean).map((x) => `"${x}"`).join(" / ");
+      const out = [
+        `${k.summary}:`,
+        `• ${k.sFormat}: ${cfg.shapes[val("formato")]} ${fmtIn(w)} × ${fmtIn(h)} in`,
+        `• ${k.sHole}: ${cfg.holes[val("troquel")]}`,
+        `• ${k.sCorners}: ${cfg.corners[val("esquinas")]}`,
+        `• ${k.sPaper}: ${stock().name}`,
+        `• ${k.sThick}: ${cfg.thicks[thick()]}`,
+        `• ${k.sSides}: ${cfg.sides[val("caras")]}`,
+        `• ${k.sStub}: ${stub() ? `${k.yes} · "${t.talon}"` : k.no}`,
+        `• ${k.sDesign}: ${cfg.tpls[val("plantilla")]}`,
+        `• ${k.sBg}: ${cfg.bgs[val("fondo")]}`,
+        `• ${k.sType}: ${cfg.types[val("tipografia")]}`,
+        `• ${k.sAccent}: ${accent().name}`,
+      ];
+      if (hasPhoto()) out.push(`• ${k.sImage}: ${cfg.images[val("imagen")]}`);
+      out.push(`• ${k.sWords}: ${words}`, `• ${k.sBiz}: ${[t.negocio, t.tel, t.web, t.direccion].filter(Boolean).join(" / ")}`);
+      if (twoSided()) out.push(`• ${k.sBack}: ${cfg.backs[val("reverso")]}`);
+      out.push(`• ${k.sQty}: ${qty()}`, `• ${k.sLink}: ${shareUrl()}`);
+      return out.join("\n");
+    };
+
+    const syncUI = () => {
+      const { w, h } = dims();
+      const plas = plastic();
+      // El plástico trae su propio calibre: la cartulina se apaga, y al revés
+      thickSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => {
+        i.disabled = plas !== (i.value === "plastico");
+      });
+      if (plas && val("grosor") !== "plastico") setRadio("grosor", "plastico");
+      if (!plas && val("grosor") === "plastico") setRadio("grosor", "grueso");
+      imageSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = !hasPhoto()));
+      imageSeg.toggleAttribute("data-off", !hasPhoto());
+      backSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = !twoSided()));
+      backSeg.toggleAttribute("data-off", !twoSided());
+      backHelp.hidden = twoSided();
+      stubField.hidden = !stub();
+      thickHelp.textContent = cfg.thickHelp[thick()] ?? "";
+      accentName.textContent = accent().name;
+      sizeOut.textContent = `${fmtIn(w)} × ${fmtIn(h)} in`;
+      approx.textContent = guides ? cfg.copy.guidesOn : onDoor ? cfg.copy.doorOn : cfg.copy.approx;
+      guidesBtn.setAttribute("aria-pressed", String(guides));
+      doorBtn.setAttribute("aria-pressed", String(onDoor));
+      viewBtn.textContent = cfg.views[view];
+      // Colgado de la perilla solo se ve el frente
+      viewBtn.hidden = !twoSided() || onDoor;
+      const q = qty();
+      root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.qty) === q)));
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+    const render = () => {
+      syncUI();
+      draw();
+      renderTpls();
+      update();
+    };
+
+    // ---------- Eventos ----------
+    const onEdit = (e: Event) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      render();
+    };
+    form.addEventListener("change", onEdit);
+    form.addEventListener("input", onEdit);
+    root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) =>
+      b.addEventListener("click", () => {
+        qtyEl.value = b.dataset.qty!;
+        touched = true;
+        render();
+      })
+    );
+    guidesBtn.addEventListener("click", () => {
+      guides = !guides;
+      syncUI();
+      draw();
+    });
+    doorBtn.addEventListener("click", () => {
+      onDoor = !onDoor;
+      syncUI();
+      draw();
+    });
+    viewBtn.addEventListener("click", () => {
+      view = VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length];
+      syncUI();
+      draw();
+    });
+
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    Promise.all(
+      [`800 40px "Saira"`, `700 40px "Playfair Display"`, `400 40px "Michroma"`, `500 40px "Instrument Sans"`].map((f) =>
+        document.fonts.load(f).catch(() => [])
+      )
+    ).then(() => render());
+    render();
+  }
+</script>

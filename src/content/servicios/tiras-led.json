@@ -1,0 +1,60 @@
+{
+  "nombre": "Tiras LED a medida",
+  "linea": "iluminacion",
+  "orden": 4,
+  "nameEn": "Custom LED strips",
+  "slugEn": "led-strips",
+  "short": {
+    "es": "Tiras LED, perfiles de aluminio y soluciones personalizadas para tu diseño.",
+    "en": "LED strips, aluminum profiles and custom solutions for your design."
+  },
+  "intro": {
+    "es": "Tiras LED en perfiles de aluminio para techos, muebles, escaleras y detalles de diseño. Las cortamos e instalamos a la medida de tu espacio.",
+    "en": "LED strips in aluminum profiles for ceilings, furniture, stairs and design details. We cut and install them to fit your space."
+  },
+  "includes": {
+    "es": [
+      "Tiras LED blancas y RGB",
+      "Perfiles de aluminio con difusor",
+      "Luz indirecta en techos y cornisas",
+      "Iluminación de muebles y repisas",
+      "Control por app o control remoto"
+    ],
+    "en": [
+      "White and RGB LED strips",
+      "Aluminum profiles with diffusers",
+      "Indirect ceiling and cove lighting",
+      "Furniture and shelf lighting",
+      "App or remote control"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Techos",
+      "Cocinas",
+      "Escaleras",
+      "Muebles de TV",
+      "Cabeceras"
+    ],
+    "en": [
+      "Ceilings",
+      "Kitchens",
+      "Stairs",
+      "TV walls",
+      "Headboards"
+    ]
+  },
+  "note": {
+    "es": "Desde blanco cálido de 2700 K hasta tiras RGB que cambian de color.",
+    "en": "From warm white at 2700 K to RGB strips that change color."
+  },
+  "kelvin": {
+    "discriminant": true,
+    "value": {
+      "from": 2700,
+      "to": 6500,
+      "label": "2700 K – RGB",
+      "rgb": true
+    }
+  }
+}

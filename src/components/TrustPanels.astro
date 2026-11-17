@@ -1,0 +1,79 @@
+---
+// Logos de clientes y reseñas (panel: Clientes y reseñas). Si aún no hay, se marca PENDIENTE.
+import Pending from "./Pending.astro";
+import type { Lang } from "../data/site";
+import { CLIENTS } from "../data/content";
+
+interface Props {
+  lang: Lang;
+  logosTitle: string;
+  reviewsTitle: string;
+}
+
+const { lang, logosTitle, reviewsTitle } = Astro.props;
+const logos = CLIENTS.logos.filter((l) => l.image);
+const reviews = CLIENTS.reviews.filter((r) => r.text[lang] || r.text.es);
+
+const COPY = {
+  es: {
+    logo: "Logo",
+    logosPending: "logos de clientes, con su permiso",
+    reviewsPending: "calificación de Google y 2 o 3 reseñas reales",
+    count: (n: number) => `${n} reseñas en Google`,
+    seeAll: "Ver reseñas en Google",
+  },
+  en: {
+    logo: "Logo",
+    logosPending: "client logos, with their permission",
+    reviewsPending: "Google rating and 2–3 real reviews",
+    count: (n: number) => `${n} Google reviews`,
+    seeAll: "See reviews on Google",
+  },
+};
+const c = COPY[lang];
+---
+<div class="trust">
+  <div class="panel">
+    <h2 class="panel__title">{logosTitle}</h2>
+    {logos.length ? (
+      <ul class="logo-row">
+        {logos.map((l) => <li><img src={l.image!} alt={l.name} loading="lazy" decoding="async" /></li>)}
+      </ul>
+    ) : (
+      <>
+        <ul class="logo-slots" aria-hidden="true">
+          {Array.from({ length: 6 }, () => <li>{c.logo}</li>)}
+        </ul>
+        <p class="panel__note"><Pending lang={lang}>{c.logosPending}</Pending></p>
+      </>
+    )}
+  </div>
+
+  <div class="panel">
+    <h2 class="panel__title">{reviewsTitle}</h2>
+    {CLIENTS.googleRating && (
+      <p class="rating">
+        <b>{CLIENTS.googleRating}</b>
+        <span class="rating__stars" aria-hidden="true">★★★★★</span>
+        {CLIENTS.googleCount ? <span>{c.count(CLIENTS.googleCount)}</span> : null}
+      </p>
+    )}
+    {reviews.length ? (
+      <ul class="reviews">
+        {reviews.map((r) => (
+          <li>
+            <blockquote><p>{r.text[lang] || r.text.es}</p></blockquote>
+            <p class="reviews__who">{r.author}{r.business && ` · ${r.business}`}</p>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="panel__note"><Pending lang={lang}>{c.reviewsPending}</Pending></p>
+    )}
+    {CLIENTS.googleUrl && (
+      <a class="more" href={CLIENTS.googleUrl} target="_blank" rel="noopener">
+        {c.seeAll}<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
+      </a>
+    )}
+  </div>
+</div>

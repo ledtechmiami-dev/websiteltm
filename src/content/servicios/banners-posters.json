@@ -1,0 +1,52 @@
+{
+  "nombre": "Banners y pósters",
+  "linea": "graficos",
+  "orden": 4,
+  "nameEn": "Banners and posters",
+  "slugEn": "banners-posters",
+  "short": {
+    "es": "Banners de vinil, roll-ups y pósters para eventos y promociones.",
+    "en": "Vinyl banners, roll-ups and posters for events and promotions."
+  },
+  "intro": {
+    "es": "Impresión en gran formato para eventos, ferias, obras y promociones: banners de vinil, roll-ups y pósters.",
+    "en": "Large-format printing for events, trade shows, job sites and promotions: vinyl banners, roll-ups and posters."
+  },
+  "includes": {
+    "es": [
+      "Banners de vinil con ojales",
+      "Roll-ups (banners retráctiles)",
+      "Pósters en papel o cartón",
+      "Tamaños a la medida"
+    ],
+    "en": [
+      "Vinyl banners with grommets",
+      "Roll-up (retractable) banners",
+      "Paper or board posters",
+      "Custom sizes"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Eventos",
+      "Ferias",
+      "Obras",
+      "Promociones",
+      "Inauguraciones"
+    ],
+    "en": [
+      "Events",
+      "Trade shows",
+      "Job sites",
+      "Promotions",
+      "Grand openings"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

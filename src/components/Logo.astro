@@ -1,0 +1,15 @@
+---
+// Logo vectorial en línea: horizontal en escritorio y apilado en móvil.
+// Va en línea (no como <img>) para poder "encender" cada segmento del LED al cargar.
+import horizontal from "../assets/logo/ltm-logo-horizontal-reverse.svg?raw";
+import stacked from "../assets/logo/ltm-logo-reverse.svg?raw";
+
+// El enlace que lo contiene ya lleva el nombre accesible, así que el SVG es decorativo.
+const clean = (svg: string) =>
+  svg
+    .replace(/<\?xml[^>]*>\s*/, "")
+    .replace(/<title>.*?<\/title>/, "")
+    .replace(/role="img" aria-label="[^"]*"/, 'aria-hidden="true" focusable="false"');
+---
+<span class="logo__h" set:html={clean(horizontal)} />
+<span class="logo__s" set:html={clean(stacked)} />

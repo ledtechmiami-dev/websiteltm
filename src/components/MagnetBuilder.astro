@@ -1,0 +1,1472 @@
+---
+// Constructor de imanes (idea tomada del catálogo de imanes de Vistaprint, que
+// hace imanes de nevera, de tarjeta de presentación, postales, calendarios y de
+// puerta de vehículo, en 0.4 y 0.6 mm y de 0.85 mm los de carro). El dueño
+// confirmó las cuatro medidas, el de vehículo y los tres grosores. Lo propio de
+// este producto es dónde se pega: el constructor lo enseña a escala, en la
+// puerta de la nevera o en la de la camioneta, y avisa que solo agarra en
+// lámina de acero. No muestra precios: el precio va en la cotización.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// La cara impresa del imán: laminada brillante o mate. tex: cómo se dibuja.
+const FACES = [
+  { id: "brillante", es: "Brillante", en: "Glossy", base: "#FFFFFF", edge: "#DCE1E6", ink: "#14161A", sub: "#5A616B", tex: "brillo" },
+  { id: "mate", es: "Mate", en: "Matte", base: "#FCFCFB", edge: "#DEDFDC", ink: "#14161A", sub: "#5A616B", tex: "mate" },
+];
+
+// La paleta LED del logo más neutros de imprenta
+const ACCENTS = [
+  { id: "azul", es: "Azul LED", en: "LED blue", hex: "#0094DA" },
+  { id: "amarillo", es: "Amarillo LED", en: "LED yellow", hex: "#FFCA09" },
+  { id: "verde", es: "Verde LED", en: "LED green", hex: "#99C941" },
+  { id: "rojo", es: "Rojo LED", en: "LED red", hex: "#ED1B24" },
+  { id: "negro", es: "Negro", en: "Black", hex: "#0B0C0E" },
+  { id: "pizarra", es: "Gris pizarra", en: "Slate grey", hex: "#59626D" },
+  { id: "marino", es: "Azul marino", en: "Navy", hex: "#16304F" },
+  { id: "vino", es: "Vino", en: "Wine", hex: "#7A1F2B" },
+  { id: "oliva", es: "Verde oliva", en: "Olive", hex: "#4F5B32" },
+  { id: "terracota", es: "Terracota", en: "Terracotta", hex: "#B4522E" },
+];
+
+// Tiradas: los de nevera se piden por cientos, los de vehículo por pares
+const QTYS = { promo: [25, 50, 100, 250, 500], carro: [2, 4, 6, 10] };
+
+const MONTHS = {
+  es: ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"],
+  en: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+};
+
+const COPY = {
+  es: {
+    title: "Diseña tu imán",
+    lead: "Elige la medida, el grosor y el diseño, escribe lo que quieres que quede pegado en la nevera o en la puerta de la camioneta, y mira cómo queda. Mándanos el diseño y te respondemos con el precio.",
+    format: "Medida",
+    shapes: { tarjeta: "Tarjeta", postal: "Postal", grande: "Grande", vehiculo: "Vehículo" },
+    shapeHelp: {
+      tarjeta: "El del tamaño de una tarjeta de presentación: el clásico que se queda en la nevera con tu teléfono.",
+      postal: "Postal de 4 × 6 in. Se ve de lejos en la cocina y cabe el calendario del año.",
+      grande: "El más grande para la casa: menú, calendario o foto.",
+      vehiculo: "Para la puerta del carro o de la camioneta. Solo agarra en lámina de acero plana: en aluminio y en fibra de vidrio no se pega.",
+    },
+    orient: "Orientación",
+    orients: { vertical: "Vertical", horizontal: "Horizontal" },
+    orientHelp: "La tarjeta y el de vehículo van siempre horizontales.",
+    corners: "Esquinas",
+    cornerOpts: { rectas: "Rectas", redondas: "Redondeadas" },
+    cornerHelp: {
+      normal: "Las redondeadas se despegan menos de los bordes.",
+      vehiculo: "En el carro conviene redondearlas: con las esquinas en punta el aire levanta el imán en carretera.",
+    },
+    face: "Cara impresa",
+    faceHelp: "La cara va laminada. La brillante levanta más el color; la mate no refleja y no se marcan las huellas.",
+    thick: "Grosor del imán",
+    thicks: { estandar: "Estándar · 0.4 mm", premium: "Premium · 0.6 mm", vehiculo: "Vehículo · 0.85 mm" },
+    thickHelp: {
+      estandar: "0.4 mm. El de toda la vida para la nevera de la casa.",
+      premium: "0.6 mm. Más cuerpo: no se enrolla y agarra más fuerte.",
+      vehiculo: "0.85 mm. El grosor que aguanta la velocidad de la carretera. Los de 0.4 y 0.6 mm no sirven para el carro.",
+    },
+    sidesNote: "El imán se imprime por una cara: por detrás va la lámina magnética.",
+    design: "Diseño",
+    tpls: { servicio: "Servicio", calendario: "Calendario", foto: "Foto", rotulo: "Rótulo", tipografica: "Solo texto" },
+    type: "Tipografía",
+    types: { moderna: "Moderna", clasica: "Clásica", tecnica: "Técnica", sencilla: "Sencilla" },
+    accent: "Color de acento",
+    bg: "Fondo",
+    bgs: { papel: "Blanco", color: "Color de acento", oscuro: "Oscuro" },
+    image: "Imagen",
+    images: { foto: "Espacio para foto", color: "Bloque de color" },
+    imageHelp: "Déjanos el espacio marcado y",
+    imageCta: "mándanos la foto por WhatsApp",
+    imageWa: "Hola, quiero imprimir imanes. Les envío la foto y el logo.",
+    photoBox: "TU FOTO",
+    words: "Qué dice",
+    business: "Nombre del negocio",
+    businessPh: "Ej. Tu Negocio",
+    defBusiness: "Tu Negocio",
+    headline: "Qué haces",
+    headlinePh: "Ej. Aire acondicionado y refrigeración",
+    defHeadline: "Aire acondicionado y refrigeración",
+    sub: "Segunda línea",
+    subPh: "Ej. Servicio el mismo día",
+    defSub: "Servicio el mismo día",
+    offer: "Lo que más destaca",
+    offerPh: "Ej. Emergencias 24/7",
+    defOffer: "Emergencias 24/7",
+    details: "Tres detalles",
+    d1Ph: "Ej. Instalación y mantenimiento",
+    defD1: "Instalación y mantenimiento",
+    d2Ph: "Ej. Reparación de neveras",
+    defD2: "Reparación de neveras",
+    d3Ph: "Ej. Presupuesto sin costo",
+    defD3: "Presupuesto sin costo",
+    year: "Año del calendario",
+    yearPh: "Ej. 2027",
+    defYear: "2027",
+    biz: "Tus datos",
+    phone: "Teléfono",
+    phonePh: "Ej. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Sitio web o red social",
+    webPh: "Ej. tunegocio.com",
+    defWeb: "tunegocio.com",
+    address: "Dirección",
+    addressPh: "Ej. 123 NW 1st St, Miami, FL",
+    defAddress: "123 NW 1st St, Miami, FL",
+    license: "Licencia (opcional)",
+    licensePh: "Ej. tu número de licencia",
+    order: "Tu pedido",
+    qty: "Cantidad",
+    qtyHelp: { promo: "Lo normal para repartir es 250 o 500. Desde 25 en adelante.", carro: "Los de vehículo van por pares: uno para cada puerta." },
+    guides: "Guías de corte",
+    guidesOn: "Línea roja: sangrado, por donde pasa la cuchilla. Línea azul: zona segura, los textos no deben salir de ahí.",
+    scene: { nevera: "En la nevera", carro: "En la puerta" },
+    sceneOn: {
+      nevera: "El imán a escala en la puerta de una nevera: así de grande se ve en la cocina de tu cliente.",
+      carro: "El imán a escala en la puerta de una camioneta. Tiene que quedar en la parte plana de la lámina, sin pasar por un filo ni por una moldura.",
+    },
+    approx: "Vista aproximada · el color impreso varía un poco del de la pantalla",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h. Depende del tiraje, de la medida y del grosor.",
+    cta: "Cotizar estos imanes",
+    wa: "Enviar por WhatsApp",
+    notesPh: "Para cuándo los necesitas, en qué va pegado el de vehículo, si ya tienes el diseño hecho…",
+    summary: "Diseño del constructor de imanes",
+    sFormat: "Medida",
+    sCorners: "Esquinas",
+    sFace: "Cara impresa",
+    sThick: "Grosor",
+    sDesign: "Diseño",
+    sType: "Tipografía",
+    sAccent: "Color de acento",
+    sBg: "Fondo",
+    sImage: "Imagen",
+    sWords: "Textos",
+    sBiz: "Datos",
+    sYear: "Año",
+    sLicense: "Licencia",
+    sQty: "Cantidad",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesan estos imanes:",
+    preview: "Vista previa del imán",
+  },
+  en: {
+    title: "Design your magnet",
+    lead: "Pick the size, the thickness and the layout, type what you want stuck on the fridge or on the truck door, and see how it looks. Send us the design and we'll reply with the price.",
+    format: "Size",
+    shapes: { tarjeta: "Card", postal: "Postcard", grande: "Large", vehiculo: "Vehicle" },
+    shapeHelp: {
+      tarjeta: "Business-card size: the classic one that stays on the fridge with your phone number.",
+      postal: "A 4 × 6 in postcard. It reads across the kitchen and fits a year calendar.",
+      grande: "The biggest one for the home: a menu, a calendar or a photo.",
+      vehiculo: "For a car or truck door. It only grips flat steel: it won't stick to aluminum or fiberglass.",
+    },
+    orient: "Orientation",
+    orients: { vertical: "Portrait", horizontal: "Landscape" },
+    orientHelp: "The card and the vehicle magnet are always landscape.",
+    corners: "Corners",
+    cornerOpts: { rectas: "Square", redondas: "Rounded" },
+    cornerHelp: {
+      normal: "Rounded corners are less likely to lift at the edges.",
+      vehiculo: "On a vehicle, round them: with sharp corners the air lifts the magnet at highway speed.",
+    },
+    face: "Printed face",
+    faceHelp: "The face is laminated. Glossy lifts the color; matte doesn't reflect and won't show fingerprints.",
+    thick: "Magnet thickness",
+    thicks: { estandar: "Standard · 0.4 mm", premium: "Premium · 0.6 mm", vehiculo: "Vehicle · 0.85 mm" },
+    thickHelp: {
+      estandar: "0.4 mm. The everyday one for a home fridge.",
+      premium: "0.6 mm. More body: it won't curl and it grips harder.",
+      vehiculo: "0.85 mm. The thickness that holds at highway speed. The 0.4 and 0.6 mm ones are not for a vehicle.",
+    },
+    sidesNote: "A magnet prints on one face: the magnetic sheet is the back.",
+    design: "Layout",
+    tpls: { servicio: "Service", calendario: "Calendar", foto: "Photo", rotulo: "Sign", tipografica: "Type only" },
+    type: "Typeface",
+    types: { moderna: "Modern", clasica: "Classic", tecnica: "Technical", sencilla: "Simple" },
+    accent: "Accent color",
+    bg: "Background",
+    bgs: { papel: "White", color: "Accent color", oscuro: "Dark" },
+    image: "Image",
+    images: { foto: "Space for a photo", color: "Color block" },
+    imageHelp: "We'll leave the space marked and you can",
+    imageCta: "send us the photo on WhatsApp",
+    imageWa: "Hi, I want to print magnets. I'll send you the photo and the logo.",
+    photoBox: "YOUR PHOTO",
+    words: "What it says",
+    business: "Business name",
+    businessPh: "E.g. Your Business",
+    defBusiness: "Your Business",
+    headline: "What you do",
+    headlinePh: "E.g. Air conditioning and refrigeration",
+    defHeadline: "Air conditioning and refrigeration",
+    sub: "Second line",
+    subPh: "E.g. Same-day service",
+    defSub: "Same-day service",
+    offer: "The part that stands out",
+    offerPh: "E.g. 24/7 emergencies",
+    defOffer: "24/7 emergencies",
+    details: "Three details",
+    d1Ph: "E.g. Install and maintenance",
+    defD1: "Install and maintenance",
+    d2Ph: "E.g. Fridge repair",
+    defD2: "Fridge repair",
+    d3Ph: "E.g. Free estimate",
+    defD3: "Free estimate",
+    year: "Calendar year",
+    yearPh: "E.g. 2027",
+    defYear: "2027",
+    biz: "Your details",
+    phone: "Phone",
+    phonePh: "E.g. (305) 555 1234",
+    defPhone: "(305) 555 1234",
+    web: "Website or social handle",
+    webPh: "E.g. yourbusiness.com",
+    defWeb: "yourbusiness.com",
+    address: "Address",
+    addressPh: "E.g. 123 NW 1st St, Miami, FL",
+    defAddress: "123 NW 1st St, Miami, FL",
+    license: "License (optional)",
+    licensePh: "E.g. your license number",
+    order: "Your order",
+    qty: "Quantity",
+    qtyHelp: { promo: "For handing out, 250 or 500 is normal. From 25 up.", carro: "Vehicle magnets go in pairs: one for each door." },
+    guides: "Cut guides",
+    guidesOn: "Red line: the bleed, where the blade cuts. Blue line: the safe area, keep text inside it.",
+    scene: { nevera: "On the fridge", carro: "On the door" },
+    sceneOn: {
+      nevera: "The magnet to scale on a fridge door: that's how big it looks in your customer's kitchen.",
+      carro: "The magnet to scale on a truck door. It has to sit on the flat part of the panel, clear of any edge or molding.",
+    },
+    approx: "Approximate preview · printed color varies a little from the screen",
+    price: "Price: we send it with your quote, in under 24 hours. It depends on the run, the size and the thickness.",
+    cta: "Quote these magnets",
+    wa: "Send on WhatsApp",
+    notesPh: "When you need them, what the vehicle one goes on, whether your design is already done…",
+    summary: "Magnet builder design",
+    sFormat: "Size",
+    sCorners: "Corners",
+    sFace: "Printed face",
+    sThick: "Thickness",
+    sDesign: "Layout",
+    sType: "Typeface",
+    sAccent: "Accent color",
+    sBg: "Background",
+    sImage: "Image",
+    sWords: "Copy",
+    sBiz: "Details",
+    sYear: "Year",
+    sLicense: "License",
+    sQty: "Quantity",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in these magnets:",
+    preview: "Magnet preview",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  faces: FACES.map((f) => ({ id: f.id, base: f.base, edge: f.edge, ink: f.ink, sub: f.sub, tex: f.tex, name: f[lang] })),
+  accents: ACCENTS.map((a) => ({ id: a.id, hex: a.hex, name: a[lang] })),
+  shapes: c.shapes,
+  shapeHelp: c.shapeHelp,
+  orients: c.orients,
+  corners: c.cornerOpts,
+  cornerHelp: c.cornerHelp,
+  thicks: c.thicks,
+  thickHelp: c.thickHelp,
+  tpls: c.tpls,
+  types: c.types,
+  bgs: c.bgs,
+  images: c.images,
+  months: MONTHS[lang],
+  qtyHelp: c.qtyHelp,
+  scene: c.scene,
+  sceneOn: c.sceneOn,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    photoBox: c.photoBox,
+    approx: c.approx,
+    guidesOn: c.guidesOn,
+    summary: c.summary,
+    sFormat: c.sFormat,
+    sCorners: c.sCorners,
+    sFace: c.sFace,
+    sThick: c.sThick,
+    sDesign: c.sDesign,
+    sType: c.sType,
+    sAccent: c.sAccent,
+    sBg: c.sBg,
+    sImage: c.sImage,
+    sWords: c.sWords,
+    sBiz: c.sBiz,
+    sYear: c.sYear,
+    sLicense: c.sLicense,
+    sQty: c.sQty,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+    preview: c.preview,
+  },
+};
+const waPhoto = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.imageWa)}`;
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+const TPLS = Object.keys(c.tpls);
+---
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" />
+
+<section class="section section--flush" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb im" data-magnet data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage">
+        <canvas class="nb__canvas im__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-guides aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.guides}
+          </button>
+          <button type="button" class="nb__tool" data-scene aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span><span data-scene-lbl>{c.scene.nevera}</span>
+          </button>
+        </div>
+        <p class="nb__approx" data-approx>{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.format}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.format}>
+            {seg("formato", c.shapes, "postal").map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help"><b data-size-out></b> · <span data-shape-help>{c.shapeHelp.postal}</span></p>
+          <p class="tb__sub">{c.orient}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.orient} data-orient>
+            {seg("orientacion", c.orients).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-orient-help hidden>{c.orientHelp}</p>
+          <p class="tb__sub">{c.corners}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.corners}>
+            {seg("esquinas", c.cornerOpts, "redondas").map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-corner-help>{c.cornerHelp.normal}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.face}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.face}>
+            {seg("cara", { brillante: FACES[0][lang], mate: FACES[1][lang] }).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.faceHelp}</p>
+          <p class="tb__sub">{c.thick}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.thick} aria-describedby="im-thick-help" data-thick>
+            {seg("grosor", c.thicks, "premium").map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="im-thick-help" data-thick-help>{c.thickHelp.premium}</p>
+          <p class="nb__help">{c.sidesNote}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.design}</legend>
+          <div class="fb__pats im__tpls" role="radiogroup" aria-label={c.design}>
+            {TPLS.map((id, i) => (
+              <label class="fb__pat im__tpl">
+                <input type="radio" name="plantilla" value={id} checked={i === 0} />
+                <canvas width="180" height="150" aria-hidden="true"></canvas>
+                <span>{c.tpls[id as keyof typeof c.tpls]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.bg}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.bg}>
+            {seg("fondo", c.bgs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.type}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.type}>
+            {seg("tipografia", c.types).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.accent} · <span class="eb__picked" data-accent-name>{ACCENTS[0][lang]}</span></p>
+          <div class="eb__sws" role="radiogroup" aria-label={c.accent}>
+            {ACCENTS.map((a, i) => (
+              <label class="eb__sw" title={a[lang]}>
+                <input type="radio" name="acento" value={a.id} checked={i === 0} />
+                <i style={`--c:${a.hex}`} aria-hidden="true"></i>
+                <span class="sr-only">{a[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.image}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.image} data-image>
+            {seg("imagen", c.images).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.imageHelp} <a class="eb__link" href={waPhoto} target="_blank" rel="noopener">{c.imageCta}</a>.</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.words}</legend>
+          <div class="tb__words">
+            <div class="field">
+              <label for="im-negocio">{c.business}</label>
+              <input id="im-negocio" type="text" name="negocio" maxlength="30" autocomplete="off" placeholder={c.businessPh} value={c.defBusiness} />
+            </div>
+            <div class="field">
+              <label for="im-titular">{c.headline}</label>
+              <input id="im-titular" type="text" name="titular" maxlength="34" autocomplete="off" placeholder={c.headlinePh} value={c.defHeadline} />
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="im-sub">{c.sub}</label>
+                <input id="im-sub" type="text" name="subtitulo" maxlength="30" autocomplete="off" placeholder={c.subPh} value={c.defSub} />
+              </div>
+              <div class="field">
+                <label for="im-oferta">{c.offer}</label>
+                <input id="im-oferta" type="text" name="oferta" maxlength="24" autocomplete="off" placeholder={c.offerPh} value={c.defOffer} />
+              </div>
+            </div>
+            <p class="tb__sub">{c.details}</p>
+            <div class="im__rows">
+              {[1, 2, 3].map((n) => (
+                <div class="field">
+                  <input
+                    type="text"
+                    name={`detalle${n}`}
+                    maxlength="28"
+                    autocomplete="off"
+                    placeholder={[c.d1Ph, c.d2Ph, c.d3Ph][n - 1]}
+                    value={[c.defD1, c.defD2, c.defD3][n - 1]}
+                    aria-label={`${c.details} ${n}`}
+                  />
+                </div>
+              ))}
+            </div>
+            <div class="field im__year" data-year-field hidden>
+              <label for="im-anio">{c.year}</label>
+              <input id="im-anio" type="text" name="anio" maxlength="4" inputmode="numeric" autocomplete="off" placeholder={c.yearPh} value={c.defYear} />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.biz}</legend>
+          <div class="tb__words">
+            <div class="form__row">
+              <div class="field">
+                <label for="im-tel">{c.phone}</label>
+                <input id="im-tel" type="text" name="tel" maxlength="24" autocomplete="off" placeholder={c.phonePh} value={c.defPhone} />
+              </div>
+              <div class="field">
+                <label for="im-web">{c.web}</label>
+                <input id="im-web" type="text" name="web" maxlength="30" autocomplete="off" placeholder={c.webPh} value={c.defWeb} />
+              </div>
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="im-dir">{c.address}</label>
+                <input id="im-dir" type="text" name="direccion" maxlength="40" autocomplete="off" placeholder={c.addressPh} value={c.defAddress} />
+              </div>
+              <div class="field">
+                <label for="im-lic">{c.license}</label>
+                <input id="im-lic" type="text" name="licencia" maxlength="28" autocomplete="off" placeholder={c.licensePh} value="" />
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="nb__sizes" data-qtys="promo">
+            {QTYS.promo.map((q) => (
+              <button type="button" class="nb__pill" data-qty={q}>{q}</button>
+            ))}
+          </div>
+          <div class="nb__sizes" data-qtys="carro" hidden>
+            {QTYS.carro.map((q) => (
+              <button type="button" class="nb__pill" data-qty={q}>{q}</button>
+            ))}
+          </div>
+          <div class="tb__row">
+            <div class="field">
+              <label for="im-cantidad">{c.qty}</label>
+              <input id="im-cantidad" type="number" name="cantidad" min="25" max="100000" step="25" value="250" inputmode="numeric" aria-describedby="im-qty-help" />
+            </div>
+          </div>
+          <p class="nb__help" id="im-qty-help" data-qty-help>{c.qtyHelp.promo}</p>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="im" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type FaceStock = { id: string; name: string; base: string; edge: string; ink: string; sub: string; tex: string };
+  type Accent = { id: string; name: string; hex: string };
+  type Cfg = {
+    faces: FaceStock[];
+    accents: Accent[];
+    shapes: Record<string, string>;
+    shapeHelp: Record<string, string>;
+    orients: Record<string, string>;
+    corners: Record<string, string>;
+    cornerHelp: Record<string, string>;
+    thicks: Record<string, string>;
+    thickHelp: Record<string, string>;
+    tpls: Record<string, string>;
+    types: Record<string, string>;
+    bgs: Record<string, string>;
+    images: Record<string, string>;
+    months: string[];
+    qtyHelp: Record<string, string>;
+    scene: Record<string, string>;
+    sceneOn: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+  // Lo que hay que dibujar en el imán, ya resuelto desde el formulario
+  type Art = {
+    w: number; // pulgadas
+    h: number;
+    stock: FaceStock;
+    accent: string;
+    type: string;
+    tpl: string;
+    bg: string;
+    photo: boolean;
+    t: Record<string, string>;
+    mini: boolean;
+  };
+
+  // Medidas de imán, en pulgadas. rot: si se puede girar a horizontal.
+  const SHAPES: Record<string, { w: number; h: number; rot: boolean }> = {
+    tarjeta: { w: 3.5, h: 2, rot: false },
+    postal: { w: 4, h: 6, rot: true },
+    grande: { w: 5, h: 7, rot: true },
+    vehiculo: { w: 18, h: 12, rot: false },
+  };
+  const BLEED = 0.125; // sangrado de imprenta
+  const SAFE = 0.1875; // margen de seguridad hacia dentro
+  // La superficie donde se pega, a escala: un trozo de puerta de nevera y uno
+  // de puerta de camioneta
+  const SCENES: Record<string, { w: number; h: number }> = {
+    nevera: { w: 26, h: 20 },
+    carro: { w: 46, h: 32 },
+  };
+
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  // Luminancia relativa: decide si sobre ese color el texto va blanco o negro
+  const lum = (hex: string) =>
+    rgb(hex)
+      .map((v) => v / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)))
+      .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const onColor = (hex: string) => (lum(hex) > 0.42 ? "#0B0C0E" : "#FFFFFF");
+  const mix = (hex: string, t: number) => {
+    const to = t < 0 ? 0 : 255;
+    const a = Math.abs(t);
+    const [r, g, b] = rgb(hex).map((v) => Math.round(v + (to - v) * a));
+    return `rgb(${r},${g},${b})`;
+  };
+  // Azar con semilla: la textura no cambia en cada redibujado
+  const rng = (seed: number) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  // Medidas en pulgadas, escritas como en la imprenta: 3-1/2 in
+  const fmtIn = (v: number) => {
+    const whole = Math.floor(v);
+    const fr = +(v - whole).toFixed(3);
+    const frac: Record<string, string> = { "0.5": "-1/2", "0.25": "-1/4", "0.75": "-3/4" };
+    const f = frac[String(fr)];
+    if (f) return `${whole}${f}`;
+    return fr ? String(+v.toFixed(2)) : String(whole);
+  };
+
+  const FAMS: Record<string, { title: string; body: string; track: string }> = {
+    moderna: { title: '800 {px}px "Saira", "Arial Narrow", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    clasica: { title: '700 {px}px "Playfair Display", Georgia, serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    tecnica: { title: '400 {px}px "Michroma", "Eurostile", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.02em" },
+    sencilla: { title: '600 {px}px "Instrument Sans", system-ui, sans-serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+  };
+  const LABEL = (px: number) => `400 ${px}px "Michroma", "Eurostile", sans-serif`;
+  const setTrack = (c: CanvasRenderingContext2D, v: string) => {
+    (c as unknown as { letterSpacing: string }).letterSpacing = v;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-magnet]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const guidesBtn = root.querySelector<HTMLButtonElement>("[data-guides]")!;
+    const sceneBtn = root.querySelector<HTMLButtonElement>("[data-scene]")!;
+    const sceneLbl = root.querySelector<HTMLElement>("[data-scene-lbl]")!;
+    const tools = root.querySelector<HTMLElement>(".nb__tools")!;
+    const approx = root.querySelector<HTMLElement>("[data-approx]")!;
+    const sizeOut = form.querySelector<HTMLElement>("[data-size-out]")!;
+    const shapeHelp = form.querySelector<HTMLElement>("[data-shape-help]")!;
+    const orientSeg = form.querySelector<HTMLElement>("[data-orient]")!;
+    const orientHelp = form.querySelector<HTMLElement>("[data-orient-help]")!;
+    const cornerHelp = form.querySelector<HTMLElement>("[data-corner-help]")!;
+    const thickSeg = form.querySelector<HTMLElement>("[data-thick]")!;
+    const thickHelp = form.querySelector<HTMLElement>("[data-thick-help]")!;
+    const imageSeg = form.querySelector<HTMLElement>("[data-image]")!;
+    const yearField = form.querySelector<HTMLElement>("[data-year-field]")!;
+    const accentName = form.querySelector<HTMLElement>("[data-accent-name]")!;
+    const qtyEl = form.querySelector<HTMLInputElement>("input[name='cantidad']")!;
+    const qtyHelp = form.querySelector<HTMLElement>("[data-qty-help]")!;
+    const qtySets = form.querySelectorAll<HTMLElement>("[data-qtys]");
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    let guides = false;
+    let scene = false;
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const stock = () => cfg.faces.find((s) => s.id === val("cara")) ?? cfg.faces[0];
+    const accent = () => cfg.accents.find((a) => a.id === val("acento")) ?? cfg.accents[0];
+    const car = () => val("formato") === "vehiculo";
+    const canRot = () => (SHAPES[val("formato")] ?? SHAPES.postal).rot;
+    // El de vehículo lleva siempre 0.85 mm; los otros, nunca
+    const thick = () => (car() ? "vehiculo" : val("grosor") === "vehiculo" ? "premium" : val("grosor"));
+    const tpl = () => val("plantilla");
+    // Calendario y solo texto no llevan hueco de imagen
+    const hasPhoto = () => tpl() !== "calendario" && tpl() !== "tipografica";
+    const isCal = () => tpl() === "calendario";
+    const qty = () => {
+      const min = car() ? 1 : 25;
+      return Math.max(min, Math.min(100000, Math.round(Number(qtyEl.value) || (car() ? 2 : 250))));
+    };
+    const dims = () => {
+      const sh = SHAPES[val("formato")] ?? SHAPES.postal;
+      const horiz = sh.rot && val("orientacion") === "horizontal";
+      return horiz ? { w: sh.h, h: sh.w } : { w: sh.w, h: sh.h };
+    };
+    const round = () => (val("esquinas") === "redondas" ? (car() ? 0.5 : 0.125) : 0);
+    const texts = () => ({
+      negocio: text("negocio"),
+      titular: text("titular"),
+      sub: text("subtitulo"),
+      oferta: text("oferta"),
+      d1: text("detalle1"),
+      d2: text("detalle2"),
+      d3: text("detalle3"),
+      anio: text("anio"),
+      tel: text("tel"),
+      web: text("web"),
+      direccion: text("direccion"),
+      licencia: text("licencia"),
+    });
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const RADIOS = ["formato", "orientacion", "esquinas", "cara", "grosor", "plantilla", "fondo", "tipografia", "acento", "imagen"];
+    const FIELDS: Array<[string, number]> = [
+      ["negocio", 30],
+      ["titular", 34],
+      ["subtitulo", 30],
+      ["oferta", 24],
+      ["detalle1", 28],
+      ["detalle2", 28],
+      ["detalle3", 28],
+      ["anio", 4],
+      ["tel", 24],
+      ["web", 30],
+      ["direccion", 40],
+      ["licencia", 28],
+    ];
+    const params = new URLSearchParams(location.search);
+    if (params.has("plantilla") && params.has("formato")) {
+      RADIOS.forEach((n) => setRadio(n, params.get(n)));
+      FIELDS.forEach(([n, max]) => {
+        const v = params.get(n);
+        if (v !== null) (form.elements.namedItem(n) as HTMLInputElement).value = v.slice(0, max);
+      });
+      const q = Number(params.get("cantidad"));
+      if (q >= 1 && q <= 100000) qtyEl.value = String(Math.round(q));
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams();
+      RADIOS.forEach((n) => p.set(n, val(n)));
+      FIELDS.forEach(([n]) => p.set(n, text(n)));
+      p.set("cantidad", String(qty()));
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Dibujo ----------
+    // La cara impresa: brillante con su reflejo en diagonal, mate sin reflejo
+    const facePaper = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, st: FaceStock) => {
+      c.fillStyle = st.base;
+      c.fillRect(x, y, w, h);
+      if (st.tex === "brillo") {
+        const g = c.createLinearGradient(x, y + h, x + w, y);
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.44, "rgba(255,255,255,0)");
+        g.addColorStop(0.5, "rgba(255,255,255,0.5)");
+        g.addColorStop(0.56, "rgba(255,255,255,0)");
+        g.addColorStop(1, "rgba(180,200,215,0.14)");
+        c.fillStyle = g;
+        c.fillRect(x, y, w, h);
+      } else {
+        const r = rng(911);
+        const n = Math.round((w * h) / 260);
+        for (let i = 0; i < n; i++) {
+          c.fillStyle = r() > 0.5 ? "rgba(255,255,255,0.5)" : "rgba(90,92,96,0.05)";
+          c.fillRect(x + r() * w, y + r() * h, 1, 1);
+        }
+      }
+      const sh = c.createLinearGradient(x, y, x, y + h);
+      sh.addColorStop(0, "rgba(255,255,255,0.1)");
+      sh.addColorStop(0.5, "rgba(255,255,255,0)");
+      sh.addColorStop(1, "rgba(11,12,14,0.06)");
+      c.fillStyle = sh;
+      c.fillRect(x, y, w, h);
+    };
+
+    // Dibuja la cara impresa del imán: cinco diseños, cada uno resuelto para
+    // formato vertical y horizontal (una tarjeta y un imán de puerta son muy
+    // anchos; una postal es alta).
+    const drawArt = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Art) => {
+      const { w, h } = o;
+      const X = (v: number) => x0 + v * s;
+      const Y = (v: number) => y0 + v * s;
+      const P = (v: number) => v * s;
+      const st = o.stock;
+      const acc = o.accent;
+      const land = w > h * 1.15; // acostado
+      const fu = Math.min(h, w * 1.3); // unidad de texto: manda el lado corto
+      const m = 0.065 * fu;
+      const V = (k: number) => k * h;
+
+      // ---- Fondo ----
+      facePaper(c, X(0), Y(0), P(w), P(h), st);
+      const dark = o.bg === "oscuro";
+      const colored = o.bg === "color";
+      if (dark || colored) {
+        c.fillStyle = dark ? "#14161A" : acc;
+        c.fillRect(X(0), Y(0), P(w), P(h));
+        c.save();
+        c.globalAlpha = 0.12;
+        c.globalCompositeOperation = "overlay";
+        facePaper(c, X(0), Y(0), P(w), P(h), st);
+        c.restore();
+      }
+      const ink = dark ? "#FFFFFF" : colored ? onColor(acc) : st.ink;
+      const sub = dark ? "#AEB5BD" : colored ? mix(onColor(acc), onColor(acc) === "#FFFFFF" ? -0.2 : 0.35) : st.sub;
+      const mark = colored ? ink : acc;
+      // Sobre una franja, el texto va del color del fondo del imán
+      const onMark = colored ? acc : onColor(acc);
+
+      const fam = () => FAMS[o.type] ?? FAMS.moderna;
+      const make = (kind: "title" | "body" | "label", px: number) =>
+        kind === "label" ? LABEL(px) : fam()[kind].replace("{px}", String(px));
+
+      // Un renglón de texto; en las miniaturas se sustituye por una barra
+      const put = (
+        txt: string,
+        kind: "title" | "body" | "label",
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string,
+        align: CanvasTextAlign = "left",
+        upper = false
+      ) => {
+        if (!txt) return 0;
+        const px = Math.max(1, P(sizeIn));
+        const maxPx = P(maxIn);
+        const t = upper ? txt.toLocaleUpperCase() : txt;
+        setTrack(c, kind === "label" ? "0.1em" : fam().track);
+        c.font = make(kind, px);
+        let wd = c.measureText(t).width;
+        if (wd > maxPx && wd > 0) {
+          c.font = make(kind, px * (maxPx / wd));
+          wd = maxPx;
+        }
+        c.fillStyle = color;
+        c.textAlign = align;
+        c.textBaseline = "alphabetic";
+        if (o.mini) {
+          const bh = Math.max(1, px * 0.6);
+          const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+          c.fillRect(bx, Y(yIn) - bh, wd, bh);
+        } else {
+          c.fillText(t, X(xIn), Y(yIn));
+        }
+        setTrack(c, "0px");
+        return wd;
+      };
+
+      // Titular: parte en dos renglones antes que achicarse hasta no leerse
+      const headline = (
+        txt: string,
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string,
+        align: CanvasTextAlign = "left",
+        mid = false,
+        maxHIn = 0
+      ) => {
+        if (!txt) return yIn;
+        const maxPx = P(maxIn);
+        let px = Math.max(1, P(sizeIn));
+        c.font = make("title", px);
+        const words = txt.split(/\s+/);
+        let lines = [txt];
+        if (words.length > 1 && c.measureText(txt).width > maxPx) {
+          // El corte que deja los renglones más parejos
+          let best = 1;
+          let diff = Infinity;
+          for (let i = 1; i < words.length; i++) {
+            const a = c.measureText(words.slice(0, i).join(" ")).width;
+            const b = c.measureText(words.slice(i).join(" ")).width;
+            if (Math.abs(a - b) < diff) {
+              diff = Math.abs(a - b);
+              best = i;
+            }
+          }
+          lines = [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+        }
+        const widest = Math.max(...lines.map((l) => c.measureText(l).width));
+        if (widest > maxPx) px *= maxPx / widest;
+        c.font = make("title", px);
+        if (maxHIn && lines.length * px * 1.06 > P(maxHIn)) {
+          px *= P(maxHIn) / (lines.length * px * 1.06);
+          c.font = make("title", px);
+        }
+        const lh = px * 1.06;
+        const baseY = Y(yIn) - (mid ? ((lines.length - 1) * lh) / 2 : 0);
+        lines.forEach((l, i) => {
+          const ly = baseY + i * lh;
+          c.fillStyle = color;
+          c.textAlign = align;
+          c.textBaseline = "alphabetic";
+          if (o.mini) {
+            const wd = c.measureText(l).width;
+            const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+            c.fillRect(bx, ly - px * 0.62, wd, px * 0.62);
+          } else {
+            c.fillText(l, X(xIn), ly);
+          }
+        });
+        return (baseY + (lines.length - 1) * lh - y0) / s;
+      };
+
+      const band = (xIn: number, yIn: number, wIn: number, hIn: number, color: string = mark) => {
+        c.fillStyle = color;
+        c.fillRect(X(xIn), Y(yIn), P(wIn), P(hIn));
+      };
+      // Hueco de la foto: rayado en diagonal con su rótulo, o un bloque de color
+      const image = (xIn: number, yIn: number, wIn: number, hIn: number) => {
+        const bx = X(xIn);
+        const by = Y(yIn);
+        const bw = P(wIn);
+        const bh = P(hIn);
+        if (!o.photo) {
+          c.fillStyle = mark;
+          c.fillRect(bx, by, bw, bh);
+          return;
+        }
+        c.save();
+        c.beginPath();
+        c.rect(bx, by, bw, bh);
+        c.clip();
+        c.fillStyle = dark ? "#23262B" : colored ? mix(acc, onColor(acc) === "#FFFFFF" ? -0.18 : 0.2) : "#E4E7EA";
+        c.fillRect(bx, by, bw, bh);
+        c.strokeStyle = dark ? "rgba(255,255,255,0.1)" : "rgba(11,12,14,0.09)";
+        c.lineWidth = Math.max(1, P(0.02));
+        const step = Math.max(6, P(0.26));
+        c.beginPath();
+        for (let i = -bh; i < bw; i += step) {
+          c.moveTo(bx + i, by + bh);
+          c.lineTo(bx + i + bh, by);
+        }
+        c.stroke();
+        c.restore();
+        if (!o.mini) {
+          const lbl = Math.min(hIn * 0.12, wIn * 0.075);
+          put(cfg.copy.photoBox, "label", lbl, xIn + wIn / 2, yIn + hIn / 2 + lbl * 0.4, wIn * 0.74, dark ? "#8D949C" : colored ? sub : "#8A9099", "center");
+        }
+      };
+      // Lista con marca de verificación en el color de acento
+      const ticks = (rows: string[], xIn: number, yIn: number, stepIn: number, sizeIn: number, maxIn: number) => {
+        rows.forEach((r, i) => {
+          const ty = yIn + i * stepIn;
+          const rad = sizeIn * 0.34;
+          c.fillStyle = mark;
+          c.beginPath();
+          c.arc(X(xIn + rad), Y(ty) - P(sizeIn * 0.26), P(rad), 0, Math.PI * 2);
+          c.fill();
+          if (!o.mini) {
+            c.strokeStyle = onMark;
+            c.lineWidth = Math.max(1, P(rad * 0.26));
+            c.lineCap = "round";
+            c.lineJoin = "round";
+            c.beginPath();
+            c.moveTo(X(xIn + rad * 0.55), Y(ty) - P(sizeIn * 0.26));
+            c.lineTo(X(xIn + rad * 0.88), Y(ty) - P(sizeIn * 0.26) + P(rad * 0.38));
+            c.lineTo(X(xIn + rad * 1.45), Y(ty) - P(sizeIn * 0.26) - P(rad * 0.45));
+            c.stroke();
+          }
+          put(r, "body", sizeIn, xIn + rad * 2.6, ty, maxIn - rad * 2.6, sub);
+        });
+      };
+      // El calendario del año: cada mes con su rejilla de días. El domingo va
+      // en el color de acento, como en los calendarios de pared.
+      const calendar = (xIn: number, yIn: number, wIn: number, hIn: number, cols: number) => {
+        const rows = Math.ceil(12 / cols);
+        const cw = wIn / cols;
+        const chh = hIn / rows;
+        const pad = Math.min(cw, chh) * 0.09;
+        const lbl = Math.min(chh * 0.24, cw * 0.19);
+        for (let i = 0; i < 12; i++) {
+          const cx = xIn + (i % cols) * cw;
+          const cy = yIn + Math.floor(i / cols) * chh;
+          put(cfg.months[i] ?? "", "label", lbl, cx + cw / 2, cy + lbl, cw - pad * 2, mark, "center");
+          const gw = cw - pad * 2;
+          // El hueco de abajo tiene que ser mayor que el del rótulo: si no, cada
+          // mes se lee pegado a la rejilla del mes de arriba
+          const gh = chh - lbl * 1.7 - Math.max(pad, lbl * 0.7);
+          if (gh <= 0) continue;
+          const dx = gw / 7;
+          const dy = gh / 5;
+          const rad = Math.min(dx, dy) * 0.4;
+          for (let r = 0; r < 5; r++) {
+            for (let k = 0; k < 7; k++) {
+              c.fillStyle = k === 0 ? mark : sub;
+              c.globalAlpha = k === 0 ? 0.85 : 0.5;
+              c.beginPath();
+              c.arc(X(cx + pad + dx * (k + 0.5)), Y(cy + lbl * 1.7 + dy * (r + 0.5)), Math.max(0.5, P(rad)), 0, Math.PI * 2);
+              c.fill();
+            }
+          }
+          c.globalAlpha = 1;
+        }
+      };
+
+      const details = [o.t.d1, o.t.d2, o.t.d3].filter(Boolean);
+      const contact = [o.t.tel, o.t.web].filter(Boolean).join("   ·   ");
+      const footLine = [o.t.direccion, o.t.licencia].filter(Boolean).join("   ·   ");
+
+      if (o.tpl === "servicio") {
+        // El teléfono es el héroe: un imán de nevera está ahí para que lo llamen
+        if (land) {
+          band(0, 0, w, V(0.22));
+          put(o.t.negocio, "title", 0.055 * fu, m, V(0.15), w * 0.62, onMark);
+          put(o.t.titular, "body", 0.032 * fu, w - m, V(0.145), w * 0.33, onMark, "right");
+          // El teléfono nunca parte en dos renglones: se achica hasta caber
+          put(o.t.tel, "title", 0.2 * fu, w / 2, V(0.62), w - m * 2, mark, "center");
+          put([o.t.sub, o.t.oferta].filter(Boolean).join("   ·   "), "body", 0.034 * fu, w / 2, V(0.73), w - m * 2, sub, "center");
+          put(details.join("   ·   "), "body", 0.03 * fu, w / 2, V(0.86), w - m * 2, ink, "center");
+          put(footLine, "body", 0.026 * fu, w / 2, V(0.94), w - m * 2, sub, "center");
+        } else {
+          band(0, 0, w, V(0.13));
+          put(o.t.negocio, "title", 0.05 * fu, w / 2, V(0.09), w - m * 2, onMark, "center");
+          const last = headline(o.t.titular, 0.06 * fu, w / 2, V(0.22), w - m * 2, ink, "center", false, h * 0.11);
+          if (o.t.sub) put(o.t.sub, "body", 0.03 * fu, w / 2, last + 0.05 * fu, w - m * 2, sub, "center");
+          // Un cuadro para el logo, centrado entre el titular y el teléfono
+          image(w / 2 - w * 0.13, V(0.33), w * 0.26, h * 0.1);
+          put(o.t.tel, "title", 0.14 * fu, w / 2, V(0.58), w - m * 2, mark, "center");
+          ticks(details, m, V(0.69), 0.065 * fu, 0.03 * fu, w - m * 2);
+          if (o.t.oferta) {
+            band(m, V(0.85), w - m * 2, 0.075 * fu);
+            put(o.t.oferta, "title", 0.036 * fu, w / 2, V(0.85) + 0.053 * fu, w - m * 3, onMark, "center");
+          }
+          put(footLine || contact, "body", 0.026 * fu, w / 2, V(0.95), w - m * 2, sub, "center");
+        }
+      } else if (o.tpl === "calendario") {
+        // Calendario: arriba el negocio y el teléfono, abajo los doce meses
+        const hdr = land ? 0.2 : 0.15;
+        band(0, 0, w, V(hdr));
+        put(o.t.negocio, "title", 0.045 * fu, m, V(hdr * 0.5), w * 0.56, onMark);
+        put(o.t.tel, "title", 0.045 * fu, w - m, V(hdr * 0.5), w * 0.38, onMark, "right");
+        put([o.t.titular, o.t.web].filter(Boolean).join("   ·   "), "body", 0.026 * fu, m, V(hdr * 0.88), w - m * 2, onMark);
+        const yr = put(o.t.anio, "title", land ? 0.1 * fu : 0.09 * fu, m, V(hdr + 0.1), w * 0.4, mark);
+        if (o.t.oferta) put(o.t.oferta, "body", 0.03 * fu, m + yr / s + 0.1 * fu, V(hdr + 0.095), w - m * 2 - yr / s - 0.1 * fu, sub);
+        const top = V(hdr + 0.15);
+        const bot = V(0.9);
+        calendar(m, top, w - m * 2, bot - top, land ? 6 : 3);
+        put(footLine, "body", 0.024 * fu, w / 2, V(0.96), w - m * 2, sub, "center");
+      } else if (o.tpl === "foto") {
+        if (land) {
+          image(0, 0, w * 0.46, h);
+          const xs = w * 0.46 + m;
+          const mw = w - xs - m;
+          put(o.t.negocio, "label", 0.026 * fu, xs, V(0.2), mw, sub);
+          const last = headline(o.t.titular, 0.075 * fu, xs, V(0.36), mw, ink, "left", false, h * 0.26);
+          if (o.t.sub) put(o.t.sub, "body", 0.032 * fu, xs, last + 0.06 * fu, mw, sub);
+          put(o.t.tel, "title", 0.075 * fu, xs, V(0.78), mw, mark);
+          put([o.t.web, o.t.oferta].filter(Boolean).join("   ·   "), "body", 0.028 * fu, xs, V(0.9), mw, sub);
+        } else {
+          image(0, 0, w, V(0.5));
+          put(o.t.negocio, "label", 0.026 * fu, w / 2, V(0.6), w - m * 2, sub, "center");
+          const last = headline(o.t.titular, 0.08 * fu, w / 2, V(0.69), w - m * 2, ink, "center", false, h * 0.14);
+          if (o.t.sub) put(o.t.sub, "body", 0.03 * fu, w / 2, last + 0.055 * fu, w - m * 2, sub, "center");
+          band(0, h - 0.12 * fu, w, 0.12 * fu);
+          put(o.t.tel, "title", 0.045 * fu, w / 2, h - 0.072 * fu, w - m * 2, onMark, "center");
+          put([o.t.web, o.t.oferta].filter(Boolean).join("   ·   "), "body", 0.026 * fu, w / 2, h - 0.03 * fu, w - m * 2, onMark, "center");
+        }
+      } else if (o.tpl === "rotulo") {
+        // Como un rótulo de puerta: el nombre manda y el teléfono se lee de lejos
+        if (land) {
+          const nameW = w * 0.56;
+          put(o.t.negocio, "title", 0.11 * fu, m, V(0.26), nameW, mark);
+          band(m, V(0.31), nameW * 0.52, 0.018 * fu);
+          put(o.t.titular, "body", 0.042 * fu, m, V(0.42), nameW, ink);
+          ticks(details, m, V(0.56), 0.075 * fu, 0.032 * fu, nameW);
+          // El bloque del teléfono, a la derecha
+          const bw = w - nameW - m * 2.4;
+          const bx = w - m - bw;
+          c.fillStyle = mark;
+          c.beginPath();
+          c.roundRect(X(bx), Y(V(0.2)), P(bw), P(h * 0.42), P(0.1 * fu));
+          c.fill();
+          put(o.t.oferta, "label", 0.03 * fu, bx + bw / 2, V(0.3), bw * 0.86, onMark, "center");
+          put(o.t.tel, "title", 0.1 * fu, bx + bw / 2, V(0.47), bw * 0.88, onMark, "center");
+          // Debajo del teléfono, el hueco del logo y al final la web
+          image(bx, V(0.68), bw, h * 0.18);
+          put(o.t.web, "body", 0.034 * fu, bx + bw / 2, V(0.95), bw, sub, "center");
+          put(footLine, "body", 0.028 * fu, m, V(0.95), nameW, sub);
+        } else {
+          put(o.t.negocio, "title", 0.1 * fu, w / 2, V(0.16), w - m * 2, mark, "center");
+          band(w / 2 - w * 0.16, V(0.2), w * 0.32, 0.018 * fu);
+          put(o.t.titular, "body", 0.04 * fu, w / 2, V(0.28), w - m * 2, ink, "center");
+          if (o.photo) image(m, V(0.33), w - m * 2, h * 0.16);
+          ticks(details, m, V(0.56), 0.07 * fu, 0.03 * fu, w - m * 2);
+          c.fillStyle = mark;
+          c.beginPath();
+          c.roundRect(X(m), Y(V(0.76)), P(w - m * 2), P(h * 0.15), P(0.08 * fu));
+          c.fill();
+          put(o.t.oferta, "label", 0.026 * fu, w / 2, V(0.8), w - m * 3, onMark, "center");
+          put(o.t.tel, "title", 0.07 * fu, w / 2, V(0.87), w - m * 3, onMark, "center");
+          put([o.t.web, footLine].filter(Boolean).join("   ·   "), "body", 0.026 * fu, w / 2, V(0.95), w - m * 2, sub, "center");
+        }
+      } else {
+        // tipografica: sin imagen, todo el peso lo lleva el texto
+        if (land) {
+          band(0, 0, w, 0.1 * fu);
+          put(o.t.negocio, "label", 0.03 * fu, m, 0.065 * fu, w - m * 2, onMark);
+          const last = headline(o.t.titular, 0.1 * fu, m, V(0.42), w * 0.6, ink, "left", false, h * 0.3);
+          if (o.t.sub) put(o.t.sub, "body", 0.034 * fu, m, last + 0.06 * fu, w * 0.6, sub);
+          put(o.t.tel, "title", 0.11 * fu, w - m, V(0.45), w * 0.36, mark, "right");
+          put(o.t.web, "body", 0.032 * fu, w - m, V(0.58), w * 0.36, sub, "right");
+          put(details.join("   ·   "), "body", 0.03 * fu, m, V(0.82), w - m * 2, ink);
+          put(footLine, "body", 0.026 * fu, m, V(0.93), w - m * 2, sub);
+        } else {
+          band(0, 0, w, 0.1 * fu);
+          put(o.t.negocio, "label", 0.028 * fu, m, 0.065 * fu, w - m * 2, onMark);
+          const last = headline(o.t.titular, 0.1 * fu, m, V(0.24), w - m * 2, ink, "left", false, h * 0.18);
+          if (o.t.sub) put(o.t.sub, "body", 0.032 * fu, m, last + 0.06 * fu, w - m * 2, sub);
+          band(m, V(0.46), w * 0.24, 0.016 * fu);
+          put(o.t.tel, "title", 0.12 * fu, m, V(0.62), w - m * 2, mark);
+          put(o.t.web, "body", 0.032 * fu, m, V(0.7), w - m * 2, sub);
+          ticks(details, m, V(0.78), 0.06 * fu, 0.028 * fu, w - m * 2);
+          put(footLine, "body", 0.026 * fu, m, V(0.95), w - m * 2, sub);
+        }
+      }
+    };
+
+    // El imán completo: el canto de la lámina magnética, la cara impresa y las guías
+    const drawMagnet = (x0: number, y0: number, s: number, o: Art, r: number) => {
+      const wPx = o.w * s;
+      const hPx = o.h * s;
+      const rad = r * s;
+      const shape = new Path2D();
+      shape.roundRect(x0, y0, wPx, hPx, rad);
+
+      ctx.save();
+      ctx.shadowColor = "rgba(18,26,36,0.42)";
+      ctx.shadowBlur = 20;
+      ctx.shadowOffsetY = 8;
+      ctx.fillStyle = "#2B2F34"; // el canto negro de la lámina
+      ctx.fill(shape);
+      ctx.restore();
+
+      ctx.save();
+      ctx.clip(shape);
+      drawArt(ctx, x0, y0, s, o);
+      ctx.restore();
+
+      // Un filo oscuro alrededor: se ve el grosor del imán
+      ctx.lineWidth = Math.max(1, s * 0.02);
+      ctx.strokeStyle = "rgba(11,12,14,0.45)";
+      ctx.stroke(shape);
+
+      if (guides) {
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = "#ED1B24";
+        ctx.beginPath();
+        ctx.roundRect(x0 - BLEED * s, y0 - BLEED * s, wPx + BLEED * 2 * s, hPx + BLEED * 2 * s, rad ? rad + BLEED * s : 0);
+        ctx.stroke();
+        ctx.strokeStyle = "#0094DA";
+        ctx.beginPath();
+        ctx.roundRect(x0 + SAFE * s, y0 + SAFE * s, wPx - SAFE * 2 * s, hPx - SAFE * 2 * s, rad ? Math.max(0, rad - SAFE * s) : 0);
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+
+    // La superficie donde se pega, a escala: puerta de nevera o de camioneta
+    const drawScene = (x0: number, y0: number, s: number, kind: string) => {
+      const sc = SCENES[kind];
+      const W = sc.w * s;
+      const H = sc.h * s;
+      const panel = new Path2D();
+      panel.roundRect(x0, y0, W, H, 0.5 * s);
+      ctx.save();
+      ctx.shadowColor = "rgba(18,26,36,0.28)";
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 10;
+      ctx.fillStyle = "#C9CED4";
+      ctx.fill(panel);
+      ctx.restore();
+      ctx.save();
+      ctx.clip(panel);
+      if (kind === "nevera") {
+        // Acero cepillado: vetas verticales muy finas
+        const g = ctx.createLinearGradient(x0, 0, x0 + W, 0);
+        g.addColorStop(0, "#AFB5BB");
+        g.addColorStop(0.3, "#DDE2E6");
+        g.addColorStop(0.62, "#C2C8CE");
+        g.addColorStop(1, "#9FA6AD");
+        ctx.fillStyle = g;
+        ctx.fillRect(x0, y0, W, H);
+        const r = rng(4201);
+        ctx.lineWidth = 1;
+        for (let i = 0; i < W; i += 2) {
+          ctx.strokeStyle = `rgba(255,255,255,${0.04 + r() * 0.07})`;
+          ctx.beginPath();
+          ctx.moveTo(x0 + i, y0);
+          ctx.lineTo(x0 + i, y0 + H);
+          ctx.stroke();
+        }
+        // La junta de la puerta del congelador, arriba
+        ctx.fillStyle = "rgba(11,12,14,0.22)";
+        ctx.fillRect(x0, y0 + 1.6 * s, W, Math.max(2, 0.12 * s));
+        // La agarradera vertical, a la derecha
+        const hx = x0 + W - 2.6 * s;
+        const hg = ctx.createLinearGradient(hx, 0, hx + 0.9 * s, 0);
+        hg.addColorStop(0, "#8C9298");
+        hg.addColorStop(0.4, "#E8ECEF");
+        hg.addColorStop(1, "#7F858B");
+        ctx.fillStyle = hg;
+        ctx.beginPath();
+        ctx.roundRect(hx, y0 + 3.4 * s, 0.9 * s, H - 5.6 * s, 0.45 * s);
+        ctx.fill();
+      } else {
+        // Lámina de la puerta: pintura clara con la caída de luz
+        const g = ctx.createLinearGradient(x0, y0, x0, y0 + H);
+        g.addColorStop(0, "#F2F5F7");
+        g.addColorStop(0.55, "#DEE3E8");
+        g.addColorStop(1, "#C3CAD1");
+        ctx.fillStyle = g;
+        ctx.fillRect(x0, y0, W, H);
+        // El cristal de la ventanilla, arriba
+        ctx.fillStyle = "#23282E";
+        ctx.fillRect(x0, y0, W, 5.2 * s);
+        const gg = ctx.createLinearGradient(x0, y0, x0 + W, y0 + 5 * s);
+        gg.addColorStop(0, "rgba(255,255,255,0.18)");
+        gg.addColorStop(0.5, "rgba(255,255,255,0.04)");
+        gg.addColorStop(1, "rgba(255,255,255,0.14)");
+        ctx.fillStyle = gg;
+        ctx.fillRect(x0, y0, W, 5.2 * s);
+        // El burlete bajo la ventanilla
+        ctx.fillStyle = "rgba(11,12,14,0.5)";
+        ctx.fillRect(x0, y0 + 5.2 * s, W, Math.max(2, 0.22 * s));
+        // La ranura de la puerta, al final
+        ctx.strokeStyle = "rgba(11,12,14,0.18)";
+        ctx.lineWidth = Math.max(1, 0.1 * s);
+        ctx.beginPath();
+        ctx.moveTo(x0 + W - 1.6 * s, y0 + 5.4 * s);
+        ctx.lineTo(x0 + W - 1.6 * s, y0 + H);
+        ctx.stroke();
+        // La manija
+        ctx.fillStyle = "#AEB4BA";
+        ctx.beginPath();
+        ctx.roundRect(x0 + W - 9 * s, y0 + 7 * s, 4.4 * s, 1.1 * s, 0.5 * s);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(11,12,14,0.3)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(11,12,14,0.3)";
+      ctx.stroke(panel);
+    };
+
+    const art = (mini: boolean, which?: string): Art => ({
+      ...dims(),
+      stock: stock(),
+      accent: accent().hex,
+      type: val("tipografia"),
+      tpl: which ?? tpl(),
+      bg: val("fondo"),
+      photo: val("imagen") === "foto",
+      t: texts(),
+      mini,
+    });
+
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const o = art(false);
+      const { w, h } = o;
+      const kind = car() ? "carro" : "nevera";
+      const sc = scene ? SCENES[kind] : null;
+      // Lo que hay que meter en la escena: el imán solo, o la superficie entera
+      const bw = sc ? sc.w : w;
+      const bh = sc ? sc.h : h;
+      const pad = guides && !sc ? 0.3 : sc ? 0.3 : 0.08;
+      const top = tools.offsetHeight + 24;
+      const keep = top + 44 + (approx.offsetParent ? 26 : 0);
+      const s = Math.min((cw - 44) / (bw + pad * 2), (ch - keep) / (bh + pad * 2));
+      const bx = (cw - bw * s) / 2;
+      const by = Math.max(top, 16 + (ch - bh * s - 52) / 2);
+
+      let x0 = bx;
+      let y0 = by;
+      if (sc) {
+        drawScene(bx, by, s, kind);
+        // Dónde se pega: en la nevera a la izquierda de la agarradera, en la
+        // puerta debajo de la ventanilla
+        const cxk = kind === "nevera" ? 0.4 : 0.46;
+        const cyk = kind === "nevera" ? 0.46 : 0.62;
+        x0 = bx + (sc.w * cxk - w / 2) * s;
+        y0 = by + (sc.h * cyk - h / 2) * s;
+      }
+      drawMagnet(x0, y0, s, o, round());
+
+      // Cota del ancho, debajo del imán
+      const gy = y0 + h * s + 20;
+      const tick = 5;
+      ctx.strokeStyle = "rgba(11,12,14,0.5)";
+      ctx.fillStyle = "rgba(11,12,14,0.66)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x0, gy);
+      ctx.lineTo(x0 + w * s, gy);
+      ctx.moveTo(x0, gy - tick);
+      ctx.lineTo(x0, gy + tick);
+      ctx.moveTo(x0 + w * s, gy - tick);
+      ctx.lineTo(x0 + w * s, gy + tick);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.font = `500 12px "Instrument Sans", system-ui, sans-serif`;
+      const txt = `${fmtIn(w)} × ${fmtIn(h)} in · ${cfg.thicks[thick()]}`;
+      const half = ctx.measureText(txt).width / 2;
+      ctx.fillText(txt, Math.min(Math.max(x0 + (w * s) / 2, half + 8), cw - half - 8), gy + 7);
+
+      canvas.setAttribute(
+        "aria-label",
+        `${cfg.copy.preview}: ${fmtIn(w)} × ${fmtIn(h)} in · ${cfg.tpls[o.tpl]} · ${stock().name} · ${accent().name}${o.t.negocio ? ` · "${o.t.negocio}"` : ""}`
+      );
+    };
+
+    // Miniaturas de los diseños, con el mismo dibujo que la vista previa
+    const renderTpls = () => {
+      const ids = Object.keys(cfg.tpls);
+      form.querySelectorAll<HTMLCanvasElement>(".im__tpl canvas").forEach((cv, i) => {
+        const c2 = cv.getContext("2d")!;
+        const o: Art = art(true, ids[i] ?? ids[0]);
+        c2.setTransform(1, 0, 0, 1, 0, 0);
+        c2.clearRect(0, 0, cv.width, cv.height);
+        const s = Math.min((cv.width - 12) / o.w, (cv.height - 12) / o.h);
+        const x = (cv.width - o.w * s) / 2;
+        const y = (cv.height - o.h * s) / 2;
+        c2.save();
+        c2.beginPath();
+        c2.roundRect(x, y, o.w * s, o.h * s, round() * s);
+        c2.clip();
+        drawArt(c2, x, y, s, o);
+        c2.restore();
+        c2.lineWidth = 1;
+        c2.strokeStyle = "rgba(11,12,14,0.25)";
+        c2.beginPath();
+        c2.roundRect(x, y, o.w * s, o.h * s, round() * s);
+        c2.stroke();
+      });
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const { w, h } = dims();
+      const t = texts();
+      const words = [t.titular, t.sub, t.oferta, t.d1, t.d2, t.d3].filter(Boolean).map((x) => `"${x}"`).join(" / ");
+      const out = [
+        `${k.summary}:`,
+        `• ${k.sFormat}: ${cfg.shapes[val("formato")]} ${fmtIn(w)} × ${fmtIn(h)} in`,
+        `• ${k.sCorners}: ${cfg.corners[val("esquinas")]}`,
+        `• ${k.sFace}: ${stock().name}`,
+        `• ${k.sThick}: ${cfg.thicks[thick()]}`,
+        `• ${k.sDesign}: ${cfg.tpls[val("plantilla")]}`,
+        `• ${k.sBg}: ${cfg.bgs[val("fondo")]}`,
+        `• ${k.sType}: ${cfg.types[val("tipografia")]}`,
+        `• ${k.sAccent}: ${accent().name}`,
+      ];
+      if (hasPhoto()) out.push(`• ${k.sImage}: ${cfg.images[val("imagen")]}`);
+      if (isCal() && t.anio) out.push(`• ${k.sYear}: ${t.anio}`);
+      out.push(`• ${k.sWords}: ${words}`, `• ${k.sBiz}: ${[t.negocio, t.tel, t.web, t.direccion].filter(Boolean).join(" / ")}`);
+      if (t.licencia) out.push(`• ${k.sLicense}: ${t.licencia}`);
+      out.push(`• ${k.sQty}: ${qty()}`, `• ${k.sLink}: ${shareUrl()}`);
+      return out.join("\n");
+    };
+
+    let wasCar = false;
+    const syncUI = () => {
+      const isCar = car();
+      // El de vehículo solo va en 0.85 mm; los de nevera, nunca
+      thickSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => {
+        i.disabled = isCar !== (i.value === "vehiculo");
+      });
+      if (isCar && val("grosor") !== "vehiculo") setRadio("grosor", "vehiculo");
+      if (!isCar && val("grosor") === "vehiculo") setRadio("grosor", "premium");
+      // Las tiradas: por cientos en la nevera, por pares en el carro
+      if (isCar !== wasCar) {
+        qtyEl.value = isCar ? "2" : "250";
+        wasCar = isCar;
+      }
+      qtyEl.min = isCar ? "2" : "25";
+      qtyEl.step = isCar ? "2" : "25";
+      qtySets.forEach((el) => (el.hidden = el.dataset.qtys !== (isCar ? "carro" : "promo")));
+      qtyHelp.textContent = isCar ? cfg.qtyHelp.carro : cfg.qtyHelp.promo;
+
+      const rot = canRot();
+      orientSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = !rot));
+      orientSeg.toggleAttribute("data-off", !rot);
+      orientHelp.hidden = rot;
+      imageSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = !hasPhoto()));
+      imageSeg.toggleAttribute("data-off", !hasPhoto());
+      yearField.hidden = !isCal();
+
+      const { w, h } = dims();
+      sizeOut.textContent = `${fmtIn(w)} × ${fmtIn(h)} in`;
+      shapeHelp.textContent = cfg.shapeHelp[val("formato")] ?? "";
+      cornerHelp.textContent = isCar ? cfg.cornerHelp.vehiculo : cfg.cornerHelp.normal;
+      thickHelp.textContent = cfg.thickHelp[thick()] ?? "";
+      accentName.textContent = accent().name;
+      const kind = isCar ? "carro" : "nevera";
+      sceneLbl.textContent = cfg.scene[kind];
+      approx.textContent = guides ? cfg.copy.guidesOn : scene ? cfg.sceneOn[kind] : cfg.copy.approx;
+      guidesBtn.setAttribute("aria-pressed", String(guides));
+      sceneBtn.setAttribute("aria-pressed", String(scene));
+      const q = qty();
+      root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.qty) === q)));
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+    const render = () => {
+      syncUI();
+      draw();
+      renderTpls();
+      update();
+    };
+
+    // ---------- Eventos ----------
+    const onEdit = (e: Event) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      render();
+    };
+    form.addEventListener("change", onEdit);
+    form.addEventListener("input", onEdit);
+    root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) =>
+      b.addEventListener("click", () => {
+        qtyEl.value = b.dataset.qty!;
+        touched = true;
+        render();
+      })
+    );
+    guidesBtn.addEventListener("click", () => {
+      guides = !guides;
+      syncUI();
+      draw();
+    });
+    sceneBtn.addEventListener("click", () => {
+      scene = !scene;
+      syncUI();
+      draw();
+    });
+
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    Promise.all(
+      [`800 40px "Saira"`, `700 40px "Playfair Display"`, `400 40px "Michroma"`, `500 40px "Instrument Sans"`].map((f) =>
+        document.fonts.load(f).catch(() => [])
+      )
+    ).then(() => render());
+    render();
+  }
+</script>

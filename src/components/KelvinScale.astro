@@ -1,0 +1,26 @@
+---
+// Escala de temperatura de color (2700–6500 K) con el rango recomendado marcado.
+interface Props {
+  from: number;
+  to: number;
+  label: string;
+  rgb?: boolean;
+}
+
+const { from, to, label, rgb = false } = Astro.props;
+const MIN = 2700;
+const MAX = 6500;
+const pos = (k: number) => ((k - MIN) / (MAX - MIN)) * 100;
+const left = pos(from);
+const width = Math.max(pos(to) - left, 2);
+const ticks = [2700, 4000, 5000, 6500]; // 3000 queda muy cerca de 2700 y se encima
+---
+<div class="kscale">
+  <div class="kscale__bar">
+    <span class="kscale__range" style={`left:${left}%;width:${width}%`}><b>{label}</b></span>
+  </div>
+  <div class="kscale__ticks" aria-hidden="true">
+    {ticks.map((k) => <span style={`left:${pos(k)}%`}>{k}</span>)}
+  </div>
+  {rgb && <p class="svc-note">+ RGB</p>}
+</div>

@@ -1,0 +1,50 @@
+{
+  "nombre": "Letras impresas en 3D",
+  "linea": "letreros",
+  "orden": 6,
+  "nameEn": "3D printed letters",
+  "slugEn": "3d-printed-letters",
+  "short": {
+    "es": "Letras y logos con formas que no se pueden cortar, impresos en 3D.",
+    "en": "Letters and logos with shapes that can't be cut, 3D printed."
+  },
+  "intro": {
+    "es": "Con impresión 3D hacemos letras y logos con curvas, volumen y detalles que no salen con corte. Se pintan en el color de tu marca y pueden llevar luz.",
+    "en": "With 3D printing we make letters and logos with curves, depth and detail that cutting can't achieve. They're painted in your brand colors and can be lit."
+  },
+  "includes": {
+    "es": [
+      "Modelado a partir de tu logo",
+      "Impresión 3D por piezas",
+      "Acabado y pintura",
+      "Opción con luz LED"
+    ],
+    "en": [
+      "Modeled from your logo",
+      "3D printed in sections",
+      "Finishing and paint",
+      "Optional LED lighting"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Recepciones",
+      "Vidrieras",
+      "Eventos",
+      "Decoración"
+    ],
+    "en": [
+      "Lobbies",
+      "Shop windows",
+      "Events",
+      "Decor"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

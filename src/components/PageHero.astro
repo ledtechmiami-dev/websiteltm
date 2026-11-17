@@ -1,0 +1,62 @@
+---
+// Portada de páginas internas: tarjeta redondeada con el texto a la izquierda y,
+// a la derecha, el dibujo de la línea (o un mosaico de líneas en páginas generales).
+// El slot "art" reemplaza el dibujo (por ejemplo, con la foto de un servicio).
+import LineArt from "./LineArt.astro";
+import type { Lang } from "../data/site";
+import { LINES, type Line, type LineKey } from "../data/catalog";
+import { UI } from "../i18n/ui";
+
+interface Crumb {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  lang: Lang;
+  title: string;
+  lead?: string;
+  crumbs?: Crumb[];
+  line?: Line;
+  mosaic?: LineKey[];
+}
+
+const { lang, title, lead, crumbs, line, mosaic = ["letreros", "marino", "graficos", "iluminacion"] } = Astro.props;
+const mosaicLines = mosaic.map((k) => LINES.find((l) => l.key === k)!);
+const hasArt = Astro.slots.has("art");
+---
+<section class="phero container">
+  <div
+    class:list={["phero__card", line && "phero__card--line"]}
+    style={line ? `--tint:${line.tint};--ground:${line.ground}` : undefined}
+  >
+    <div class="phero__text">
+      {crumbs && (
+        <nav class="crumbs" aria-label={UI[lang].crumbs}>
+          <ol>
+            {crumbs.map((c) => (
+              <li>{c.href ? <a href={c.href}>{c.label}</a> : <span aria-current="page">{c.label}</span>}</li>
+            ))}
+          </ol>
+        </nav>
+      )}
+      <h1>{title}</h1>
+      {lead && <p class="phero__lead">{lead}</p>}
+      <slot />
+    </div>
+
+    <div class="phero__art">
+      {hasArt ? (
+        <slot name="art" />
+      ) : line ? (
+        <LineArt type={line.key} />
+      ) : (
+        <div class="mosaic" aria-hidden="true">
+          {mosaicLines.map((l) => (
+            <span style={`--ground:${l.ground}`}><LineArt type={l.key} /></span>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</section>

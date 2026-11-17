@@ -1,0 +1,64 @@
+---
+import Layout from "../layouts/Layout.astro";
+import PageHero from "../components/PageHero.astro";
+import ServiceCard from "../components/ServiceCard.astro";
+import Steps from "../components/Steps.astro";
+import QuoteSection from "../components/QuoteSection.astro";
+import type { Lang } from "../data/site";
+import { LINES, lineUrl, topServicesOf } from "../data/catalog";
+import { HOME, PAGES, type Bi } from "../data/content";
+import { ROUTES } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = UI[lang];
+const tr = (b: Bi) => b[lang] || b.es;
+const head = PAGES.services.head;
+const c = { title: tr(head.title), h1: tr(head.h1), lead: tr(head.lead), stepsTitle: tr(HOME.steps.title) };
+// Columnas que se llenan sin dejar una tarjeta sola en la última fila
+const cols = (n: number) => (n === 4 ? 4 : n === 2 ? 2 : 3);
+---
+<Layout lang={lang} page="services" title={c.title} description={c.lead} alternates={ROUTES.services}>
+  <PageHero
+    lang={lang}
+    title={c.h1}
+    lead={c.lead}
+    crumbs={[{ label: t.nav.home, href: ROUTES.home[lang] }, { label: t.nav.services }]}
+  >
+    <nav class="jump" aria-label={c.h1}>
+      {LINES.map((l) => (
+        <a href={`#${l.key}`}><span class="chip" style={`--c:${l.color}`}></span>{l[lang].name}</a>
+      ))}
+    </nav>
+  </PageHero>
+
+  {LINES.map((l) => {
+    const list = topServicesOf(l);
+    return (
+      <section class="section section--flush line-block" id={l.key}>
+        <div class="container">
+          <div class="sec-head">
+            <div>
+              <h2><span class="chip chip--lg" style={`--c:${l.color}`}></span>{l[lang].name}</h2>
+              <p>{l[lang].short}</p>
+            </div>
+            <a class="more" href={lineUrl(l, lang)}>{t.seeLine}: {l[lang].name}<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+          </div>
+          <ul class="svc-grid" style={`--cols:${cols(list.length)}`}>
+            {list.map((s) => <ServiceCard lang={lang} service={s} />)}
+          </ul>
+        </div>
+      </section>
+    );
+  })}
+
+  <section class="section">
+    <div class="container">
+      <div class="sec-head"><div><h2>{c.stepsTitle}</h2></div></div>
+      <Steps lang={lang} />
+    </div>
+  </section>
+
+  <QuoteSection lang={lang} />
+</Layout>

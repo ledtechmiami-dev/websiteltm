@@ -1,0 +1,23 @@
+{
+  "nombre": "Letrero de neón OPEN",
+  "nameEn": "OPEN neon sign",
+  "slugEn": "open-neon-sign",
+  "categoria": "taller",
+  "orden": 2,
+  "precio": null,
+  "variantes": [],
+  "short": {
+    "es": "Letrero de neón LED para la vidriera de tu negocio.",
+    "en": "LED neon sign for your shop window."
+  },
+  "descripcion": {
+    "es": "Letrero de neón LED con la palabra OPEN, listo para colgar en la vidriera.",
+    "en": "LED neon sign that reads OPEN, ready to hang in your window."
+  },
+  "specs": { "es": [], "en": [] },
+  "imagenes": [],
+  "soloLocal": false,
+  "agotado": false,
+  "ejemplo": true,
+  "publicado": true
+}

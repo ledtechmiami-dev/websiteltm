@@ -1,0 +1,22 @@
+{
+  "phone": "305-877-0384",
+  "email": "ledtechmiami@gmail.com",
+  "street": "7292 W 18th Ln",
+  "city": "Hialeah",
+  "state": "FL",
+  "zip": "33014",
+  "hours": {
+    "es": "Lunes a viernes, de 8:00 am a 5:00 pm",
+    "en": "Monday to Friday, 8:00 am to 5:00 pm"
+  },
+  "social": [
+    {
+      "network": "instagram",
+      "url": "https://www.instagram.com/ledtechmiami/"
+    },
+    {
+      "network": "facebook",
+      "url": "https://www.facebook.com/ledtechmiamilighting"
+    }
+  ]
+}

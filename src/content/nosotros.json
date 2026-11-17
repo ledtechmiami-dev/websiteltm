@@ -1,0 +1,73 @@
+{
+  "head": {
+    "title": {
+      "es": "Nosotros | LED Tech Miami",
+      "en": "About us | LED Tech Miami"
+    },
+    "h1": {
+      "es": "Somos LED Tech Miami",
+      "en": "We are LED Tech Miami"
+    },
+    "lead": {
+      "es": "Un equipo de Miami que diseña, fabrica e instala letreros, gráficos, piezas para botes, trabajos en metal e iluminación LED.",
+      "en": "A Miami team that designs, builds and installs signs, graphics, boat parts, metal work and LED lighting."
+    }
+  },
+  "storyTitle": {
+    "es": "Nuestra historia",
+    "en": "Our story"
+  },
+  "story": {
+    "es": "",
+    "en": ""
+  },
+  "experience": {
+    "es": "",
+    "en": ""
+  },
+  "license": "",
+  "insurance": {
+    "es": "",
+    "en": ""
+  },
+  "zones": {
+    "es": "Miami-Dade y Broward",
+    "en": "Miami-Dade and Broward"
+  },
+  "valuesTitle": {
+    "es": "Cómo trabajamos",
+    "en": "How we work"
+  },
+  "values": [
+    {
+      "title": {
+        "es": "Te decimos qué necesitas, y qué no",
+        "en": "We tell you what you need, and what you don't"
+      },
+      "text": {
+        "es": "Recomendamos solo lo que tu proyecto necesita. Si algo no hace falta, te lo decimos.",
+        "en": "We only recommend what your project needs. If something isn't necessary, we'll say so."
+      }
+    },
+    {
+      "title": {
+        "es": "Un solo equipo de principio a fin",
+        "en": "One team from start to finish"
+      },
+      "text": {
+        "es": "Diseño, fabricación e instalación con las mismas personas. Siempre sabes a quién llamar.",
+        "en": "Design, fabrication and installation from the same people. You always know who to call."
+      }
+    },
+    {
+      "title": {
+        "es": "Respuesta en menos de 24 horas",
+        "en": "Response in under 24 hours"
+      },
+      "text": {
+        "es": "Contestamos cada solicitud de cotización en menos de un día.",
+        "en": "We answer every quote request within a day."
+      }
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "nombre": "Channel letters",
+  "linea": "letreros",
+  "orden": 1,
+  "nameEn": "Channel letters",
+  "slugEn": "channel-letters",
+  "short": {
+    "es": "Letras de canal iluminadas con LED para fachadas y plazas comerciales.",
+    "en": "LED-lit channel letters for storefronts and shopping plazas."
+  },
+  "intro": {
+    "es": "Letras individuales en 3D con luz LED por dentro. Son el letrero más común en fachadas y plazas comerciales porque se leen de día y de noche.",
+    "en": "Individual 3D letters lit from inside with LEDs. They're the most common storefront sign because they read well day and night."
+  },
+  "includes": {
+    "es": [
+      "Iluminación frontal, trasera (halo) o ambas",
+      "Caras de acrílico en el color de tu marca",
+      "Montaje directo en pared o sobre riel",
+      "Instalación en la fachada"
+    ],
+    "en": [
+      "Front-lit, back-lit (halo) or both",
+      "Acrylic faces in your brand colors",
+      "Direct wall or raceway mounting",
+      "Storefront installation"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Fachadas",
+      "Plazas comerciales",
+      "Restaurantes",
+      "Oficinas",
+      "Clínicas"
+    ],
+    "en": [
+      "Storefronts",
+      "Shopping plazas",
+      "Restaurants",
+      "Offices",
+      "Clinics"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

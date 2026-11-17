@@ -1,0 +1,98 @@
+---
+import Layout from "../layouts/Layout.astro";
+import PageHero from "../components/PageHero.astro";
+import Pending from "../components/Pending.astro";
+import TrustPanels from "../components/TrustPanels.astro";
+import type { Lang } from "../data/site";
+import { LINES } from "../data/catalog";
+import { ABOUT, HOME, paragraphs, type Bi } from "../data/content";
+import { ROUTES } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = UI[lang];
+const tr = (b: Bi) => b[lang] || b.es;
+
+const COPY = {
+  es: {
+    story: "2 o 3 párrafos: quiénes son, desde cuándo trabajan y por qué empezaron",
+    experience: ["Experiencia", "años de experiencia"],
+    license: ["Licencia", "número de licencia"],
+    insurance: ["Seguro", "tipo de seguro o aseguradora"],
+    zones: "Zonas",
+  },
+  en: {
+    story: "2–3 paragraphs: who you are, how long you've been working and why you started",
+    experience: ["Experience", "years of experience"],
+    license: ["License", "license number"],
+    insurance: ["Insurance", "insurance type or carrier"],
+    zones: "Service area",
+  },
+};
+
+const c = COPY[lang];
+const story = paragraphs(tr(ABOUT.story));
+const facts: [string, string, string][] = [
+  [c.experience[0], tr(ABOUT.experience), c.experience[1]],
+  [c.license[0], ABOUT.license, c.license[1]],
+  [c.insurance[0], tr(ABOUT.insurance), c.insurance[1]],
+];
+const chipColors = LINES.slice(0, 3).map((l) => l.color);
+---
+<Layout lang={lang} page="about" title={tr(ABOUT.head.title)} description={tr(ABOUT.head.lead)} alternates={ROUTES.about}>
+  <PageHero
+    lang={lang}
+    title={tr(ABOUT.head.h1)}
+    lead={tr(ABOUT.head.lead)}
+    crumbs={[{ label: t.nav.home, href: ROUTES.home[lang] }, { label: t.nav.about }]}
+    mosaic={["fabricacion", "iluminacion", "letreros", "marino"]}
+  />
+
+  <section class="section">
+    <div class="container">
+      <div class="panel">
+        <h2 class="panel__title">{tr(ABOUT.storyTitle)}</h2>
+        <div class="prose">
+          {story.length ? story.map((p) => <p>{p}</p>) : <p><Pending lang={lang}>{c.story}</Pending></p>}
+        </div>
+      </div>
+      <dl class="facts">
+        {facts.map(([label, value, pending]) => (
+          <div>
+            <dt>{label}</dt>
+            <dd>{value ? value : <Pending lang={lang}>{pending}</Pending>}</dd>
+          </div>
+        ))}
+        <div>
+          <dt>{c.zones}</dt>
+          <dd>{tr(ABOUT.zones)}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section section--flush">
+    <div class="container">
+      <div class="sec-head"><div><h2>{tr(ABOUT.valuesTitle)}</h2></div></div>
+      <ul class="values">
+        {ABOUT.values.map((v, i) => (
+          <li>
+            <span class="chip chip--lg" style={`--c:${chipColors[i % chipColors.length]}`}></span>
+            <h3>{tr(v.title)}</h3>
+            <p>{tr(v.text)}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <TrustPanels lang={lang} logosTitle={tr(HOME.trust.title)} reviewsTitle={tr(HOME.trust.reviewsTitle)} />
+      <div class="cta cta--plain">
+        <a class="btn" href={ROUTES.quote[lang]}>{t.requestQuote}</a>
+      </div>
+    </div>
+  </section>
+</Layout>

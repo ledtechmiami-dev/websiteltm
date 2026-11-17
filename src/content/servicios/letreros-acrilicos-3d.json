@@ -1,0 +1,52 @@
+{
+  "nombre": "Letreros acrílicos 3D",
+  "linea": "letreros",
+  "orden": 3,
+  "nameEn": "3D acrylic signs",
+  "slugEn": "3d-acrylic-signs",
+  "short": {
+    "es": "Logos en acrílico con relieve para recepciones y paredes.",
+    "en": "Dimensional acrylic logos for lobbies and feature walls."
+  },
+  "intro": {
+    "es": "Tu logo en capas de acrílico con relieve, montado con separadores sobre la pared. Se ve profesional en recepciones, oficinas y consultorios.",
+    "en": "Your logo in layered, dimensional acrylic, mounted off the wall with standoffs. It looks sharp in lobbies, offices and clinics."
+  },
+  "includes": {
+    "es": [
+      "Acrílico de color, espejo o impreso",
+      "Capas y relieve a la medida",
+      "Separadores metálicos para pared",
+      "Opción con luz LED"
+    ],
+    "en": [
+      "Colored, mirror or printed acrylic",
+      "Custom layers and depth",
+      "Metal wall standoffs",
+      "Optional LED lighting"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Recepciones",
+      "Oficinas",
+      "Consultorios",
+      "Salones",
+      "Tiendas"
+    ],
+    "en": [
+      "Lobbies",
+      "Offices",
+      "Clinics",
+      "Salons",
+      "Stores"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

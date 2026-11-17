@@ -1,0 +1,53 @@
+---
+// Bloque de cotización: tarjeta oscura con datos y WhatsApp + formulario.
+import QuoteForm from "./QuoteForm.astro";
+import type { Lang } from "../data/site";
+import { SITE, waLink } from "../data/site";
+import { UI } from "../i18n/ui";
+
+interface Props {
+  lang: Lang;
+  preset?: string;
+  heading?: string;
+  waText?: string;
+}
+
+const { lang, preset, heading, waText } = Astro.props;
+const t = UI[lang];
+
+const COPY = {
+  es: {
+    title: "Solicita tu cotización",
+    text: "Sin costo y sin compromiso. Mientras más detalles nos des (medidas, fotos, dónde va), más precisa será la propuesta.",
+    facts: ["Respuesta en menos de 24 h", "Diseño, fabricación e instalación", "Atendemos Miami-Dade y Broward"],
+    wa: "¿Prefieres WhatsApp?",
+    waCta: `Escríbenos al ${SITE.phone}`,
+  },
+  en: {
+    title: "Request your quote",
+    text: "Free and with no commitment. The more details you share (size, photos, where it goes), the more accurate your proposal will be.",
+    facts: ["Response in under 24 hours", "Design, fabrication and installation", "Serving Miami-Dade and Broward"],
+    wa: "Prefer WhatsApp?",
+    waCta: `Message us at ${SITE.phone}`,
+  },
+};
+
+const c = COPY[lang];
+---
+<section class="section" id="cotizar">
+  <div class="container quote-wrap">
+    <div class="quote__intro">
+      <div class="ledbar" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <h2>{heading ?? c.title}</h2>
+      <p>{c.text}</p>
+      <ul class="quote__facts">
+        {c.facts.map((f) => <li>{f}</li>)}
+      </ul>
+      <a href={waLink(waText ?? t.waText)} class="quote__wa" target="_blank" rel="noopener">
+        <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>
+        <span>{c.wa} <strong>{c.waCta}</strong></span>
+      </a>
+    </div>
+    <QuoteForm lang={lang} preset={preset} />
+  </div>
+</section>

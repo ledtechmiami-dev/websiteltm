@@ -1,0 +1,59 @@
+{
+  "nombre": "Colgantes de puerta",
+  "linea": "graficos",
+  "orden": 13,
+  "padre": "marketing-digital",
+  "nameEn": "Door hangers",
+  "slugEn": "door-hangers",
+  "short": {
+    "es": "Colgantes troquelados de 4-1/4 × 11 in para repartir casa por casa, con el diseño que armas aquí mismo.",
+    "en": "Die-cut 4-1/4 × 11 in hangers for going door to door, with the design you build right here."
+  },
+  "intro": {
+    "es": "El colgante de puerta es el único anuncio que llega a la casa sin buzón y sin competencia: queda colgado de la perilla hasta que alguien lo lee. Sirve para trabajar una calle entera, para avisar que estás trabajando en el barrio o para dejar un cupón. Lo diseñas aquí mismo, eliges medida, troquel y material, y el constructor te enseña dónde empieza lo que se lee y cómo queda colgado.",
+    "en": "A door hanger is the one ad that reaches a house with no mailbox and no competition: it hangs on the knob until somebody reads it. It's for working a whole street, for letting the neighborhood know you're working nearby, or for leaving a coupon. You design it right here, pick the size, the die cut and the material, and the builder shows you where the readable part starts and how it hangs."
+  },
+  "includes": {
+    "es": [
+      "Medidas de 4-1/4 × 11, 3-1/2 × 8-1/2 y 4-1/4 × 14 in",
+      "Corte de contorno en plotter: agujero y ranura, bocallave o muesca",
+      "Agujero de 1-3/16 in, entra en casi toda perilla",
+      "Cartulina brillante o mate, de 14 o 16 pt",
+      "La forma que quieras, sin costo de matriz",
+      "Talón perforado a 2 in del borde, con taller aliado"
+    ],
+    "en": [
+      "4-1/4 × 11, 3-1/2 × 8-1/2 and 4-1/4 × 14 in sizes",
+      "Plotter contour cut: hole-and-slit, keyhole or notch",
+      "1-3/16 in hole, fits almost any doorknob",
+      "Glossy or matte card stock, 14 or 16 pt",
+      "Any shape you want, with no die cost",
+      "Stub perforated 2 in from the bottom, through a partner shop"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Jardinería y lavado a presión",
+      "Techos, plomería y aire acondicionado",
+      "Comida a domicilio",
+      "Bienes raíces",
+      "Avisos de la administración",
+      "Campañas y eventos del barrio"
+    ],
+    "en": [
+      "Landscaping and pressure washing",
+      "Roofing, plumbing and HVAC",
+      "Food delivery",
+      "Real estate",
+      "Building notices",
+      "Neighborhood campaigns and events"
+    ]
+  },
+  "note": {
+    "es": "El agujero se come las dos pulgadas de arriba: ahí no puede ir ni el logo ni el teléfono. El constructor marca en azul dónde empieza lo que de verdad se lee. El corte lo hacemos aquí, en plotter de contorno, así que la forma no cuesta matriz; si lo quieres con talón, la perforación la hace un taller aliado y suma días.",
+    "en": "The hole eats the top two inches: no logo and no phone number can go there. The builder marks in blue where the readable part really starts. We cut it here on a contour plotter, so the shape costs no die; if you want a stub, the perforation is done by a partner shop and adds days."
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

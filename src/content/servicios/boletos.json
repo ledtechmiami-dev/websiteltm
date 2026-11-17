@@ -1,0 +1,59 @@
+{
+  "nombre": "Boletos",
+  "linea": "graficos",
+  "orden": 14,
+  "padre": "marketing-digital",
+  "nameEn": "Tickets",
+  "slugEn": "tickets",
+  "short": {
+    "es": "Boletos numerados con talón perforado para tu evento o tu rifa, con el diseño que armas aquí mismo.",
+    "en": "Numbered tickets with a perforated stub for your event or your raffle, with the design you build right here."
+  },
+  "intro": {
+    "es": "Un boleto son dos cosas pegadas: la que se lleva quien entra y la que se queda quien cobra. Por eso lleva talón perforado y número, y el número tiene que estar en las dos mitades, porque es lo único que las une. Lo diseñas aquí mismo, eliges medida, talón y numeración, y el constructor te lo enseña arrancado para que veas qué queda en cada mano.",
+    "en": "A ticket is two things stuck together: the half the guest takes in and the half the person collecting keeps. That's why it has a perforated stub and a number, and the number has to be on both halves, because it's the only thing tying them together. You design it right here, pick the size, the stub and the numbering, and the builder shows it torn in two so you can see what stays in each hand."
+  },
+  "includes": {
+    "es": [
+      "Medidas de 5-1/2 × 2, 6-1/2 × 2-1/8 y 5-1/2 × 1-3/4 in para rifa",
+      "Talón perforado a la izquierda o a la derecha, con taller aliado",
+      "Numeración consecutiva, con el número en las dos mitades",
+      "Talón de rifa con renglones para el nombre y el teléfono",
+      "Cartulina de 14 pt brillante, mate o sin recubrir",
+      "Por una cara o por las dos, con condiciones al reverso"
+    ],
+    "en": [
+      "5-1/2 × 2, 6-1/2 × 2-1/8 and 5-1/2 × 1-3/4 in raffle sizes",
+      "Perforated stub on the left or on the right, through a partner shop",
+      "Sequential numbering, with the number on both halves",
+      "Raffle stub with ruled lines for the name and phone number",
+      "14 pt glossy, matte or uncoated card stock",
+      "Single- or double-sided, with terms on the back"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Conciertos y fiestas",
+      "Rifas y recaudaciones",
+      "Cenas benéficas",
+      "Iglesias y escuelas",
+      "Ferias y festivales",
+      "Entradas de temporada"
+    ],
+    "en": [
+      "Concerts and parties",
+      "Raffles and fundraisers",
+      "Charity dinners",
+      "Churches and schools",
+      "Fairs and festivals",
+      "Season passes"
+    ]
+  },
+  "note": {
+    "es": "La impresión la hacemos aquí, pero la perforación del talón y la numeración las hace un taller aliado: eso suma días a la entrega. Dinos la fecha del evento cuando pidas la cotización y te confirmamos si llegamos. Si los quieres sin talón y sin numerar, salen de aquí y salen antes.",
+    "en": "We print them here, but the stub perforation and the numbering are done by a partner shop, and that adds days to the delivery. Tell us the date of the event when you ask for the quote and we'll confirm whether we make it. If you want them with no stub and no numbering, they come straight from us and they come out sooner."
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

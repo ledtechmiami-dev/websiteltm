@@ -1,0 +1,50 @@
+{
+  "nombre": "Rotulación de botes",
+  "linea": "marino",
+  "orden": 1,
+  "nameEn": "Boat wraps",
+  "slugEn": "boat-wraps",
+  "short": {
+    "es": "Wraps completos o parciales, nombres y registros para el casco.",
+    "en": "Full or partial wraps, names and registration numbers for the hull."
+  },
+  "intro": {
+    "es": "Cambia el color o el diseño de tu bote con vinil, o agrega solo el nombre y el número de registro.",
+    "en": "Change your boat's color or design with vinyl, or just add its name and registration number."
+  },
+  "includes": {
+    "es": [
+      "Diseño adaptado al casco",
+      "Wrap completo o parcial",
+      "Nombre y número de registro",
+      "Instalación"
+    ],
+    "en": [
+      "Design fitted to the hull",
+      "Full or partial wrap",
+      "Name and registration number",
+      "Installation"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Lanchas",
+      "Botes de pesca",
+      "Yates",
+      "Jet skis"
+    ],
+    "en": [
+      "Center consoles",
+      "Fishing boats",
+      "Yachts",
+      "Jet skis"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

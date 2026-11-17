@@ -1,0 +1,52 @@
+{
+  "nombre": "Letreros de neón LED",
+  "linea": "letreros",
+  "orden": 2,
+  "nameEn": "LED neon signs",
+  "slugEn": "neon-signs",
+  "short": {
+    "es": "Neón flexible de LED con tu logo o frase, para interiores y vidrieras.",
+    "en": "Flexible LED neon with your logo or phrase, for interiors and windows."
+  },
+  "intro": {
+    "es": "Neón hecho con LED flexible: el brillo del neón clásico, con menos consumo y sin vidrio. Lo montamos sobre acrílico transparente o de color.",
+    "en": "Neon made with flexible LED: the glow of classic neon with lower power use and no glass. We mount it on clear or colored acrylic."
+  },
+  "includes": {
+    "es": [
+      "Diseño a partir de tu logo o frase",
+      "Base de acrílico cortada a la forma",
+      "Colores fijos o RGB",
+      "Fuente de poder incluida"
+    ],
+    "en": [
+      "Designed from your logo or phrase",
+      "Acrylic backer cut to shape",
+      "Single colors or RGB",
+      "Power supply included"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Vidrieras",
+      "Bares y restaurantes",
+      "Salones de belleza",
+      "Eventos y bodas",
+      "Casas"
+    ],
+    "en": [
+      "Shop windows",
+      "Bars and restaurants",
+      "Beauty salons",
+      "Events and weddings",
+      "Homes"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

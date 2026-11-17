@@ -1,0 +1,50 @@
+{
+  "nombre": "Pisos EVA foam para botes",
+  "linea": "marino",
+  "orden": 2,
+  "nameEn": "EVA foam boat decking",
+  "slugEn": "eva-foam-boat-decking",
+  "short": {
+    "es": "Piso antideslizante de EVA foam cortado a la medida de tu bote.",
+    "en": "Non-slip EVA foam decking cut to fit your boat."
+  },
+  "intro": {
+    "es": "Piso de EVA foam antideslizante y cómodo al pisar, cortado a la medida de tu cubierta. Puede llevar tu logo o el nombre del bote grabado.",
+    "en": "Non-slip EVA foam that's comfortable underfoot, cut to fit your deck. It can carry your logo or the boat's name engraved."
+  },
+  "includes": {
+    "es": [
+      "Plantilla a la medida de la cubierta",
+      "Colores de una o dos capas",
+      "Logo o nombre grabado",
+      "Instalación"
+    ],
+    "en": [
+      "Template made to your deck",
+      "One- or two-tone colors",
+      "Engraved logo or name",
+      "Installation"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Cubiertas",
+      "Plataformas de baño",
+      "Consolas",
+      "Pisos de cabina"
+    ],
+    "en": [
+      "Decks",
+      "Swim platforms",
+      "Consoles",
+      "Cockpit floors"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

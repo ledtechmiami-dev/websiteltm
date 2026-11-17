@@ -1,0 +1,24 @@
+---
+// Cinta en movimiento con todos los servicios. Es decorativa (los mismos servicios
+// están enlazados más abajo), por eso los lectores de pantalla la omiten.
+import type { Lang } from "../data/site";
+import { SERVICES, lineOf } from "../data/catalog";
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+---
+<div class="container marquee" aria-hidden="true">
+  <div class="marquee__band">
+    <div class="marquee__view">
+      <div class="marquee__track">
+        {[0, 1].map(() => (
+          <ul>
+            {SERVICES.map((s) => (
+              <li><span class="chip" style={`--c:${lineOf(s).color}`}></span>{s[lang].name}</li>
+            ))}
+          </ul>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>

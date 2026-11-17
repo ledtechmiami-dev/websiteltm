@@ -1,0 +1,869 @@
+---
+// Constructor de channel letters (idea tomada de buysignletters.com): el cliente escribe el
+// nombre de su negocio, elige letra, altura, iluminación, colores de la cara y del canto,
+// profundidad y montaje; ve las letras en una fachada de día y de noche, con el largo
+// aproximado, y envía el diseño directo al correo. No muestra precios.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Las 5 letras con las que se fabrican las channel letters (lista del cliente, 2026-09-25).
+// name es el nombre que ve el cliente y llega en la cotización. css es la letra de la vista previa:
+// Arial y Arial Narrow se usan si el equipo las tiene; si no, una de Google Fonts de medidas parecidas.
+// Gilroy y Assemblage son de pago, así que por ahora se ven con una parecida de Google Fonts.
+const FONTS = [
+  { id: "arial-narrow", name: "Arial Narrow Bold", css: `"Arial Narrow","Archivo Narrow",sans-serif`, weight: 700, q: "Archivo+Narrow:wght@700" },
+  { id: "arial", name: "Arial Bold", css: `Arial,Arimo,sans-serif`, weight: 700, q: "Arimo:wght@700" },
+  { id: "assemblage", name: "Assemblage Black", css: `"Archivo Black",sans-serif`, weight: 400, q: "Archivo+Black" },
+  { id: "gilroy", name: "Gilroy Bold", css: `Poppins,sans-serif`, weight: 700, q: "Poppins:wght@700" },
+  { id: "montserrat", name: "Montserrat Medium", css: `Montserrat,sans-serif`, weight: 500, q: "Montserrat:wght@500" },
+];
+const fontsHref = `https://fonts.googleapis.com/css2?${FONTS.map((f) => `family=${f.q}`).join("&")}&display=swap`;
+
+// Acrílico de la cara: color de día y color encendido
+const FACES = [
+  { id: "blanco", hex: "#F4F4EF", glow: "#FFFFFF", es: "Blanco", en: "White" },
+  { id: "rojo", hex: "#D1202A", glow: "#FF4436", es: "Rojo", en: "Red" },
+  { id: "azul", hex: "#0E4FA8", glow: "#3C8BFF", es: "Azul", en: "Blue" },
+  { id: "verde", hex: "#10853D", glow: "#3DEB6A", es: "Verde", en: "Green" },
+  { id: "amarillo", hex: "#FFC414", glow: "#FFE45C", es: "Amarillo", en: "Yellow" },
+  { id: "naranja", hex: "#F0661C", glow: "#FF9A3D", es: "Naranja", en: "Orange" },
+  { id: "morado", hex: "#5A2A8C", glow: "#B45CFF", es: "Morado", en: "Purple" },
+];
+// Canto (lateral de aluminio pintado)
+const RETURNS = [
+  { id: "negro", hex: "#1D1E21", es: "Negro", en: "Black" },
+  { id: "blanco", hex: "#E9E9E5", es: "Blanco", en: "White" },
+  { id: "aluminio", hex: "#A7ACB1", es: "Aluminio", en: "Aluminum" },
+  { id: "bronce", hex: "#5E4129", es: "Bronce", en: "Bronze" },
+  { id: "cara", hex: "", es: "Igual a la cara", en: "Match the face" },
+];
+// Luz del halo (la que se refleja en la pared)
+const HALOS = [
+  { id: "frio", hex: "#EAF4FF", es: "Blanco frío", en: "Cool white" },
+  { id: "calido", hex: "#FFD39A", es: "Blanco cálido", en: "Warm white" },
+  { id: "rojo", hex: "#FF3B30", es: "Rojo", en: "Red" },
+  { id: "azul", hex: "#3C8BFF", es: "Azul", en: "Blue" },
+  { id: "verde", hex: "#3DEB6A", es: "Verde", en: "Green" },
+];
+const HEIGHTS = [12, 18, 24, 36];
+
+const COPY = {
+  es: {
+    title: "Diseña tus channel letters",
+    lead: "Escribe el nombre de tu negocio, elige la letra, la altura y los colores, y míralo en una fachada de día y de noche. Envíanos el diseño y te respondemos con el precio.",
+    defaultText: "Café Miami",
+    text: "Texto del letrero",
+    textHelp: "Hasta 2 líneas. Cada letra es una pieza separada.",
+    font: "Letra",
+    size: "Altura de las letras",
+    height: "Altura",
+    lengthLbl: "Largo aprox. de la línea más larga",
+    lengthNote: "Puede variar un 10 % según la letra. Si necesitas una medida exacta, escríbela en las notas.",
+    light: "Iluminación",
+    lights: { frontal: "Frontal", halo: "Halo (trasera)", ambas: "Frontal + halo", ninguna: "Sin luz" },
+    lightHelp: {
+      frontal: "La luz sale por la cara de acrílico.",
+      halo: "La cara es de metal y la luz se refleja en la pared, detrás de cada letra.",
+      ambas: "Se ilumina la cara y también la pared, detrás de cada letra.",
+      ninguna: "Letras en 3D sin LEDs; de noche solo se ven con la luz de la calle.",
+    },
+    face: "Color de la cara",
+    faceMetal: "En halo la cara es de metal, del mismo color del canto.",
+    custom: "Tu color",
+    customHelp: "Elige el color de tu marca",
+    halo: "Color del halo",
+    ret: "Canto (lateral)",
+    retColor: "Color del canto",
+    depthNote: "Profundidad del canto: 3 in.",
+    mount: "Montaje",
+    mounts: { pared: "Directo a la pared", riel: "Sobre riel", nose: "Recomiéndame" },
+    mountHelp: "El riel es una barra detrás de las letras que lleva los cables; se usa cuando no se puede perforar mucho la fachada.",
+    order: "Instalación y lugar",
+    installs: { si: "Con instalación", no: "Solo las letras" },
+    use: "¿Dónde va?",
+    uses: { fachada: "Fachada del local", plaza: "Plaza comercial", interior: "Interior u oficina" },
+    night: "Noche",
+    wall: "Fachada",
+    walls: { clara: "Clara", ladrillo: "Ladrillo", oscura: "Oscura" },
+    approx: "Vista aproximada · los colores reales varían",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h.",
+    cta: "Cotizar este letrero",
+    wa: "Enviar por WhatsApp",
+    logo: "¿Es un logo y no solo letras?",
+    logoCta: "Mándanoslo por WhatsApp",
+    logoWa: "Hola, quiero channel letters con mi logo. Les envío el archivo.",
+    notesPh: "Medida de la fachada, para cuándo lo necesitas, dirección del local…",
+    summary: "Diseño del constructor de channel letters",
+    sText: "Texto",
+    sFont: "Letra",
+    sHeight: "Altura de las letras",
+    sLength: "Largo aprox.",
+    sLight: "Iluminación",
+    sFace: "Cara",
+    sFaceMetal: "metal, color del canto",
+    sHalo: "Halo",
+    sReturn: "Canto",
+    sMount: "Montaje",
+    sInstall: "Instalación",
+    sUse: "Dónde va",
+    sLines: "líneas",
+    sTotal: "alto total",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesan estas channel letters:",
+    preview: "Vista previa del letrero",
+  },
+  en: {
+    title: "Design your channel letters",
+    lead: "Type your business name, pick the lettering, height and colors, and see it on a storefront by day and by night. Send us the design and we'll reply with the price.",
+    defaultText: "Café Miami",
+    text: "Sign text",
+    textHelp: "Up to 2 lines. Each letter is a separate piece.",
+    font: "Lettering",
+    size: "Letter height",
+    height: "Height",
+    lengthLbl: "Approx. length of the longest line",
+    lengthNote: "It may vary by 10% depending on the lettering. If you need an exact size, add it to the notes.",
+    light: "Lighting",
+    lights: { frontal: "Front-lit", halo: "Halo (back-lit)", ambas: "Front + halo", ninguna: "Non-lit" },
+    lightHelp: {
+      frontal: "Light shines through the acrylic face.",
+      halo: "The face is metal and the light glows on the wall behind each letter.",
+      ambas: "The face lights up and the wall glows behind each letter too.",
+      ninguna: "3D letters without LEDs; at night they only show under street light.",
+    },
+    face: "Face color",
+    faceMetal: "With halo lighting the face is metal, the same color as the returns.",
+    custom: "Your color",
+    customHelp: "Pick your brand color",
+    halo: "Halo color",
+    ret: "Returns (sides)",
+    retColor: "Return color",
+    depthNote: "Return depth: 3 in.",
+    mount: "Mounting",
+    mounts: { pared: "Direct to wall", riel: "On a raceway", nose: "Recommend one" },
+    mountHelp: "A raceway is a bar behind the letters that carries the wiring; it's used when the wall can't take many holes.",
+    order: "Installation and location",
+    installs: { si: "With installation", no: "Letters only" },
+    use: "Where does it go?",
+    uses: { fachada: "Storefront", plaza: "Shopping plaza", interior: "Indoors or office" },
+    night: "Night",
+    wall: "Wall",
+    walls: { clara: "Light", ladrillo: "Brick", oscura: "Dark" },
+    approx: "Approximate preview · real colors vary",
+    price: "Price: we send it with your quote, in under 24 hours.",
+    cta: "Quote this sign",
+    wa: "Send on WhatsApp",
+    logo: "Is it a logo rather than just letters?",
+    logoCta: "Send it to us on WhatsApp",
+    logoWa: "Hi, I'd like channel letters with my logo. I'll send you the file.",
+    notesPh: "Storefront width, when you need it, the business address…",
+    summary: "Channel letters builder design",
+    sText: "Text",
+    sFont: "Lettering",
+    sHeight: "Letter height",
+    sLength: "Approx. length",
+    sLight: "Lighting",
+    sFace: "Face",
+    sFaceMetal: "metal, return color",
+    sHalo: "Halo",
+    sReturn: "Returns",
+    sMount: "Mounting",
+    sInstall: "Installation",
+    sUse: "Where it goes",
+    sLines: "lines",
+    sTotal: "total height",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in these channel letters:",
+    preview: "Sign preview",
+  },
+};
+
+const c = COPY[lang];
+const cfg = {
+  fonts: FONTS.map(({ id, name, css, weight }) => ({ id, name, css, weight })),
+  faces: FACES.map((f) => ({ id: f.id, hex: f.hex, glow: f.glow, name: f[lang] })),
+  returns: RETURNS.map((r) => ({ id: r.id, hex: r.hex, name: r[lang] })),
+  halos: HALOS.map((h) => ({ id: h.id, hex: h.hex, name: h[lang] })),
+  lights: c.lights,
+  lightHelp: c.lightHelp,
+  mounts: c.mounts,
+  installs: c.installs,
+  uses: c.uses,
+  walls: c.walls,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    custom: c.custom,
+    summary: c.summary,
+    sText: c.sText,
+    sFont: c.sFont,
+    sHeight: c.sHeight,
+    sLength: c.sLength,
+    sLight: c.sLight,
+    sFace: c.sFace,
+    sFaceMetal: c.sFaceMetal,
+    sHalo: c.sHalo,
+    sReturn: c.sReturn,
+    sMount: c.sMount,
+    sInstall: c.sInstall,
+    sUse: c.sUse,
+    sLines: c.sLines,
+    sTotal: c.sTotal,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+    preview: c.preview,
+  },
+};
+const waLogo = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.logoWa)}`;
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+const retSwatch = (hex: string) =>
+  hex === "#A7ACB1" ? "--c:linear-gradient(135deg, #CDD1D5, #8E9398 55%, #BFC3C7)" : `--c:${hex}`;
+---
+<link rel="stylesheet" href={fontsHref} />
+
+<section class="section" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb cl" data-channel data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage" data-wall="clara">
+        <canvas class="nb__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-night aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.night}
+          </button>
+          <button type="button" class="nb__tool" data-wall-toggle>
+            {c.wall}: <b data-wall-name>{c.walls.clara}</b>
+          </button>
+        </div>
+        <p class="nb__approx">{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <div class="nb__group">
+          <label class="nb__label" for="cl-text">{c.text}</label>
+          <textarea id="cl-text" name="text" rows="2" maxlength="60" spellcheck="false" aria-describedby="cl-text-help">{c.defaultText}</textarea>
+          <p class="nb__help" id="cl-text-help">{c.textHelp}</p>
+        </div>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.font}</legend>
+          <div class="nb__fonts">
+            {FONTS.map((f) => (
+              <label class="nb__font">
+                <input type="radio" name="font" value={f.id} checked={f.id === FONTS[0].id} />
+                <span style={`font-family:${f.css};font-weight:${f.weight}`}>{f.name}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.size}</legend>
+          <div class="nb__sizes">
+            {HEIGHTS.map((h) => (
+              <button type="button" class="nb__pill" data-height={h}>{h} <small>in</small></button>
+            ))}
+          </div>
+          <div class="nb__range">
+            <label for="cl-height">{c.height}</label>
+            <output class="nb__dims" for="cl-height" data-height-out>18 in · 46 cm</output>
+            <input id="cl-height" type="range" name="altura" min="8" max="48" step="1" value="18" />
+          </div>
+          <div class="cl__len">
+            <span>{c.lengthLbl}</span>
+            <output data-length-out>—</output>
+          </div>
+          <p class="nb__help">{c.lengthNote}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.light}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.light} aria-describedby="cl-light-help">
+            {seg("luz", c.lights).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="cl-light-help" data-light-help>{c.lightHelp.frontal}</p>
+        </fieldset>
+
+        <fieldset class="nb__group" data-face-group>
+          <legend class="nb__label">{c.face}: <span class="eb__picked" data-face-name></span></legend>
+          <div class="eb__sws">
+            {FACES.map((f) => (
+              <label class="eb__sw" title={f[lang]}>
+                <input type="radio" name="cara" value={f.id} checked={f.id === "rojo"} aria-label={f[lang]} />
+                <i style={`--c:${f.hex}`} aria-hidden="true"></i>
+              </label>
+            ))}
+            <label class="eb__sw cl__custom" title={c.custom}>
+              <input type="radio" name="cara" value="marca" aria-label={c.custom} />
+              <i aria-hidden="true"></i>
+            </label>
+          </div>
+          <div class="cl__pick" data-custom hidden>
+            <label for="cl-hex">{c.customHelp}</label>
+            <input id="cl-hex" type="color" name="caraHex" value="#E4007C" />
+          </div>
+          <p class="nb__help" data-face-note hidden>{c.faceMetal}</p>
+        </fieldset>
+
+        <fieldset class="nb__group" data-halo-group hidden>
+          <legend class="nb__label">{c.halo}: <span class="eb__picked" data-halo-name></span></legend>
+          <div class="eb__sws">
+            {HALOS.map((h) => (
+              <label class="eb__sw" title={h[lang]}>
+                <input type="radio" name="halo" value={h.id} checked={h.id === "frio"} aria-label={h[lang]} />
+                <i class="cl__glow" style={`--c:${h.hex}`} aria-hidden="true"></i>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.ret}</legend>
+          <p class="tb__sub">{c.retColor}: <span class="cl__subval" data-return-name></span></p>
+          <div class="eb__sws">
+            {RETURNS.map((r) => (
+              <label class="eb__sw" title={r[lang]}>
+                <input type="radio" name="canto" value={r.id} checked={r.id === "negro"} aria-label={r[lang]} />
+                <i class={r.hex ? undefined : "cl__match"} style={r.hex ? retSwatch(r.hex) : undefined} aria-hidden="true"></i>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help">{c.depthNote}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.mount}</legend>
+          <div class="nb__seg nb__seg--wrap eb__seg3" role="radiogroup" aria-label={c.mount} aria-describedby="cl-mount-help">
+            {seg("montaje", c.mounts).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" id="cl-mount-help">{c.mountHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="nb__seg" role="radiogroup" aria-label={c.order}>
+            {seg("instal", c.installs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.use}</p>
+          <div class="nb__seg nb__seg--wrap eb__seg3" role="radiogroup" aria-label={c.use}>
+            {seg("uso", c.uses).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="cl" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+          <p class="nb__logo">{c.logo} <a href={waLogo} target="_blank" rel="noopener">{c.logoCta}</a></p>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Font = { id: string; name: string; css: string; weight: number };
+  type Face = { id: string; hex: string; glow: string; name: string };
+  type Swatch = { id: string; hex: string; name: string };
+  type Cfg = {
+    fonts: Font[];
+    faces: Face[];
+    returns: Swatch[];
+    halos: Swatch[];
+    lights: Record<string, string>;
+    lightHelp: Record<string, string>;
+    mounts: Record<string, string>;
+    installs: Record<string, string>;
+    uses: Record<string, string>;
+    walls: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+
+  const CM = 2.54;
+  const MIN_H = 8;
+  const MAX_H = 48;
+  const SCENE_IN = 180; // la fachada de la vista mide al menos 15 ft de ancho
+  const DEPTH = 3; // profundidad del canto, en pulgadas (el taller fabrica solo 3 in)
+  const WALLS = ["clara", "ladrillo", "oscura"];
+
+  // ---------- Colores ----------
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const mix = (hex: string, to: number[], t: number) => {
+    const [r, g, b] = rgb(hex);
+    return `rgb(${Math.round(r + (to[0] - r) * t)},${Math.round(g + (to[1] - g) * t)},${Math.round(b + (to[2] - b) * t)})`;
+  };
+  const alpha = (hex: string, a: number) => `rgba(${rgb(hex).join(",")},${a})`;
+  const BLACK = [0, 0, 0];
+  const WHITE = [255, 255, 255];
+  // Color encendido de un color cualquiera (para el color de marca)
+  const glowOf = (hex: string) => {
+    const [r, g, b] = rgb(hex);
+    const m = Math.max(r, g, b) || 1;
+    const k = 255 / m;
+    return `#${[r, g, b].map((v) => Math.round(Math.min(255, v * k * 0.9 + 25)).toString(16).padStart(2, "0")).join("")}`;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-channel]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const stage = root.querySelector<HTMLElement>(".nb__stage")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const textEl = form.querySelector<HTMLTextAreaElement>("textarea[name='text']")!;
+    const heightEl = form.querySelector<HTMLInputElement>("input[name='altura']")!;
+    const hexEl = form.querySelector<HTMLInputElement>("input[name='caraHex']")!;
+    const heightOut = form.querySelector<HTMLOutputElement>("[data-height-out]")!;
+    const lengthOut = form.querySelector<HTMLOutputElement>("[data-length-out]")!;
+    const lightHelp = form.querySelector<HTMLElement>("[data-light-help]")!;
+    const faceGroup = form.querySelector<HTMLFieldSetElement>("[data-face-group]")!;
+    const faceName = form.querySelector<HTMLElement>("[data-face-name]")!;
+    const faceNote = form.querySelector<HTMLElement>("[data-face-note]")!;
+    const customBox = form.querySelector<HTMLElement>("[data-custom]")!;
+    const haloGroup = form.querySelector<HTMLFieldSetElement>("[data-halo-group]")!;
+    const haloName = form.querySelector<HTMLElement>("[data-halo-name]")!;
+    const returnName = form.querySelector<HTMLElement>("[data-return-name]")!;
+    const nightBtn = root.querySelector<HTMLButtonElement>("[data-night]")!;
+    const wallBtn = root.querySelector<HTMLButtonElement>("[data-wall-toggle]")!;
+    const wallName = root.querySelector<HTMLElement>("[data-wall-name]")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    let night = false;
+    let wall = "clara";
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+    let size = { len: 0, total: 0, lines: 1 };
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList | HTMLInputElement).value;
+    const font = () => cfg.fonts.find((f) => f.id === val("font")) ?? cfg.fonts[0];
+    const heightIn = () => Number(heightEl.value);
+    const light = () => val("luz");
+    const hasFront = () => light() === "frontal" || light() === "ambas";
+    const hasHalo = () => light() === "halo" || light() === "ambas";
+    const face = (): Face => {
+      if (val("cara") === "marca") {
+        const hex = hexEl.value.toUpperCase();
+        return { id: "marca", hex, glow: glowOf(hex), name: `${cfg.copy.custom} ${hex}` };
+      }
+      return cfg.faces.find((f) => f.id === val("cara")) ?? cfg.faces[0];
+    };
+    const ret = () => cfg.returns.find((r) => r.id === val("canto")) ?? cfg.returns[0];
+    const retHex = () => ret().hex || face().hex;
+    const halo = () => cfg.halos.find((h) => h.id === val("halo")) ?? cfg.halos[0];
+    const lines = () => {
+      const ls = textEl.value.replace(/\r/g, "").split("\n").slice(0, 2).map((l) => l.trim());
+      while (ls.length > 1 && !ls[ls.length - 1]) ls.pop();
+      return ls.some(Boolean) ? ls : ["ABC"];
+    };
+    const fmtFt = (inches: number) => {
+      const ft = Math.floor(inches / 12);
+      const rest = Math.round(inches - ft * 12);
+      return rest === 12 ? `${ft + 1} ft` : rest ? `${ft} ft ${rest} in` : `${ft} ft`;
+    };
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const params = new URLSearchParams(location.search);
+    if (params.get("letrero")) {
+      textEl.value = params.get("letrero")!.slice(0, 60);
+      ["font", "luz", "cara", "halo", "canto", "montaje", "instal", "uso"].forEach((n) =>
+        setRadio(n, params.get(n === "font" ? "letra" : n))
+      );
+      const h = Number(params.get("altura"));
+      if (h >= MIN_H && h <= MAX_H) heightEl.value = String(Math.round(h));
+      const hex = params.get("color");
+      if (hex && /^[0-9a-f]{6}$/i.test(hex)) hexEl.value = `#${hex}`;
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams({
+        letrero: lines().join("\n"),
+        letra: val("font"),
+        altura: heightEl.value,
+        luz: val("luz"),
+        cara: val("cara"),
+        halo: val("halo"),
+        canto: val("canto"),
+        montaje: val("montaje"),
+        instal: val("instal"),
+        uso: val("uso"),
+      });
+      if (val("cara") === "marca") p.set("color", hexEl.value.slice(1));
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Medidas (a 100 px; la altura de la letra es la de la mayúscula) ----------
+    type Line = { text: string; left: number; right: number; asc: number; desc: number };
+    type Metrics = { ls: Line[]; cap: number; lh: number; inkW: number; inkH: number; top: number };
+    const measure = (f: Font): Metrics => {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.font = `${f.weight} 100px ${f.css}`;
+      ctx.textBaseline = "alphabetic"; // las medidas dependen de la línea base
+      const cap = ctx.measureText("H").actualBoundingBoxAscent || 70;
+      const lh = cap * 1.55;
+      let inkW = 1, top = Infinity, bottom = -Infinity;
+      const ls = lines().map((text, i) => {
+        const m = ctx.measureText(text || " ");
+        const d = { text, left: m.actualBoundingBoxLeft, right: m.actualBoundingBoxRight, asc: m.actualBoundingBoxAscent, desc: m.actualBoundingBoxDescent };
+        if (text) {
+          inkW = Math.max(inkW, d.left + d.right);
+          top = Math.min(top, i * lh - Math.max(d.asc, cap));
+          bottom = Math.max(bottom, i * lh + d.desc);
+        }
+        return d;
+      });
+      ctx.restore();
+      return { ls, cap, lh, inkW, inkH: Math.max(bottom - top, 1), top };
+    };
+
+    // ---------- Dibujo ----------
+    const draw = () => {
+      const f = font();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const m = measure(f);
+      const H = heightIn();
+      const u = H / m.cap; // pulgadas por unidad de medida
+      const signW = m.inkW * u;
+      const signH = m.inkH * u;
+      size = { len: signW, total: signH, lines: m.ls.filter((l) => l.text).length };
+      const depth = DEPTH;
+
+      // Vidriera abajo; el letrero va arriba, a escala con una fachada de al menos 15 ft
+      const glassH = Math.round(Math.min(ch * 0.2, 110));
+      const availW = cw - 150;
+      const availH = ch - glassH - 118;
+      const ppi = Math.min(availW / Math.max(SCENE_IN, signW * 1.15), availH / (signH + depth));
+      const px = (100 * u) * ppi; // tamaño de la fuente en px
+      const k = px / 100;
+      const inkWpx = m.inkW * k;
+      const inkHpx = m.inkH * k;
+      const cx = cw / 2 + 14;
+      const inkTop = (ch - glassH) / 2 - inkHpx / 2 + 4;
+      const dx = depth * ppi * 0.32;
+      const dy = depth * ppi * 0.5;
+
+      // Noche: la pared se oscurece (el lienzo está encima del fondo de la fachada)
+      if (night) {
+        ctx.fillStyle = "rgba(6, 9, 20, 0.84)";
+        ctx.fillRect(0, 0, cw, ch);
+      }
+
+      // Vidriera del local
+      const gy0 = ch - glassH;
+      const glass = ctx.createLinearGradient(0, gy0, 0, ch);
+      if (night) {
+        glass.addColorStop(0, "#3A3226");
+        glass.addColorStop(1, "#6B5639");
+      } else {
+        glass.addColorStop(0, "#4F6573");
+        glass.addColorStop(0.5, "#7E95A2");
+        glass.addColorStop(1, "#3E515D");
+      }
+      ctx.fillStyle = glass;
+      ctx.fillRect(0, gy0, cw, glassH);
+      ctx.fillStyle = night ? "#15161A" : "#2A2C30";
+      ctx.fillRect(0, gy0 - 6, cw, 8);
+      for (let x = 70; x < cw; x += 150) ctx.fillRect(x, gy0, 5, glassH);
+      if (!night) {
+        ctx.fillStyle = "rgba(255,255,255,0.14)";
+        for (let x = 70; x < cw; x += 150) {
+          ctx.beginPath();
+          ctx.moveTo(x + 30, gy0 + glassH);
+          ctx.lineTo(x + 70, gy0 + 2);
+          ctx.lineTo(x + 92, gy0 + 2);
+          ctx.lineTo(x + 52, gy0 + glassH);
+          ctx.fill();
+        }
+      }
+
+      ctx.font = `${f.weight} ${px}px ${f.css}`;
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "left";
+      ctx.lineJoin = "round";
+      const pos = m.ls.map((l, i) => ({
+        text: l.text,
+        x: cx - ((l.right - l.left) / 2) * k,
+        y: inkTop + (i * m.lh - m.top) * k,
+        w: (l.left + l.right) * k,
+      }));
+      const each = (fn: (t: string, x: number, y: number) => void, ox = 0, oy = 0) =>
+        pos.forEach((p) => p.text && fn(p.text, p.x + ox, p.y + oy));
+
+      const fc = face();
+      const rc = retHex();
+      const front = hasFront();
+      const haloOn = hasHalo();
+      const faceHex = light() === "halo" ? rc : fc.hex;
+      const trimW = Math.max(1, 0.35 * ppi);
+
+      // Riel: una barra por línea, detrás de las letras
+      if (val("montaje") === "riel") {
+        const rh = Math.max(7 * ppi, H * 0.34 * ppi);
+        pos.forEach((p) => {
+          if (!p.text) return;
+          const x = cx - p.w / 2 - 5 * ppi;
+          const y = p.y - H * ppi * 0.5 - rh / 2;
+          const w = p.w + 10 * ppi;
+          ctx.fillStyle = night ? "#0D0E11" : mix(rc, BLACK, 0.3);
+          ctx.fillRect(x + dx * 0.6, y + dy * 0.6, w, rh);
+          ctx.fillStyle = night ? "#17181C" : rc;
+          ctx.fillRect(x, y, w, rh);
+          ctx.fillStyle = night ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.14)";
+          ctx.fillRect(x, y, w, Math.max(1, rh * 0.12));
+        });
+      }
+
+      // Sombra de día o halo de noche, sobre la pared
+      ctx.save();
+      if (night && (haloOn || front)) {
+        // La luz baña un poco la pared alrededor del letrero
+        const wash = haloOn ? halo().hex : fc.glow;
+        const r = Math.max(inkWpx, inkHpx) * 0.75;
+        const g = ctx.createRadialGradient(cx, inkTop + inkHpx / 2, 0, cx, inkTop + inkHpx / 2, r);
+        g.addColorStop(0, alpha(wash, haloOn ? 0.2 : 0.12));
+        g.addColorStop(1, alpha(wash, 0));
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, cw, ch);
+      }
+      if (night && haloOn) {
+        const hc = halo().hex;
+        ctx.shadowColor = hc;
+        ctx.fillStyle = hc;
+        ctx.lineWidth = Math.max(2, H * ppi * 0.1);
+        ctx.strokeStyle = hc;
+        for (const b of [0.5, 0.26, 0.1]) {
+          ctx.shadowBlur = Math.max(6, H * ppi * b) * dpr;
+          each((t, x, y) => { ctx.strokeText(t, x, y); ctx.fillText(t, x, y); }, dx * 0.4, dy * 0.4);
+        }
+      } else if (!night) {
+        ctx.shadowColor = wall === "oscura" ? "rgba(0,0,0,0.55)" : "rgba(40,30,20,0.34)";
+        ctx.shadowBlur = Math.max(4, depth * ppi * 0.9) * dpr;
+        ctx.fillStyle = wall === "oscura" ? "rgba(0,0,0,0.4)" : "rgba(40,30,20,0.22)";
+        each((t, x, y) => ctx.fillText(t, x, y), dx * 1.6, dy * 1.6);
+      }
+      ctx.restore();
+
+      // Canto: capas desplazadas hacia abajo a la derecha
+      const steps = Math.min(48, Math.max(3, Math.ceil(Math.hypot(dx, dy))));
+      const sideDark = night ? "#0A0B0D" : mix(rc, BLACK, 0.42);
+      const sideLight = night ? "#141519" : mix(rc, BLACK, 0.18);
+      for (let i = steps; i >= 1; i--) {
+        ctx.fillStyle = i > steps * 0.35 ? sideDark : sideLight;
+        each((t, x, y) => ctx.fillText(t, x, y), (dx * i) / steps, (dy * i) / steps);
+      }
+
+      // Moldura de la cara (trim cap) y cara
+      ctx.save();
+      ctx.lineWidth = trimW * 2;
+      ctx.strokeStyle = night ? (front ? mix(rc, BLACK, 0.55) : "#101114") : mix(rc, WHITE, rc === "#1D1E21" ? 0.08 : 0);
+      if (light() !== "halo") each((t, x, y) => ctx.strokeText(t, x, y));
+      if (night && front) {
+        ctx.shadowColor = fc.glow;
+        ctx.shadowBlur = Math.max(8, H * ppi * 0.28) * dpr;
+        ctx.fillStyle = fc.glow;
+        each((t, x, y) => ctx.fillText(t, x, y));
+        ctx.shadowBlur = Math.max(3, H * ppi * 0.06) * dpr;
+        ctx.fillStyle = mix(fc.glow, WHITE, 0.45);
+        each((t, x, y) => ctx.fillText(t, x, y));
+      } else {
+        const top = inkTop;
+        const g = ctx.createLinearGradient(0, top, 0, top + inkHpx);
+        const base = night ? mix(faceHex, BLACK, 0.8) : faceHex;
+        g.addColorStop(0, night ? base : mix(faceHex, WHITE, 0.14));
+        g.addColorStop(1, night ? base : mix(faceHex, BLACK, 0.08));
+        ctx.fillStyle = g;
+        each((t, x, y) => ctx.fillText(t, x, y));
+      }
+      ctx.restore();
+
+      // Cotas: largo abajo y altura de la letra a la izquierda
+      const ink = night || wall !== "clara" ? "rgba(255,255,255,0.82)" : "rgba(11,12,14,0.74)";
+      const bx = cx - inkWpx / 2;
+      const gyy = Math.min(inkTop + inkHpx + dy + 22, gy0 - 26);
+      const first = pos.find((p) => p.text) ?? pos[0];
+      const capTop = first.y - H * ppi;
+      const gx = Math.max(bx - 22 - (val("montaje") === "riel" ? 5 * ppi : 0), 58);
+      const tick = 5;
+      ctx.save();
+      ctx.strokeStyle = ink;
+      ctx.fillStyle = ink;
+      ctx.lineWidth = 1;
+      ctx.font = `600 12px "Instrument Sans", system-ui, sans-serif`;
+      ctx.beginPath();
+      ctx.moveTo(bx, gyy); ctx.lineTo(bx + inkWpx, gyy);
+      ctx.moveTo(bx, gyy - tick); ctx.lineTo(bx, gyy + tick);
+      ctx.moveTo(bx + inkWpx, gyy - tick); ctx.lineTo(bx + inkWpx, gyy + tick);
+      ctx.moveTo(gx, capTop); ctx.lineTo(gx, first.y);
+      ctx.moveTo(gx - tick, capTop); ctx.lineTo(gx + tick, capTop);
+      ctx.moveTo(gx - tick, first.y); ctx.lineTo(gx + tick, first.y);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(`≈ ${Math.round(signW)} in · ${fmtFt(signW)}`, bx + inkWpx / 2, gyy + 7);
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`${H} in`, gx - 9, (capTop + first.y) / 2);
+      ctx.restore();
+
+      canvas.setAttribute(
+        "aria-label",
+        `${cfg.copy.preview}: "${lines().join(" / ")}" · ${f.name} · ${H} in · ${cfg.lights[light()]} · ${light() === "halo" ? ret().name : fc.name}`
+      );
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const H = heightIn();
+      const faceTxt = light() === "halo" ? k.sFaceMetal : face().name;
+      const out = [
+        `${k.summary}:`,
+        `• ${k.sText}: ${lines().join(" / ")}`,
+        `• ${k.sFont}: ${font().name}`,
+        `• ${k.sHeight}: ${H} in (${Math.round(H * CM)} cm)`,
+        `• ${k.sLength}: ${Math.round(size.len)} in (${fmtFt(size.len)})${size.lines > 1 ? ` · ${size.lines} ${k.sLines}, ${k.sTotal} ${Math.round(size.total)} in` : ""}`,
+        `• ${k.sLight}: ${cfg.lights[light()]}`,
+        `• ${k.sFace}: ${faceTxt}`,
+      ];
+      if (hasHalo()) out.push(`• ${k.sHalo}: ${halo().name}`);
+      out.push(
+        `• ${k.sReturn}: ${ret().id === "cara" ? `${ret().name} (${face().name})` : ret().name}, ${DEPTH} in`,
+        `• ${k.sMount}: ${cfg.mounts[val("montaje")]}`,
+        `• ${k.sInstall}: ${cfg.installs[val("instal")]}`,
+        `• ${k.sUse}: ${cfg.uses[val("uso")]}`,
+        `• ${k.sLink}: ${shareUrl()}`
+      );
+      return out.join("\n");
+    };
+
+    const syncUI = () => {
+      const H = heightIn();
+      heightOut.value = `${H} in · ${Math.round(H * CM)} cm`;
+      lightHelp.textContent = cfg.lightHelp[light()];
+      const metal = light() === "halo";
+      faceGroup.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = metal));
+      faceGroup.toggleAttribute("data-off", metal);
+      faceNote.hidden = !metal;
+      customBox.hidden = metal || val("cara") !== "marca";
+      faceName.textContent = metal ? "" : face().name;
+      haloGroup.hidden = !hasHalo();
+      haloName.textContent = halo().name;
+      returnName.textContent = ret().name;
+      root.querySelectorAll<HTMLButtonElement>("[data-height]").forEach((b) =>
+        b.setAttribute("aria-pressed", String(Number(b.dataset.height) === H))
+      );
+    };
+    const update = () => {
+      lengthOut.value = `≈ ${Math.round(size.len)} in · ${fmtFt(size.len)}`;
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+
+    // La letra se descarga la primera vez que se elige; se dibuja cuando está lista
+    let fontReady = "";
+    const render = async () => {
+      syncUI();
+      const f = font();
+      const key = `${f.weight} 100px ${f.css}`;
+      if (fontReady !== key) {
+        try { await document.fonts.load(key, lines().join(" ")); } catch {}
+        fontReady = key;
+      }
+      draw();
+      update();
+    };
+
+    // ---------- Eventos ----------
+    const onEdit = (e: Event) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      if (e.target === textEl) {
+        const ls = textEl.value.split("\n");
+        if (ls.length > 2) textEl.value = ls.slice(0, 2).join("\n");
+      }
+      if (e.target === hexEl) setRadio("cara", "marca");
+      render();
+    };
+    form.addEventListener("input", onEdit);
+    form.addEventListener("change", onEdit);
+    root.querySelectorAll<HTMLButtonElement>("[data-height]").forEach((b) =>
+      b.addEventListener("click", () => {
+        heightEl.value = b.dataset.height!;
+        touched = true;
+        render();
+      })
+    );
+    nightBtn.addEventListener("click", () => {
+      night = !night;
+      nightBtn.setAttribute("aria-pressed", String(night));
+      stage.toggleAttribute("data-dark", night);
+      draw();
+    });
+    wallBtn.addEventListener("click", () => {
+      wall = WALLS[(WALLS.indexOf(wall) + 1) % WALLS.length];
+      stage.dataset.wall = wall;
+      wallName.textContent = cfg.walls[wall];
+      draw();
+    });
+    // Tocar la vista previa lleva a escribir el texto
+    canvas.addEventListener("click", () => textEl.focus());
+
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    document.fonts.ready.then(() => draw());
+    render();
+  }
+</script>

@@ -1,0 +1,178 @@
+---
+// Encabezado oscuro con menú de servicios desplegable (las 5 líneas y sus servicios).
+// En escritorio el panel se abre al pasar el mouse o con el botón de la flecha;
+// en móvil el menú completo se abre con el botón de tres líneas.
+import Logo from "./Logo.astro";
+import type { Lang } from "../data/site";
+import { SITE, waLink } from "../data/site";
+import { LINES, lineUrl, topServicesOf, childrenOf, serviceUrl } from "../data/catalog";
+import { ROUTES, type PageKey } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props {
+  lang: Lang;
+  page: PageKey | "none";
+  alternates: { es: string; en: string };
+}
+
+const { lang, page, alternates } = Astro.props;
+const t = UI[lang];
+const current = (key: PageKey) => (page === key ? "page" : undefined);
+---
+<header class="site-header" data-menu="closed">
+  <div class="container site-header__inner">
+    <a href={ROUTES.home[lang]} class="logo" aria-label={t.homeLabel}>
+      <Logo />
+    </a>
+
+    <nav class="site-nav" id="site-nav" aria-label={t.navLabel}>
+      <ul class="site-nav__list">
+        <li class="has-mega" data-open="false">
+          <div class="nav-split">
+            <a class="top-link" href={ROUTES.services[lang]} aria-current={current("services")}>{t.nav.services}</a>
+            <button type="button" class="mega-toggle" aria-expanded="false" aria-controls="mega" aria-label={t.showServices}>
+              <svg aria-hidden="true"><use href="#i-chev"></use></svg>
+            </button>
+          </div>
+          <div class="mega" id="mega">
+            <div class="container">
+              <div class="mega__grid">
+                {LINES.map((l) => (
+                  <div class="mega__col" data-open="false">
+                    {/* El botón de la flecha solo se ve en el celular: abre la lista de la línea */}
+                    <div class="mega__head">
+                      <a class="mega__line" href={lineUrl(l, lang)}>
+                        <span class="chip" style={`--c:${l.color}`}></span>{l[lang].name}
+                      </a>
+                      <button type="button" class="mega__dis" data-sub-toggle
+                        aria-expanded="false" aria-controls={`m-${l.key}`} aria-label={`${t.showServices}: ${l[lang].name}`}>
+                        <svg aria-hidden="true"><use href="#i-chev"></use></svg>
+                      </button>
+                    </div>
+                    <ul id={`m-${l.key}`}>
+                      {topServicesOf(l).map((s) => {
+                        // Un servicio que agrupa a otros (Marketing Digital) abre su propio submenú
+                        const kids = childrenOf(s);
+                        return (
+                          <li class={kids.length ? "mega__item" : undefined} data-open={kids.length ? "false" : undefined}>
+                            <div class="mega__row">
+                              <a href={serviceUrl(s, lang)} class={kids.length ? "mega__parent" : undefined}>{s[lang].name}</a>
+                              {kids.length > 0 && (
+                                <button type="button" class="mega__dis" data-sub-toggle
+                                  aria-expanded="false" aria-controls={`m-${s.key}`} aria-label={`${t.showServices}: ${s[lang].name}`}>
+                                  <svg aria-hidden="true"><use href="#i-chev"></use></svg>
+                                </button>
+                              )}
+                            </div>
+                            {kids.length > 0 && (
+                              <ul class="mega__sub" id={`m-${s.key}`}>
+                                {kids.map((k) => <li><a href={serviceUrl(k, lang)}>{k[lang].name}</a></li>)}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <a class="more mega__all" href={ROUTES.services[lang]}>
+                {t.allServices}<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
+              </a>
+            </div>
+          </div>
+        </li>
+        <li><a class="top-link" href={ROUTES.shop[lang]} aria-current={current("shop")}>{t.nav.shop}</a></li>
+        <li><a class="top-link" href={ROUTES.projects[lang]} aria-current={current("projects")}>{t.nav.projects}</a></li>
+        <li><a class="top-link" href={ROUTES.about[lang]} aria-current={current("about")}>{t.nav.about}</a></li>
+        <li class="nav-quote"><a class="top-link" href={ROUTES.quote[lang]} aria-current={current("quote")}>{t.nav.quote}</a></li>
+      </ul>
+    </nav>
+
+    <div class="site-header__actions">
+      <a class="circle circle--blue" href={`tel:+${SITE.phoneIntl}`} aria-label={`${t.call} ${SITE.phone}`}>
+        <svg aria-hidden="true"><use href="#i-phone"></use></svg>
+      </a>
+      <a class="circle circle--wa" href={waLink(t.waText)} target="_blank" rel="noopener" aria-label={t.waFloat}>
+        <svg aria-hidden="true"><use href="#i-wa"></use></svg>
+      </a>
+      <div class="lang" role="group" aria-label={t.langLabel}>
+        <a href={alternates.es} hreflang="es" lang="es" aria-current={lang === "es" ? "true" : undefined}>ES</a>
+        <a href={alternates.en} hreflang="en" lang="en" aria-current={lang === "en" ? "true" : undefined}>EN</a>
+      </div>
+      <a class="circle cart-link" href={ROUTES.cart[lang]} data-cart-link data-label={t.cartLabel} aria-label={t.cartLabel.replace("{n}", "0")}>
+        <svg aria-hidden="true"><use href="#i-cart"></use></svg>
+        <span class="cart-link__n" data-cart-count hidden>0</span>
+      </a>
+      <a href={ROUTES.quote[lang]} class="btn btn--small btn--yellow header-quote">{t.nav.quote}</a>
+      <button type="button" class="circle menu-btn" aria-expanded="false" aria-controls="site-nav" aria-label={t.menu}>
+        <svg aria-hidden="true"><use href="#i-menu"></use></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<script>
+  import { cartCount, onCartChange } from "../scripts/cart";
+
+  // Número de productos en el carrito
+  const cartLink = document.querySelector<HTMLAnchorElement>("[data-cart-link]");
+  const cartBadge = cartLink?.querySelector<HTMLElement>("[data-cart-count]");
+  const paintCart = () => {
+    if (!cartLink || !cartBadge) return;
+    const n = cartCount();
+    cartBadge.textContent = n > 99 ? "99+" : String(n);
+    cartBadge.hidden = n === 0;
+    cartLink.setAttribute("aria-label", cartLink.dataset.label!.replace("{n}", String(n)));
+  };
+  paintCart();
+  onCartChange(paintCart);
+
+  const header = document.querySelector<HTMLElement>(".site-header");
+  const menuBtn = header?.querySelector<HTMLButtonElement>(".menu-btn");
+  const mega = header?.querySelector<HTMLElement>(".has-mega");
+  const megaBtn = header?.querySelector<HTMLButtonElement>(".mega-toggle");
+
+  const setMenu = (open: boolean) => {
+    if (!header || !menuBtn) return;
+    header.dataset.menu = open ? "open" : "closed";
+    menuBtn.setAttribute("aria-expanded", String(open));
+  };
+  const setMega = (open: boolean) => {
+    if (!mega || !megaBtn) return;
+    mega.dataset.open = String(open);
+    megaBtn.setAttribute("aria-expanded", String(open));
+  };
+
+  menuBtn?.addEventListener("click", () => setMenu(header!.dataset.menu !== "open"));
+  megaBtn?.addEventListener("click", () => setMega(mega!.dataset.open !== "true"));
+
+  // En el celular, la flecha de cada línea (y la de Marketing Digital) abre su lista
+  header?.querySelectorAll<HTMLButtonElement>("[data-sub-toggle]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const box = btn.closest<HTMLElement>(".mega__col, .mega__item");
+      if (!box) return;
+      const open = box.dataset.open !== "true";
+      box.dataset.open = String(open);
+      btn.setAttribute("aria-expanded", String(open));
+    });
+  });
+
+  // Tocar fuera cierra el menú móvil y el panel de servicios
+  document.addEventListener("click", (e) => {
+    if (!header?.contains(e.target as Node)) {
+      setMenu(false);
+      setMega(false);
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (mega?.dataset.open === "true") {
+      setMega(false);
+      megaBtn?.focus();
+    } else if (header?.dataset.menu === "open") {
+      setMenu(false);
+      menuBtn?.focus();
+    }
+  });
+</script>

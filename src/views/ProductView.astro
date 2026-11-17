@@ -1,0 +1,344 @@
+---
+// Página de un producto: fotos, precio, opciones, cantidad y botón para añadir al carrito.
+import Layout from "../layouts/Layout.astro";
+import LineArt from "../components/LineArt.astro";
+import Pending from "../components/Pending.astro";
+import ProductCard from "../components/ProductCard.astro";
+import type { Lang } from "../data/site";
+import { SITE, waLink } from "../data/site";
+import { lineByKey } from "../data/catalog";
+import { paragraphs } from "../data/content";
+import { DELIVERY, canBuy, categoryOf, money, priceRange, productUrl, productsOf, unitPrice, type Product } from "../data/shop";
+import { ROUTES } from "../i18n/routes";
+import { UI } from "../i18n/ui";
+
+interface Props {
+  lang: Lang;
+  product: Product;
+}
+
+const { lang, product: p } = Astro.props;
+const t = UI[lang];
+const s = p[lang];
+const cat = categoryOf(p);
+const line = lineByKey(cat.line);
+const range = priceRange(p);
+const buyable = canBuy(p);
+const related = productsOf(p.category).filter((x) => x.key !== p.key).slice(0, 4);
+
+const c = {
+  es: {
+    shopTitle: "Tienda LED Tech Miami",
+    example: "producto de ejemplo",
+    price: "precio",
+    from: "Desde",
+    option: "Opción",
+    qty: "Cantidad",
+    less: "Quitar uno",
+    more: "Agregar uno",
+    add: "Añadir al carrito",
+    added: "Añadido al carrito.",
+    viewCart: "Ver carrito",
+    choose: "Elige una opción.",
+    optionPending: "Esta opción todavía no tiene precio.",
+    notForSale: "Producto de ejemplo: todavía no está a la venta.",
+    noPrice: "Este producto todavía no tiene precio en línea. Pregúntanos por WhatsApp.",
+    soldOut: "Agotado por ahora. Escríbenos y te avisamos cuando vuelva.",
+    localOnly: "Solo recogida en el taller o entrega local.",
+    delivery: "Recíbelo así:",
+    ask: "¿Tienes preguntas sobre este producto?",
+    askCta: "Escríbenos por WhatsApp",
+    waText: "Hola, tengo una pregunta sobre este producto de la tienda:",
+    description: "Descripción",
+    specs: "Características",
+    related: "Más productos de esta categoría",
+    photos: "Fotos del producto",
+    photo: "Foto {n}",
+  },
+  en: {
+    shopTitle: "LED Tech Miami shop",
+    example: "sample product",
+    price: "price",
+    from: "From",
+    option: "Option",
+    qty: "Quantity",
+    less: "Remove one",
+    more: "Add one",
+    add: "Add to cart",
+    added: "Added to cart.",
+    viewCart: "View cart",
+    choose: "Choose an option.",
+    optionPending: "This option doesn't have a price yet.",
+    notForSale: "Sample product: not for sale yet.",
+    noPrice: "This product doesn't have an online price yet. Ask us on WhatsApp.",
+    soldOut: "Sold out for now. Message us and we'll let you know when it's back.",
+    localOnly: "Pickup at our shop or local delivery only.",
+    delivery: "Get it by:",
+    ask: "Questions about this product?",
+    askCta: "Message us on WhatsApp",
+    waText: "Hi, I have a question about this product from your shop:",
+    description: "Description",
+    specs: "Features",
+    related: "More products in this category",
+    photos: "Product photos",
+    photo: "Photo {n}",
+  },
+}[lang];
+
+const url = productUrl(p, lang);
+const abs = new URL(url, SITE.url).href;
+const blocked = p.example ? c.notForSale : p.soldOut ? c.soldOut : !range ? c.noPrice : "";
+const ways = DELIVERY.filter((d) => !(p.localOnly && d.key === "envio")).map((d) => d.name[lang]);
+const cfg = {
+  id: p.key,
+  lang,
+  prices: p.variants.length ? p.variants.map((_, i) => unitPrice(p, i)) : [p.price],
+  hasVariants: p.variants.length > 0,
+  copy: { choose: c.choose, optionPending: c.optionPending, added: c.added },
+};
+
+const schema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Product",
+      name: s.name,
+      description: s.description || s.short,
+      url: abs,
+      category: cat.name[lang],
+      brand: { "@type": "Brand", name: SITE.name },
+      ...(p.images.length ? { image: p.images.map((i) => new URL(i, SITE.url).href) } : {}),
+      ...(buyable && range
+        ? {
+            offers: {
+              "@type": range.varies ? "AggregateOffer" : "Offer",
+              priceCurrency: "USD",
+              ...(range.varies ? { lowPrice: range.from } : { price: range.from }),
+              availability: "https://schema.org/InStock",
+              url: abs,
+            },
+          }
+        : {}),
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: t.nav.home, item: new URL(ROUTES.home[lang], SITE.url).href },
+        { "@type": "ListItem", position: 2, name: t.nav.shop, item: new URL(ROUTES.shop[lang], SITE.url).href },
+        { "@type": "ListItem", position: 3, name: s.name, item: abs },
+      ],
+    },
+  ],
+};
+---
+<Layout
+  lang={lang}
+  page="shop"
+  title={`${s.name} | ${c.shopTitle}`}
+  description={s.short || s.description}
+  alternates={{ es: productUrl(p, "es"), en: productUrl(p, "en") }}
+  schema={schema}
+>
+  <section class="section section--top">
+    <div class="container product" data-product data-cfg={JSON.stringify(cfg)}>
+      <div class="product__media">
+        <div class="product__main" style={`--ground:${line.ground}`}>
+          {p.images[0]
+            ? <img src={p.images[0]} alt={s.name} data-main width="1200" height="1200" decoding="async" />
+            : <LineArt type={line.key} />}
+          {p.example && <span class="pcard__tag"><Pending lang={lang}>{c.example}</Pending></span>}
+        </div>
+        {p.images.length > 1 && (
+          <ul class="product__thumbs" aria-label={c.photos}>
+            {p.images.map((img, i) => (
+              <li>
+                <button type="button" data-thumb={img} aria-pressed={i === 0 ? "true" : "false"} aria-label={c.photo.replace("{n}", String(i + 1))}>
+                  <img src={img} alt="" loading="lazy" decoding="async" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div class="product__info">
+        <nav class="crumbs" aria-label={t.crumbs}>
+          <ol>
+            <li><a href={ROUTES.home[lang]}>{t.nav.home}</a></li>
+            <li><a href={ROUTES.shop[lang]}>{t.nav.shop}</a></li>
+            <li><span aria-current="page">{s.name}</span></li>
+          </ol>
+        </nav>
+        <p class="pack__kicker"><span class="chip" style={`--c:${line.color}`}></span>{cat.name[lang]}</p>
+        <h1>{s.name}</h1>
+        {s.short && <p class="product__short">{s.short}</p>}
+
+        <p class="product__price" aria-live="polite">
+          {range && !p.example
+            ? <><small data-from hidden={!range.varies}>{c.from}</small><output data-price>{money(range.from, lang)}</output></>
+            : <Pending lang={lang}>{c.price}</Pending>}
+        </p>
+
+        <form class="product__buy" novalidate>
+          {p.variants.length > 0 && (
+            <fieldset class="nb__group">
+              <legend class="tb__sub">{c.option}</legend>
+              <div class="opts">
+                {p.variants.map((v, i) => (
+                  <label>
+                    <input type="radio" name="variante" value={i} disabled={!buyable} />
+                    <span>{v.name[lang]}{unitPrice(p, i) !== null && !p.example && <small>{money(unitPrice(p, i)!, lang)}</small>}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
+          {buyable ? (
+            <>
+              <div class="product__row">
+                <div class="qty">
+                  <label class="sr-only" for="qty">{c.qty}</label>
+                  <button type="button" data-step="-1" aria-label={c.less}>−</button>
+                  <input id="qty" name="cantidad" type="number" inputmode="numeric" min="1" max="99" value="1" />
+                  <button type="button" data-step="1" aria-label={c.more}>+</button>
+                </div>
+                <button type="submit" class="btn">{c.add}</button>
+              </div>
+              <p class="product__status" data-status role="status">
+                <span data-status-text></span>
+                <a data-status-link href={ROUTES.cart[lang]} hidden>{c.viewCart}<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+              </p>
+            </>
+          ) : (
+            <p class="product__blocked">{blocked}</p>
+          )}
+        </form>
+
+        <ul class="product__notes">
+          <li>{c.delivery} {ways.join(" · ")}</li>
+          {p.localOnly && <li>{c.localOnly}</li>}
+        </ul>
+        <p class="product__ask">
+          {c.ask}
+          <a class="wa-link" href={waLink(`${c.waText} ${s.name} (${abs})`)} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.askCta}
+          </a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {(s.description || s.specs.length > 0) && (
+    <section class="section section--flush">
+      <div class="container detail">
+        {s.description && (
+          <div class="panel">
+            <h2 class="panel__title">{c.description}</h2>
+            <div class="prose">{paragraphs(s.description).map((para) => <p>{para}</p>)}</div>
+          </div>
+        )}
+        {s.specs.length > 0 && (
+          <div class="panel" style={`--svc:${line.color}`}>
+            <h2 class="panel__title">{c.specs}</h2>
+            <ul class="ticks">{s.specs.map((x) => <li>{x}</li>)}</ul>
+          </div>
+        )}
+      </div>
+    </section>
+  )}
+
+  {related.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <div class="sec-head">
+          <div><h2>{c.related}</h2></div>
+          <a class="more" href={ROUTES.shop[lang]}>{t.nav.shop}<svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+        </div>
+        <ul class="shop-grid">
+          {related.map((r) => <ProductCard lang={lang} product={r} />)}
+        </ul>
+      </div>
+    </section>
+  )}
+</Layout>
+
+<script>
+  import { addToCart, MAX_QTY } from "../scripts/cart";
+
+  type Cfg = { id: string; lang: string; prices: (number | null)[]; hasVariants: boolean; copy: Record<string, string> };
+
+  const root = document.querySelector<HTMLElement>("[data-product]");
+  if (root) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".product__buy")!;
+    const priceOut = root.querySelector<HTMLOutputElement>("[data-price]");
+    const fromEl = root.querySelector<HTMLElement>("[data-from]");
+    const qtyEl = form.querySelector<HTMLInputElement>("input[name='cantidad']");
+    const statusText = form.querySelector<HTMLElement>("[data-status-text]");
+    const statusLink = form.querySelector<HTMLAnchorElement>("[data-status-link]");
+    const mainImg = root.querySelector<HTMLImageElement>("[data-main]");
+    const fmt = new Intl.NumberFormat(cfg.lang === "es" ? "es-US" : "en-US", { style: "currency", currency: "USD" });
+
+    const variant = () => {
+      const el = form.querySelector<HTMLInputElement>("input[name='variante']:checked");
+      return el ? Number(el.value) : null;
+    };
+    const setStatus = (text: string, ok = false) => {
+      if (!statusText || !statusLink) return;
+      statusText.textContent = text;
+      statusText.className = ok ? "is-ok" : text ? "is-error" : "";
+      statusLink.hidden = !ok;
+    };
+    const clampQty = () => {
+      if (!qtyEl) return 1;
+      const q = Math.max(1, Math.min(MAX_QTY, Math.round(Number(qtyEl.value)) || 1));
+      qtyEl.value = String(q);
+      return q;
+    };
+
+    // El precio cambia con la opción elegida
+    form.addEventListener("change", (e) => {
+      if ((e.target as HTMLInputElement).name === "variante") {
+        const price = cfg.prices[variant()!];
+        if (priceOut && price !== null && price !== undefined) {
+          priceOut.value = fmt.format(price);
+          if (fromEl) fromEl.hidden = true;
+        }
+        setStatus(price === null ? cfg.copy.optionPending : "");
+      }
+      if (e.target === qtyEl) clampQty();
+    });
+    form.querySelectorAll<HTMLButtonElement>("[data-step]").forEach((b) =>
+      b.addEventListener("click", () => {
+        if (!qtyEl) return;
+        qtyEl.value = String(Number(qtyEl.value || 1) + Number(b.dataset.step));
+        clampQty();
+      })
+    );
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const v = cfg.hasVariants ? variant() : null;
+      if (cfg.hasVariants && v === null) {
+        setStatus(cfg.copy.choose);
+        form.querySelector<HTMLInputElement>("input[name='variante']:not(:disabled)")?.focus();
+        return;
+      }
+      if (cfg.prices[v ?? 0] === null) {
+        setStatus(cfg.copy.optionPending);
+        return;
+      }
+      addToCart(cfg.id, v, clampQty());
+      setStatus(cfg.copy.added, true);
+    });
+
+    // Miniaturas: cambian la foto principal
+    root.querySelectorAll<HTMLButtonElement>("[data-thumb]").forEach((b, _, all) =>
+      b.addEventListener("click", () => {
+        if (mainImg) mainImg.src = b.dataset.thumb!;
+        all.forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      })
+    );
+  }
+</script>

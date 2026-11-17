@@ -1,0 +1,52 @@
+{
+  "nombre": "Corte láser de metal",
+  "linea": "fabricacion",
+  "orden": 1,
+  "nameEn": "Laser metal cutting",
+  "slugEn": "fiber-laser-metal-cutting",
+  "short": {
+    "es": "Corte de metal con láser de fibra CNC, a partir de tu diseño.",
+    "en": "Fiber laser CNC metal cutting from your design."
+  },
+  "intro": {
+    "es": "Cortamos lámina de metal con láser de fibra CNC: cortes limpios y precisos para piezas, letras, paneles decorativos y placas.",
+    "en": "We cut sheet metal with a fiber laser CNC: clean, precise cuts for parts, letters, decorative panels and plaques."
+  },
+  "includes": {
+    "es": [
+      "Revisión o creación del archivo de corte",
+      "Piezas únicas o en serie",
+      "Letras, logos y paneles decorativos",
+      "Acabado y pintura"
+    ],
+    "en": [
+      "Cut file review or creation",
+      "One-off parts or production runs",
+      "Letters, logos and decorative panels",
+      "Finishing and paint"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Letreros",
+      "Paneles decorativos",
+      "Piezas industriales",
+      "Placas",
+      "Arte en metal"
+    ],
+    "en": [
+      "Signs",
+      "Decorative panels",
+      "Industrial parts",
+      "Plaques",
+      "Metal art"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

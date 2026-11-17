@@ -1,0 +1,72 @@
+{
+  "letreros": {
+    "es": {
+      "name": "Letreros",
+      "h1": "Letreros para negocios en Miami",
+      "short": "Channel letters, neón LED, acrílico 3D y aluminio, iluminados o no.",
+      "intro": "Diseñamos, fabricamos e instalamos el letrero de tu negocio: desde letras de canal iluminadas para la fachada hasta letreros de neón y acrílico para el interior."
+    },
+    "en": {
+      "name": "Signs",
+      "h1": "Business signs in Miami",
+      "short": "Channel letters, LED neon, 3D acrylic and aluminum, lit or non-lit.",
+      "intro": "We design, build and install your business sign: from illuminated channel letters for the storefront to neon and acrylic signs for the inside."
+    }
+  },
+  "graficos": {
+    "es": {
+      "name": "Gráficos e impresión",
+      "h1": "Rotulación e impresión en Miami",
+      "short": "Vinil para vidrieras, wraps de autos, banners, acrílico y camisetas.",
+      "intro": "Imprimimos e instalamos los gráficos que hacen visible tu marca: en la vidriera, en tu vehículo, en eventos y en la ropa de tu equipo."
+    },
+    "en": {
+      "name": "Graphics & print",
+      "h1": "Wraps and printing in Miami",
+      "short": "Storefront vinyl, car wraps, banners, acrylic prints and T-shirts.",
+      "intro": "We print and install the graphics that make your brand visible: on your storefront, your vehicle, at events and on your team's clothing."
+    }
+  },
+  "marino": {
+    "es": {
+      "name": "Marino",
+      "h1": "Rotulación y accesorios para botes en Miami",
+      "short": "Wraps, pisos EVA, tableros, letras de acero y puertas de Starboard.",
+      "intro": "Personalizamos tu bote por fuera y por dentro: wraps y letras para el casco, pisos EVA antideslizantes, tableros y piezas cortadas a medida."
+    },
+    "en": {
+      "name": "Marine",
+      "h1": "Boat wraps and marine fabrication in Miami",
+      "short": "Wraps, EVA decking, dashboards, stainless letters and Starboard doors.",
+      "intro": "We customize your boat inside and out: wraps and lettering for the hull, non-slip EVA decking, dashboards and parts cut to size."
+    }
+  },
+  "fabricacion": {
+    "es": {
+      "name": "Fabricación a medida",
+      "h1": "Corte láser y fabricación en metal en Miami",
+      "short": "Corte de metal con láser de fibra CNC, cercas de aluminio y tablas de cortar.",
+      "intro": "Cortamos metal con láser de fibra CNC a partir de tu diseño o del nuestro: piezas, letras, paneles decorativos y cercas de aluminio. También hacemos tablas de cortar a la medida."
+    },
+    "en": {
+      "name": "Custom fabrication",
+      "h1": "Laser cutting and metal fabrication in Miami",
+      "short": "Fiber laser CNC metal cutting, aluminum fences and cutting boards.",
+      "intro": "We cut metal with a fiber laser CNC from your design or ours: parts, letters, decorative panels and aluminum fences. We also make custom cutting boards."
+    }
+  },
+  "iluminacion": {
+    "es": {
+      "name": "Iluminación LED",
+      "h1": "Iluminación LED en Miami",
+      "short": "Residencial, comercial, exterior y tiras LED, con instalación.",
+      "intro": "Planeamos, suministramos e instalamos iluminación LED para hogares, negocios y exteriores, con la temperatura de color adecuada para cada espacio."
+    },
+    "en": {
+      "name": "LED lighting",
+      "h1": "LED lighting in Miami",
+      "short": "Residential, commercial, outdoor and LED strips, installed.",
+      "intro": "We plan, supply and install LED lighting for homes, businesses and outdoor spaces, with the right color temperature for each one."
+    }
+  }
+}

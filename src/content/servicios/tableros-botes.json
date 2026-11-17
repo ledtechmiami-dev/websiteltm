@@ -1,0 +1,48 @@
+{
+  "nombre": "Tableros para botes",
+  "linea": "marino",
+  "orden": 3,
+  "nameEn": "Boat dashboards",
+  "slugEn": "boat-dashboards",
+  "short": {
+    "es": "Tableros y paneles de consola a la medida de tus equipos.",
+    "en": "Console dashboards and panels made to fit your electronics."
+  },
+  "intro": {
+    "es": "Fabricamos el tablero de la consola a la medida de tus equipos: pantallas, relojes, interruptores y controles, en el acabado que prefieras.",
+    "en": "We build your console dashboard to fit your electronics: screens, gauges, switches and controls, in the finish you prefer."
+  },
+  "includes": {
+    "es": [
+      "Medidas según tus equipos",
+      "Cortes para pantallas e interruptores",
+      "Acabados a elección",
+      "Instalación"
+    ],
+    "en": [
+      "Sized to your electronics",
+      "Cutouts for screens and switches",
+      "Choice of finishes",
+      "Installation"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Consolas centrales",
+      "Tableros de mando",
+      "Paneles de interruptores"
+    ],
+    "en": [
+      "Center consoles",
+      "Helm panels",
+      "Switch panels"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

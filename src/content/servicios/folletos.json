@@ -1,0 +1,59 @@
+{
+  "nombre": "Folletos",
+  "linea": "graficos",
+  "orden": 9,
+  "padre": "marketing-digital",
+  "nameEn": "Brochures",
+  "slugEn": "brochures",
+  "short": {
+    "es": "Folletos doblados a dos o tres cuerpos, con el diseño que armas aquí mismo y la hoja ya doblada.",
+    "en": "Brochures folded into two or three panels, with the design you build right here and the sheet already folded."
+  },
+  "intro": {
+    "es": "El folleto es lo que dejas cuando hay que explicar algo más que un teléfono: qué haces, desde cuándo y por qué te buscan. Lo diseñas aquí mismo: eliges la medida de la hoja, el doblez, el papel y una de cinco maquetas, escribes tus textos y ves el exterior y el interior como salen impresos. Te llega ya doblado.",
+    "en": "A brochure is what you leave behind when there's more to explain than a phone number: what you do, how long you've done it and why people call you. You design it right here: pick the flat size, the fold, the paper and one of five layouts, type your copy and see the outside and the inside as they come out printed. It arrives already folded."
+  },
+  "includes": {
+    "es": [
+      "Hoja carta, legal o tabloide, doblada",
+      "Díptico de cuatro caras, tríptico o zigzag de seis",
+      "Papel brillante, mate, sin recubrir o reciclado",
+      "Papel estándar o grueso, según el papel elegido",
+      "Impresión a todo color por las dos caras",
+      "Te llega doblado, listo para repartir"
+    ],
+    "en": [
+      "Letter, legal or tabloid sheet, folded",
+      "Four-side bi-fold, or six-side tri-fold or Z-fold",
+      "Glossy, matte, uncoated or recycled paper",
+      "Standard or heavy paper, depending on the stock",
+      "Full-color printing on both sides",
+      "Arrives folded, ready to hand out"
+    ]
+  },
+  "uses": {
+    "es": [
+      "Catálogos de servicios",
+      "Menús de restaurante",
+      "Bienes raíces",
+      "Clínicas y consultorios",
+      "Eventos y ferias",
+      "Presentaciones de empresa"
+    ],
+    "en": [
+      "Service catalogs",
+      "Restaurant menus",
+      "Real estate",
+      "Clinics and practices",
+      "Events and trade shows",
+      "Company presentations"
+    ]
+  },
+  "note": {
+    "es": "",
+    "en": ""
+  },
+  "kelvin": {
+    "discriminant": false
+  }
+}

@@ -1,0 +1,1407 @@
+---
+// Constructor de etiquetas. La idea viene de las roll labels de Vistaprint,
+// pero las opciones son las del taller, confirmadas por el dueño: solo los dos
+// papeles (mate y brillante), solo en pliego y desde 100. Lo propio de este
+// producto es que va pegada en algo: el constructor la pone en el frasco, la
+// botella, la caja o la bolsa, a escala, y avisa si no cabe. No muestra precios
+// de imprenta: el precio de la impresión va en la cotización.
+import type { Lang } from "../data/site";
+import { SITE } from "../data/site";
+import BuilderContact from "./BuilderContact.astro";
+
+interface Props {
+  lang: Lang;
+  formValue: string;
+}
+
+const { lang, formValue } = Astro.props;
+
+// Los dos papeles del taller. No hay plástico ni transparente: las dos son papel
+// y el agua las arruga, que es lo que hay que avisar antes de imprimir.
+const MATS = [
+  { id: "mate", es: "Papel mate", en: "Matte paper", base: "#FFFFFF", edge: "#E7E8E6", ink: "#14161A", sub: "#5A616B", tex: "mate",
+    sw: "linear-gradient(135deg, #FFF 0 52%, #EFF0EE)" },
+  { id: "brillante", es: "Papel brillante", en: "Glossy paper", base: "#FFFFFF", edge: "#E4E8EB", ink: "#14161A", sub: "#5A616B", tex: "brillo",
+    sw: "linear-gradient(118deg, #FFF 0 26%, #D8E2EA 44%, #FFF 62%, #EDF1F4)" },
+];
+
+// La paleta LED del logo más neutros de imprenta
+const ACCENTS = [
+  { id: "oliva", es: "Verde oliva", en: "Olive", hex: "#4F5B32" },
+  { id: "terracota", es: "Terracota", en: "Terracotta", hex: "#B4522E" },
+  { id: "vino", es: "Vino", en: "Wine", hex: "#7A1F2B" },
+  { id: "marino", es: "Azul marino", en: "Navy", hex: "#16304F" },
+  { id: "negro", es: "Negro", en: "Black", hex: "#0B0C0E" },
+  { id: "pizarra", es: "Gris pizarra", en: "Slate grey", hex: "#59626D" },
+  { id: "azul", es: "Azul LED", en: "LED blue", hex: "#0094DA" },
+  { id: "amarillo", es: "Amarillo LED", en: "LED yellow", hex: "#FFCA09" },
+  { id: "verde", es: "Verde LED", en: "LED green", hex: "#99C941" },
+  { id: "rojo", es: "Rojo LED", en: "LED red", hex: "#ED1B24" },
+];
+
+const QTYS = [100, 250, 500, 1000];
+
+const COPY = {
+  es: {
+    title: "Diseña tus etiquetas",
+    lead: "Una etiqueta no se mira sola: se mira pegada en algo. Elige la forma, la medida y el material, arma el diseño y aprieta «En el envase» para verla en el frasco, la botella, la caja o la bolsa, a tamaño real. Si no cabe, te lo dice. Mándanos el diseño y te respondemos con el precio.",
+    shape: "Forma",
+    shapes: { redonda: "Redonda", ovalada: "Ovalada", cuadrada: "Cuadrada", rectangular: "Rectangular" },
+    shapeHelp: {
+      redonda: "La de siempre para frascos, tapas y sellos de bolsa.",
+      ovalada: "Se ve más ancha de lo que es: buena para el frente de la botella.",
+      cuadrada: "Esquinas redondeadas, que es lo que evita que se despegue por la punta.",
+      rectangular: "La que más texto admite: ingredientes, peso y código.",
+    },
+    dieCut: "¿La necesitas con una forma que no está aquí? La troquelamos a la medida de tu dibujo: dínoslo en la cotización.",
+    format: "Medida",
+    sizes: {
+      r15: "1-1/2 in", r2: "2 in", r3: "3 in",
+      o2: "2 × 1-1/4 in", o25: "2-1/2 × 1-1/2 in", o3: "3 × 2 in",
+      c15: "1-1/2 in", c2: "2 in", c3: "3 in",
+      x2: "2 × 1 in", x3: "3 × 2 in", x4: "4 × 3 in",
+    },
+    material: "Material",
+    matHelp: {
+      mate: "Papel mate: se escribe encima y no refleja. Para frascos de cocina, cajas y bolsas.",
+      brillante: "Papel brillante: levanta el color y la foto. El de la mermelada y la vela.",
+    },
+    matWarn: "Las dos son papel: aguantan el roce, no el agua. Si el envase va a la nevera, al hielo o se lava, dínoslo antes de imprimir.",
+    finish: "Acabado",
+    finishes: { ninguno: "Sin acabado", antirrayado: "Antirrayado" },
+    finishHelp: {
+      ninguno: "Sin acabado basta si la etiqueta no se roza.",
+      antirrayado: "El antirrayado protege la tinta cuando las cajas se rozan en el camión. En un frasco de mesa no hace falta.",
+    },
+    where: "Dónde va",
+    wheres: { frasco: "Frasco", botella: "Botella", caja: "Caja", bolsa: "Bolsa" },
+    whereHelp: "Esto no cambia la etiqueta: es para verla pegada y comprobar que la medida es la buena.",
+    design: "Diseño",
+    tpls: { marca: "Sello de marca", producto: "De producto", gracias: "Sello de gracias", direccion: "De dirección", foto: "Con foto" },
+    tplHelp: {
+      marca: "El nombre en el centro y el lema dando la vuelta: el sello de toda la vida.",
+      producto: "Nombre, variedad, peso neto y la letra chica. La del frasco de mermelada.",
+      gracias: "La que cierra la bolsa o la caja del pedido.",
+      direccion: "Remite: nombre y dirección, para el sobre y el paquete.",
+      foto: "La foto o el bloque de color arriba y el nombre debajo.",
+    },
+    type: "Tipografía",
+    types: { moderna: "Moderna", clasica: "Clásica", tecnica: "Técnica", sencilla: "Sencilla" },
+    accent: "Color de acento",
+    bg: "Fondo",
+    bgs: { papel: "Papel a la vista", color: "Color de acento", oscuro: "Oscuro" },
+    image: "Imagen",
+    images: { foto: "Espacio para foto", color: "Bloque de color" },
+    imageHelp: "Déjanos el espacio marcado y",
+    imageCta: "mándanos la foto por WhatsApp",
+    imageWa: "Hola, quiero imprimir etiquetas. Les envío las fotos y el logo.",
+    photoBox: "TU FOTO",
+    words: "Lo que dice",
+    business: "Nombre",
+    businessPh: "Ej. Miel del Sur",
+    defBusiness: "Miel del Sur",
+    tag: "Lema o vuelta",
+    tagPh: "Ej. Hecho en Miami · 2026",
+    defTag: "Hecho en Miami · 2026",
+    product: "Variedad o producto",
+    productPh: "Ej. Miel de azahar",
+    defProduct: "Miel de azahar",
+    weight: "Peso o contenido",
+    weightPh: "Ej. 12 oz / 340 g",
+    defWeight: "12 oz / 340 g",
+    phrase: "Frase",
+    phrasePh: "Ej. ¡Gracias por tu compra!",
+    defPhrase: "¡Gracias por tu compra!",
+    addr1: "Dirección, primera línea",
+    addr1Ph: "Ej. 123 NW 1st St",
+    defAddr1: "123 NW 1st St",
+    addr2: "Dirección, segunda línea",
+    addr2Ph: "Ej. Miami, FL 33128",
+    defAddr2: "Miami, FL 33128",
+    note: "Letra chica",
+    notePh: "Ej. Consérvese en lugar fresco",
+    defNote: "Consérvese en lugar fresco",
+    web: "Sitio web o red social",
+    webPh: "Ej. mieldelsur.com",
+    defWeb: "mieldelsur.com",
+    order: "Tu pedido",
+    qty: "Cantidad",
+    qtyHelp: "Las etiquetas se gastan de una en una: pide para la temporada entera, que el precio por unidad baja mucho. Desde 50.",
+    guides: "Guías de corte",
+    guidesOn: "Línea roja: sangrado, por donde pasa la cuchilla del troquel. Línea azul: zona segura. En una etiqueta el corte baila un pelo más que en el papel: no dejes el texto pegado al borde.",
+    scene: "En el envase",
+    sceneOn: "La etiqueta y el envase, a tamaño real, uno al lado del otro. En el frasco y en la botella la etiqueta se curva: lo que queda de lado se lee peor, así que lo importante va en el medio.",
+    tooTall: "Más alta que el envase",
+    tooWide: "Le da la vuelta entera",
+    fits: "Cabe bien",
+    approx: "Vista aproximada · el color impreso varía un poco del de la pantalla",
+    price: "Precio: te lo enviamos con la cotización, en menos de 24 h. Depende del tiraje, del material y de la forma.",
+    cta: "Cotizar estas etiquetas",
+    wa: "Enviar por WhatsApp",
+    notesPh: "Para cuándo las necesitas, en qué envase van, si ya tienes el diseño hecho…",
+    summary: "Diseño del constructor de etiquetas",
+    sShape: "Forma",
+    sFormat: "Medida",
+    sMaterial: "Material",
+    sFinish: "Acabado",
+    sWhere: "Va en",
+    sDesign: "Diseño",
+    sType: "Tipografía",
+    sAccent: "Color de acento",
+    sBg: "Fondo",
+    sImage: "Imagen",
+    sName: "Nombre",
+    sProduct: "Producto",
+    sWeight: "Contenido",
+    sPhrase: "Frase",
+    sAddr: "Dirección",
+    sNote: "Letra chica",
+    sWeb: "Web",
+    sQty: "Cantidad",
+    sLink: "Ver el diseño",
+    waIntro: "Hola, me interesan estas etiquetas:",
+    preview: "Vista previa de la etiqueta",
+  },
+  en: {
+    title: "Design your labels",
+    lead: "A label is never looked at on its own: it's looked at stuck on something. Pick the shape, the size and the material, build the design and hit \"On the container\" to see it on a jar, a bottle, a box or a bag, at real size. If it doesn't fit, it says so. Send us the design and we'll reply with the price.",
+    shape: "Shape",
+    shapes: { redonda: "Round", ovalada: "Oval", cuadrada: "Square", rectangular: "Rectangle" },
+    shapeHelp: {
+      redonda: "The usual one for jars, lids and bag seals.",
+      ovalada: "Reads wider than it is: good for the front of a bottle.",
+      cuadrada: "Rounded corners, which is what keeps it from peeling at the tip.",
+      rectangular: "The one that takes the most text: ingredients, weight and code.",
+    },
+    dieCut: "Need a shape that isn't here? We die-cut it to your artwork: tell us in the quote.",
+    format: "Size",
+    sizes: {
+      r15: "1-1/2 in", r2: "2 in", r3: "3 in",
+      o2: "2 × 1-1/4 in", o25: "2-1/2 × 1-1/2 in", o3: "3 × 2 in",
+      c15: "1-1/2 in", c2: "2 in", c3: "3 in",
+      x2: "2 × 1 in", x3: "3 × 2 in", x4: "4 × 3 in",
+    },
+    material: "Material",
+    matHelp: {
+      mate: "Matte paper: you can write on it and it doesn't glare. For kitchen jars, boxes and bags.",
+      brillante: "Glossy paper: lifts the color and the photo. The jam and candle one.",
+    },
+    matWarn: "Both are paper: they take rubbing, not water. If the container goes in the fridge or on ice, or gets washed, tell us before we print.",
+    finish: "Finish",
+    finishes: { ninguno: "No finish", antirrayado: "Anti-scratch" },
+    finishHelp: {
+      ninguno: "No finish is enough if the label doesn't get rubbed.",
+      antirrayado: "Anti-scratch protects the ink when boxes rub together in the truck. On a jar on the table you don't need it.",
+    },
+    where: "Where it goes",
+    wheres: { frasco: "Jar", botella: "Bottle", caja: "Box", bolsa: "Bag" },
+    whereHelp: "This doesn't change the label: it's to see it applied and check the size is right.",
+    design: "Layout",
+    tpls: { marca: "Brand seal", producto: "Product", gracias: "Thank-you seal", direccion: "Address", foto: "With photo" },
+    tplHelp: {
+      marca: "The name in the middle and the tagline running around it: the classic seal.",
+      producto: "Name, variety, net weight and the small print. The jam jar one.",
+      gracias: "The one that closes the bag or the box of an order.",
+      direccion: "Return address: name and address, for envelopes and parcels.",
+      foto: "The photo or color block on top and the name underneath.",
+    },
+    type: "Typeface",
+    types: { moderna: "Modern", clasica: "Classic", tecnica: "Technical", sencilla: "Simple" },
+    accent: "Accent color",
+    bg: "Background",
+    bgs: { papel: "Bare paper", color: "Accent color", oscuro: "Dark" },
+    image: "Image",
+    images: { foto: "Space for a photo", color: "Color block" },
+    imageHelp: "We'll leave the space marked and you can",
+    imageCta: "send us the photo on WhatsApp",
+    imageWa: "Hi, I want to print labels. I'll send you the photos and the logo.",
+    photoBox: "YOUR PHOTO",
+    words: "What it says",
+    business: "Name",
+    businessPh: "E.g. Southern Honey",
+    defBusiness: "Southern Honey",
+    tag: "Tagline or ring text",
+    tagPh: "E.g. Made in Miami · 2026",
+    defTag: "Made in Miami · 2026",
+    product: "Variety or product",
+    productPh: "E.g. Orange blossom honey",
+    defProduct: "Orange blossom honey",
+    weight: "Weight or contents",
+    weightPh: "E.g. 12 oz / 340 g",
+    defWeight: "12 oz / 340 g",
+    phrase: "Phrase",
+    phrasePh: "E.g. Thanks for your order!",
+    defPhrase: "Thanks for your order!",
+    addr1: "Address, first line",
+    addr1Ph: "E.g. 123 NW 1st St",
+    defAddr1: "123 NW 1st St",
+    addr2: "Address, second line",
+    addr2Ph: "E.g. Miami, FL 33128",
+    defAddr2: "Miami, FL 33128",
+    note: "Small print",
+    notePh: "E.g. Keep in a cool place",
+    defNote: "Keep in a cool place",
+    web: "Website or social handle",
+    webPh: "E.g. southernhoney.com",
+    defWeb: "southernhoney.com",
+    order: "Your order",
+    qty: "Quantity",
+    qtyHelp: "Labels go one at a time: order for the whole season — the unit price drops a lot. From 50 up.",
+    guides: "Cut guides",
+    guidesOn: "Red line: the bleed, where the die cuts. Blue line: the safe area. On a label the cut drifts a touch more than on paper: don't leave text tight to the edge.",
+    scene: "On the container",
+    sceneOn: "The label and the container, at real size, side by side. On a jar or a bottle the label curves: what wraps around the side reads worse, so the important part goes in the middle.",
+    tooTall: "Taller than the container",
+    tooWide: "It wraps all the way around",
+    fits: "Fits fine",
+    approx: "Approximate preview · printed color varies a little from the screen",
+    price: "Price: we send it with your quote, in under 24 hours. It depends on the run, the material and the shape.",
+    cta: "Quote these labels",
+    wa: "Send on WhatsApp",
+    notesPh: "When you need them, what container they go on, whether your design is already done…",
+    summary: "Label builder design",
+    sShape: "Shape",
+    sFormat: "Size",
+    sMaterial: "Material",
+    sFinish: "Finish",
+    sWhere: "Goes on",
+    sDesign: "Layout",
+    sType: "Typeface",
+    sAccent: "Accent color",
+    sBg: "Background",
+    sImage: "Image",
+    sName: "Name",
+    sProduct: "Product",
+    sWeight: "Contents",
+    sPhrase: "Phrase",
+    sAddr: "Address",
+    sNote: "Small print",
+    sWeb: "Web",
+    sQty: "Quantity",
+    sLink: "See the design",
+    waIntro: "Hi, I'm interested in these labels:",
+    preview: "Label preview",
+  },
+};
+
+const c = COPY[lang];
+// Qué medidas pertenecen a cada forma
+const SIZE_OF: Record<string, string[]> = {
+  redonda: ["r15", "r2", "r3"],
+  ovalada: ["o2", "o25", "o3"],
+  cuadrada: ["c15", "c2", "c3"],
+  rectangular: ["x2", "x3", "x4"],
+};
+const cfg = {
+  mats: MATS.map((m) => ({ id: m.id, base: m.base, edge: m.edge, ink: m.ink, sub: m.sub, tex: m.tex, name: m[lang] })),
+  accents: ACCENTS.map((a) => ({ id: a.id, hex: a.hex, name: a[lang] })),
+  shapes: c.shapes,
+  shapeHelp: c.shapeHelp,
+  sizes: c.sizes,
+  matHelp: c.matHelp,
+  finishes: c.finishes,
+  finishHelp: c.finishHelp,
+  wheres: c.wheres,
+  tpls: c.tpls,
+  tplHelp: c.tplHelp,
+  types: c.types,
+  bgs: c.bgs,
+  images: c.images,
+  phone: SITE.phoneIntl,
+  formValue,
+  lang,
+  copy: {
+    photoBox: c.photoBox,
+    tooTall: c.tooTall,
+    tooWide: c.tooWide,
+    fits: c.fits,
+    approx: c.approx,
+    guidesOn: c.guidesOn,
+    sceneOn: c.sceneOn,
+    scene: c.scene,
+    summary: c.summary,
+    sShape: c.sShape,
+    sFormat: c.sFormat,
+    sMaterial: c.sMaterial,
+    sFinish: c.sFinish,
+      sWhere: c.sWhere,
+    sDesign: c.sDesign,
+    sType: c.sType,
+    sAccent: c.sAccent,
+    sBg: c.sBg,
+    sImage: c.sImage,
+    sName: c.sName,
+    sProduct: c.sProduct,
+    sWeight: c.sWeight,
+    sPhrase: c.sPhrase,
+    sAddr: c.sAddr,
+    sNote: c.sNote,
+    sWeb: c.sWeb,
+    sQty: c.sQty,
+    sLink: c.sLink,
+    waIntro: c.waIntro,
+    preview: c.preview,
+  },
+};
+const waPhoto = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.imageWa)}`;
+const seg = (name: string, options: Record<string, string>, checked?: string) =>
+  Object.entries(options).map(([id, label], i) => ({ name, id, label, checked: checked ? id === checked : i === 0 }));
+const TPLS = Object.keys(c.tpls);
+---
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" />
+
+<section class="section section--flush" id="disena">
+  <div class="container">
+    <div class="sec-head">
+      <div>
+        <h2>{c.title}</h2>
+        <p>{c.lead}</p>
+      </div>
+    </div>
+
+    <div class="nb et" data-etiqueta data-cfg={JSON.stringify(cfg)}>
+      <div class="nb__stage">
+        <canvas class="nb__canvas et__canvas" role="img" aria-label={c.preview}></canvas>
+        <div class="nb__tools">
+          <button type="button" class="nb__tool" data-guides aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.guides}
+          </button>
+          <button type="button" class="nb__tool" data-scene aria-pressed="false">
+            <span class="nb__dot" aria-hidden="true"></span>{c.scene}
+          </button>
+        </div>
+        <p class="nb__approx" data-approx>{c.approx}</p>
+      </div>
+
+      <form class="nb__panel" novalidate>
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.shape}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.shape}>
+            {seg("forma", c.shapes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-shape-help>{c.shapeHelp.redonda}</p>
+          <p class="tb__sub">{c.format}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.format} data-sizes>
+            {Object.entries(SIZE_OF).map(([shape, ids]) =>
+              ids.map((id) => (
+                <label data-for={shape}>
+                  <input type="radio" name="formato" value={id} checked={id === "r2"} />
+                  <span>{c.sizes[id as keyof typeof c.sizes]}</span>
+                </label>
+              ))
+            )}
+          </div>
+          <p class="nb__help">{c.dieCut}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.material}</legend>
+          <div class="tb__mats">
+            {MATS.map((m) => (
+              <label class="tb__mat">
+                <input type="radio" name="material" value={m.id} checked={m.id === "mate"} />
+                <i style={`--c:${m.sw}`} aria-hidden="true"></i>
+                <span>{m[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help" data-mat-help>{c.matHelp.mate}</p>
+          <p class="nb__help">{c.matWarn}</p>
+          <p class="tb__sub">{c.finish}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.finish}>
+            {seg("acabado", c.finishes).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help" data-finish-help>{c.finishHelp.ninguno}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.where}</legend>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.where}>
+            {seg("envase", c.wheres).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.whereHelp}</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.design}</legend>
+          <div class="fb__pats et__tpls" role="radiogroup" aria-label={c.design}>
+            {TPLS.map((id, i) => (
+              <label class="fb__pat et__tpl">
+                <input type="radio" name="plantilla" value={id} checked={i === 0} />
+                <canvas width="132" height="132" aria-hidden="true"></canvas>
+                <span>{c.tpls[id as keyof typeof c.tpls]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="nb__help" data-tpl-help>{c.tplHelp.marca}</p>
+          <p class="tb__sub">{c.bg}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.bg}>
+            {seg("fondo", c.bgs).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.type}</p>
+          <div class="nb__seg nb__seg--wrap" role="radiogroup" aria-label={c.type}>
+            {seg("tipografia", c.types, "clasica").map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.accent} · <span class="eb__picked" data-accent-name>{ACCENTS[0][lang]}</span></p>
+          <div class="eb__sws" role="radiogroup" aria-label={c.accent}>
+            {ACCENTS.map((a, i) => (
+              <label class="eb__sw" title={a[lang]}>
+                <input type="radio" name="acento" value={a.id} checked={i === 0} />
+                <i style={`--c:${a.hex}`} aria-hidden="true"></i>
+                <span class="sr-only">{a[lang]}</span>
+              </label>
+            ))}
+          </div>
+          <p class="tb__sub">{c.image}</p>
+          <div class="nb__seg" role="radiogroup" aria-label={c.image} data-image>
+            {seg("imagen", c.images).map((o) => (
+              <label><input type="radio" name={o.name} value={o.id} checked={o.checked} /><span>{o.label}</span></label>
+            ))}
+          </div>
+          <p class="nb__help">{c.imageHelp} <a class="eb__link" href={waPhoto} target="_blank" rel="noopener">{c.imageCta}</a>.</p>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.words}</legend>
+          <div class="tb__words">
+            <div class="form__row">
+              <div class="field">
+                <label for="et-negocio">{c.business}</label>
+                <input id="et-negocio" type="text" name="negocio" maxlength="22" autocomplete="off" placeholder={c.businessPh} value={c.defBusiness} />
+              </div>
+              <div class="field">
+                <label for="et-lema">{c.tag}</label>
+                <input id="et-lema" type="text" name="lema" maxlength="30" autocomplete="off" placeholder={c.tagPh} value={c.defTag} />
+              </div>
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="et-producto">{c.product}</label>
+                <input id="et-producto" type="text" name="producto" maxlength="24" autocomplete="off" placeholder={c.productPh} value={c.defProduct} />
+              </div>
+              <div class="field">
+                <label for="et-peso">{c.weight}</label>
+                <input id="et-peso" type="text" name="peso" maxlength="18" autocomplete="off" placeholder={c.weightPh} value={c.defWeight} />
+              </div>
+            </div>
+            <div class="field">
+              <label for="et-frase">{c.phrase}</label>
+              <input id="et-frase" type="text" name="frase" maxlength="26" autocomplete="off" placeholder={c.phrasePh} value={c.defPhrase} />
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="et-dir1">{c.addr1}</label>
+                <input id="et-dir1" type="text" name="dir1" maxlength="26" autocomplete="off" placeholder={c.addr1Ph} value={c.defAddr1} />
+              </div>
+              <div class="field">
+                <label for="et-dir2">{c.addr2}</label>
+                <input id="et-dir2" type="text" name="dir2" maxlength="26" autocomplete="off" placeholder={c.addr2Ph} value={c.defAddr2} />
+              </div>
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="et-nota">{c.note}</label>
+                <input id="et-nota" type="text" name="nota" maxlength="34" autocomplete="off" placeholder={c.notePh} value={c.defNote} />
+              </div>
+              <div class="field">
+                <label for="et-web">{c.web}</label>
+                <input id="et-web" type="text" name="web" maxlength="26" autocomplete="off" placeholder={c.webPh} value={c.defWeb} />
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="nb__group">
+          <legend class="nb__label">{c.order}</legend>
+          <div class="nb__sizes">
+            {QTYS.map((q) => (
+              <button type="button" class="nb__pill" data-qty={q}>{q}</button>
+            ))}
+          </div>
+          <div class="tb__row">
+            <div class="field">
+              <label for="et-cantidad">{c.qty}</label>
+              <input id="et-cantidad" type="number" name="cantidad" min="50" max="100000" step="50" value="250" inputmode="numeric" aria-describedby="et-qty-help" />
+            </div>
+          </div>
+          <p class="nb__help" id="et-qty-help">{c.qtyHelp}</p>
+        </fieldset>
+
+        <div class="nb__foot">
+          <p class="nb__price">{c.price}</p>
+          <BuilderContact lang={lang} idp="et" cta={c.cta} notesPh={c.notesPh} />
+          <a class="wa-link" data-wa href={`https://wa.me/${SITE.phoneIntl}`} target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-wa"></use></svg>{c.wa}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { wireQuote } from "../scripts/builder-quote";
+
+  type Mat = { id: string; name: string; base: string; edge: string; ink: string; sub: string; tex: string };
+  type Accent = { id: string; name: string; hex: string };
+  type Cfg = {
+    mats: Mat[];
+    accents: Accent[];
+    shapes: Record<string, string>;
+    shapeHelp: Record<string, string>;
+    sizes: Record<string, string>;
+    matHelp: Record<string, string>;
+    finishes: Record<string, string>;
+    finishHelp: Record<string, string>;
+    wheres: Record<string, string>;
+    tpls: Record<string, string>;
+    tplHelp: Record<string, string>;
+    types: Record<string, string>;
+    bgs: Record<string, string>;
+    images: Record<string, string>;
+    phone: string;
+    formValue: string;
+    lang: string;
+    copy: Record<string, string>;
+  };
+  // Una etiqueta ya resuelta desde el formulario
+  type Face = {
+    w: number; // pulgadas
+    h: number;
+    shape: string;
+    mat: Mat;
+    accent: string;
+    type: string;
+    tpl: string;
+    bg: string;
+    photo: boolean;
+    finish: string;
+    t: Record<string, string>;
+    mini: boolean;
+  };
+
+  // Medidas de etiqueta, en pulgadas, y a qué forma pertenece cada una
+  const SIZES: Record<string, { w: number; h: number; shape: string }> = {
+    r15: { w: 1.5, h: 1.5, shape: "redonda" },
+    r2: { w: 2, h: 2, shape: "redonda" },
+    r3: { w: 3, h: 3, shape: "redonda" },
+    o2: { w: 2, h: 1.25, shape: "ovalada" },
+    o25: { w: 2.5, h: 1.5, shape: "ovalada" },
+    o3: { w: 3, h: 2, shape: "ovalada" },
+    c15: { w: 1.5, h: 1.5, shape: "cuadrada" },
+    c2: { w: 2, h: 2, shape: "cuadrada" },
+    c3: { w: 3, h: 3, shape: "cuadrada" },
+    x2: { w: 2, h: 1, shape: "rectangular" },
+    x3: { w: 3, h: 2, shape: "rectangular" },
+    x4: { w: 4, h: 3, shape: "rectangular" },
+  };
+  const DEF_SIZE: Record<string, string> = { redonda: "r2", ovalada: "o25", cuadrada: "c2", rectangular: "x3" };
+  const BLEED = 0.0625; // el sangrado de una etiqueta, 1/16 in
+  const SAFE = 0.09; // y su zona segura, que es más holgada: el troquel baila
+  const ROUND = 0.14; // el radio de la esquina de las cuadradas
+
+  // Los envases, en pulgadas, con las medidas de los de verdad: r es el radio
+  // (los redondos curvan la etiqueta) y band es el alto liso donde se pega.
+  const PACKS: Record<string, { w: number; h: number; r: number; y: number; band: number }> = {
+    frasco: { w: 2.4, h: 2.6, r: 1.2, y: 0.52, band: 2.3 }, // el de 8 oz de mermelada
+    botella: { w: 2.6, h: 7.5, r: 1.3, y: 0.8, band: 2.8 }, // el cuerpo recto, no la botella entera
+    caja: { w: 5, h: 4.2, r: 0, y: 0.5, band: 3.6 },
+    bolsa: { w: 4.6, h: 7, r: 0, y: 0.42, band: 5.2 },
+  };
+
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  // Luminancia relativa: decide si sobre ese color el texto va blanco o negro
+  const lum = (hex: string) =>
+    rgb(hex)
+      .map((v) => v / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)))
+      .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const onColor = (hex: string) => (lum(hex) > 0.42 ? "#0B0C0E" : "#FFFFFF");
+  const mix = (hex: string, t: number) => {
+    const to = t < 0 ? 0 : 255;
+    const a = Math.abs(t);
+    const [r, g, b] = rgb(hex).map((v) => Math.round(v + (to - v) * a));
+    return `rgb(${r},${g},${b})`;
+  };
+
+  // Medidas en pulgadas, escritas como en la imprenta: 2-1/2 in
+  const fmtIn = (v: number) => {
+    const whole = Math.floor(v);
+    const fr = +(v - whole).toFixed(3);
+    const frac: Record<string, string> = { "0.25": "-1/4", "0.5": "-1/2", "0.75": "-3/4" };
+    const f = frac[String(fr)];
+    if (f) return `${whole}${f}`;
+    return fr ? String(+v.toFixed(2)) : String(whole);
+  };
+
+  const FAMS: Record<string, { title: string; body: string; track: string }> = {
+    moderna: { title: '800 {px}px "Saira", "Arial Narrow", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    clasica: { title: '700 {px}px "Playfair Display", Georgia, serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+    tecnica: { title: '400 {px}px "Michroma", "Eurostile", sans-serif', body: '500 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.02em" },
+    sencilla: { title: '600 {px}px "Instrument Sans", system-ui, sans-serif', body: '400 {px}px "Instrument Sans", system-ui, sans-serif', track: "0.01em" },
+  };
+  const LABEL = (px: number) => `400 ${px}px "Michroma", "Eurostile", sans-serif`;
+  const setTrack = (c: CanvasRenderingContext2D, v: string) => {
+    (c as unknown as { letterSpacing: string }).letterSpacing = v;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-etiqueta]");
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+    const form = root.querySelector<HTMLFormElement>(".nb__panel")!;
+    const canvas = root.querySelector<HTMLCanvasElement>(".nb__canvas")!;
+    const ctx = canvas.getContext("2d")!;
+    const guidesBtn = root.querySelector<HTMLButtonElement>("[data-guides]")!;
+    const sceneBtn = root.querySelector<HTMLButtonElement>("[data-scene]")!;
+    const tools = root.querySelector<HTMLElement>(".nb__tools")!;
+    const approx = root.querySelector<HTMLElement>("[data-approx]")!;
+    const shapeHelp = form.querySelector<HTMLElement>("[data-shape-help]")!;
+    const sizesSeg = form.querySelector<HTMLElement>("[data-sizes]")!;
+    const matHelp = form.querySelector<HTMLElement>("[data-mat-help]")!;
+    const finishHelp = form.querySelector<HTMLElement>("[data-finish-help]")!;
+    const tplHelp = form.querySelector<HTMLElement>("[data-tpl-help]")!;
+    const imageSeg = form.querySelector<HTMLElement>("[data-image]")!;
+    const accentName = form.querySelector<HTMLElement>("[data-accent-name]")!;
+    const qtyEl = form.querySelector<HTMLInputElement>("input[name='cantidad']")!;
+    const waEl = form.querySelector<HTMLAnchorElement>("[data-wa]")!;
+    const contactBox = form.querySelector<HTMLElement>(".nb__contact")!;
+
+    let guides = false;
+    let scene = false;
+    let touched = false; // la dirección cambia solo cuando el cliente toca algo
+
+    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
+    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const setRadio = (name: string, v: string | null) => {
+      if (!v) return;
+      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
+      if (input) input.checked = true;
+    };
+    const shape = () => val("forma");
+    const mat = () => cfg.mats.find((m) => m.id === val("material")) ?? cfg.mats[0];
+    const accent = () => cfg.accents.find((a) => a.id === val("acento")) ?? cfg.accents[0];
+    const hasPhoto = () => val("plantilla") === "foto";
+    const qty = () => Math.max(50, Math.min(100000, Math.round(Number(qtyEl.value) || 250)));
+    const dims = () => {
+      const s = SIZES[val("formato")];
+      return s && s.shape === shape() ? s : SIZES[DEF_SIZE[shape()]];
+    };
+    const texts = () => ({
+      negocio: text("negocio"),
+      lema: text("lema"),
+      producto: text("producto"),
+      peso: text("peso"),
+      frase: text("frase"),
+      dir1: text("dir1"),
+      dir2: text("dir2"),
+      nota: text("nota"),
+      web: text("web"),
+    });
+
+    // ---------- Estado en la dirección: el diseño se puede compartir ----------
+    const RADIOS = ["forma", "formato", "material", "acabado", "envase", "plantilla", "fondo", "tipografia", "acento", "imagen"];
+    const FIELDS: Array<[string, number]> = [
+      ["negocio", 22],
+      ["lema", 30],
+      ["producto", 24],
+      ["peso", 18],
+      ["frase", 26],
+      ["dir1", 26],
+      ["dir2", 26],
+      ["nota", 34],
+      ["web", 26],
+    ];
+    const params = new URLSearchParams(location.search);
+    if (params.has("plantilla") && params.has("forma")) {
+      RADIOS.forEach((n) => setRadio(n, params.get(n)));
+      FIELDS.forEach(([n, max]) => {
+        const v = params.get(n);
+        if (v !== null) (form.elements.namedItem(n) as HTMLInputElement).value = v.slice(0, max);
+      });
+      const q = Number(params.get("cantidad"));
+      if (q >= 50 && q <= 100000) qtyEl.value = String(Math.round(q));
+    }
+    const shareUrl = () => {
+      const p = new URLSearchParams();
+      RADIOS.forEach((n) => p.set(n, val(n)));
+      FIELDS.forEach(([n]) => p.set(n, text(n)));
+      p.set("cantidad", String(qty()));
+      return `${location.origin}${location.pathname}?${p}#disena`;
+    };
+    let urlTimer = 0;
+    const syncUrl = () => {
+      clearTimeout(urlTimer);
+      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
+    };
+
+    // ---------- Dibujo ----------
+    // El contorno de la etiqueta: es lo que corta el troquel
+    const outline = (x0: number, y0: number, w: number, h: number, sh: string, s: number, grow = 0) => {
+      const p = new Path2D();
+      const gx = x0 - grow;
+      const gy = y0 - grow;
+      const gw = w + grow * 2;
+      const gh = h + grow * 2;
+      if (sh === "redonda" || sh === "ovalada") p.ellipse(gx + gw / 2, gy + gh / 2, gw / 2, gh / 2, 0, 0, Math.PI * 2);
+      else if (sh === "cuadrada") p.roundRect(gx, gy, gw, gh, ROUND * s);
+      else p.roundRect(gx, gy, gw, gh, ROUND * s * 0.7);
+      return p;
+    };
+
+    // El papel. El brillante lleva el reflejo en diagonal; el mate va liso.
+    const surface = (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, m: Mat) => {
+      c.fillStyle = m.base;
+      c.fillRect(x, y, w, h);
+      if (m.tex !== "brillo") return;
+      const g = c.createLinearGradient(x, y + h, x + w, y);
+      g.addColorStop(0, "rgba(255,255,255,0)");
+      g.addColorStop(0.44, "rgba(255,255,255,0)");
+      g.addColorStop(0.5, "rgba(255,255,255,0.4)");
+      g.addColorStop(0.56, "rgba(255,255,255,0)");
+      g.addColorStop(1, "rgba(180,200,215,0.12)");
+      c.fillStyle = g;
+      c.fillRect(x, y, w, h);
+    };
+
+    // Dibuja la etiqueta. Todo lo que se sale del contorno se recorta.
+    const drawFace = (c: CanvasRenderingContext2D, x0: number, y0: number, s: number, o: Face, onPack: boolean) => {
+      const { w, h } = o;
+      const X = (v: number) => x0 + v * s;
+      const Y = (v: number) => y0 + v * s;
+      const P = (v: number) => v * s;
+      const acc = o.accent;
+      const fu = w; // en una etiqueta manda el ancho
+      const V = (k: number) => k * h;
+      const round = o.shape === "redonda" || o.shape === "ovalada";
+      const m = (round ? 0.14 : 0.1) * w; // en las redondas el margen tiene que ser mayor
+
+      const path = outline(X(0), Y(0), P(w), P(h), o.shape, s);
+      c.save();
+      c.clip(path);
+
+      // ---- Fondo ----
+      const dark = o.bg === "oscuro";
+      const colored = o.bg === "color";
+      surface(c, X(0), Y(0), P(w), P(h), o.mat);
+      if (dark || colored) {
+        c.fillStyle = dark ? "#14161A" : acc;
+        c.fillRect(X(0), Y(0), P(w), P(h));
+        // El brillo del papel se nota también sobre la tinta
+        if (o.mat.tex === "brillo") {
+          c.save();
+          c.globalAlpha = 0.16;
+          c.globalCompositeOperation = "overlay";
+          surface(c, X(0), Y(0), P(w), P(h), o.mat);
+          c.restore();
+        }
+      }
+      const ink = dark ? "#FFFFFF" : colored ? onColor(acc) : o.mat.ink;
+      const sub = dark ? "#AEB5BD" : colored ? mix(onColor(acc), onColor(acc) === "#FFFFFF" ? -0.2 : 0.35) : o.mat.sub;
+      const mark = colored ? ink : acc;
+      const rule = dark ? "rgba(255,255,255,0.3)" : colored ? "rgba(255,255,255,0.45)" : "rgba(11,12,14,0.22)";
+
+      const fam = () => FAMS[o.type] ?? FAMS.moderna;
+      const make = (kind: "title" | "body" | "label", px: number) =>
+        kind === "label" ? LABEL(px) : fam()[kind].replace("{px}", String(px));
+
+      // Un renglón de texto; en las miniaturas se sustituye por una barra
+      const put = (
+        txt: string,
+        kind: "title" | "body" | "label",
+        sizeIn: number,
+        xIn: number,
+        yIn: number,
+        maxIn: number,
+        color: string,
+        align: CanvasTextAlign = "center",
+        upper = false
+      ) => {
+        if (!txt) return 0;
+        const px = Math.max(1, P(sizeIn));
+        const maxPx = P(maxIn);
+        const t = upper ? txt.toLocaleUpperCase() : txt;
+        setTrack(c, kind === "label" ? "0.12em" : fam().track);
+        c.font = make(kind, px);
+        let wd = c.measureText(t).width;
+        if (wd > maxPx && wd > 0) {
+          c.font = make(kind, px * (maxPx / wd));
+          wd = maxPx;
+        }
+        c.fillStyle = color;
+        c.textAlign = align;
+        c.textBaseline = "alphabetic";
+        if (o.mini) {
+          const bh = Math.max(1, px * 0.56);
+          const bx = align === "right" ? X(xIn) - wd : align === "center" ? X(xIn) - wd / 2 : X(xIn);
+          c.fillRect(bx, Y(yIn) - bh, wd, bh);
+        } else {
+          c.fillText(t, X(xIn), Y(yIn));
+        }
+        setTrack(c, "0px");
+        return wd / s;
+      };
+
+      // El texto dando la vuelta, que es lo que hace que un sello sea un sello
+      const arcText = (txt: string, sizeIn: number, rIn: number, bottom = false) => {
+        if (!txt || o.mini) return;
+        const px = Math.max(1, P(sizeIn));
+        c.save();
+        c.font = make("label", px);
+        setTrack(c, "0px");
+        c.fillStyle = mark;
+        c.textAlign = "center";
+        c.textBaseline = "middle";
+        const chars = [...txt.toLocaleUpperCase()];
+        const widths = chars.map((ch) => c.measureText(ch).width + px * 0.1);
+        const total = widths.reduce((a, b) => a + b, 0);
+        const arc = total / P(rIn); // el ángulo que ocupa
+        let a = bottom ? Math.PI / 2 + arc / 2 : -Math.PI / 2 - arc / 2;
+        chars.forEach((ch, i) => {
+          const step = widths[i] / P(rIn);
+          const mid = bottom ? a - step / 2 : a + step / 2;
+          c.save();
+          c.translate(X(w / 2) + Math.cos(mid) * P(rIn), Y(h / 2) + Math.sin(mid) * P(rIn));
+          c.rotate(bottom ? mid - Math.PI / 2 : mid + Math.PI / 2);
+          c.fillText(ch, 0, 0);
+          c.restore();
+          a = bottom ? a - step : a + step;
+        });
+        c.restore();
+      };
+
+      // Un filete horizontal, de x1 a x2 a la altura y
+      const line = (x1: number, y: number, x2: number, color = rule, lw = 1) => {
+        c.strokeStyle = color;
+        c.lineWidth = Math.max(1, lw);
+        c.beginPath();
+        c.moveTo(X(x1), Y(y));
+        c.lineTo(X(x2), Y(y));
+        c.stroke();
+      };
+      // Hueco de la foto: rayado en diagonal, o un bloque de color
+      const image = (xIn: number, yIn: number, wIn: number, hIn: number) => {
+        const ix = X(xIn);
+        const iy = Y(yIn);
+        const iw = P(wIn);
+        const ih = P(hIn);
+        if (!o.photo) {
+          c.fillStyle = mark;
+          c.fillRect(ix, iy, iw, ih);
+          return;
+        }
+        c.save();
+        c.beginPath();
+        c.rect(ix, iy, iw, ih);
+        c.clip();
+        c.fillStyle = dark ? "#2A2E34" : colored ? mix(acc, onColor(acc) === "#FFFFFF" ? -0.18 : 0.2) : "#E4E7EA";
+        c.fillRect(ix, iy, iw, ih);
+        c.strokeStyle = dark ? "rgba(255,255,255,0.1)" : "rgba(11,12,14,0.09)";
+        c.lineWidth = Math.max(1, P(0.02));
+        const step = Math.max(5, P(0.16));
+        c.beginPath();
+        for (let i = -ih; i < iw; i += step) {
+          c.moveTo(ix + i, iy + ih);
+          c.lineTo(ix + i + ih, iy);
+        }
+        c.stroke();
+        c.restore();
+        if (!o.mini) {
+          const lbl = Math.min(hIn * 0.22, wIn * 0.1);
+          put(cfg.copy.photoBox, "label", lbl, xIn + wIn / 2, yIn + hIn / 2 + lbl * 0.4, wIn * 0.8, dark ? "#8D949C" : colored ? sub : "#8A9099");
+        }
+      };
+
+      const t = o.t;
+
+      if (o.tpl === "marca") {
+        if (round) {
+          // El aro de dentro y el texto dando la vuelta
+          c.save();
+          c.strokeStyle = mark;
+          c.lineWidth = Math.max(1, P(0.014));
+          const p2 = outline(X(m * 0.72), Y(m * 0.72 * (h / w)), P(w - m * 1.44), P(h - m * 1.44 * (h / w)), o.shape, s);
+          c.stroke(p2);
+          c.restore();
+          arcText(t.lema, w * 0.062, Math.min(w, h) * 0.37);
+          put(t.negocio, "title", 0.17 * fu, w / 2, V(0.53), w - m * 2.6, ink);
+          line(w / 2 - w * 0.13, V(0.6), w / 2 + w * 0.13, mark, Math.max(1, P(0.012)));
+          put(t.producto, "body", 0.06 * fu, w / 2, V(0.69), w - m * 2.6, sub);
+        } else {
+          c.save();
+          c.strokeStyle = mark;
+          c.lineWidth = Math.max(1, P(0.014));
+          c.strokeRect(X(m * 0.7), Y(m * 0.7), P(w - m * 1.4), P(h - m * 1.4));
+          c.restore();
+          put(t.lema, "label", 0.055 * fu, w / 2, V(0.26), w - m * 2.4, sub, "center", true);
+          put(t.negocio, "title", 0.16 * fu, w / 2, V(0.56), w - m * 2.4, ink);
+          line(w / 2 - w * 0.12, V(0.64), w / 2 + w * 0.12, mark, Math.max(1, P(0.012)));
+          put(t.producto, "body", 0.058 * fu, w / 2, V(0.76), w - m * 2.4, sub);
+        }
+      } else if (o.tpl === "producto") {
+        put(t.negocio, "label", 0.058 * fu, w / 2, V(0.2), w - m * 2, mark, "center", true);
+        line(w / 2 - w * 0.16, V(0.26), w / 2 + w * 0.16, rule);
+        put(t.producto, "title", 0.125 * fu, w / 2, V(0.46), w - m * 2.2, ink);
+        put(t.peso, "body", 0.062 * fu, w / 2, V(0.62), w - m * 2.2, sub);
+        put(t.nota, "body", 0.05 * fu, w / 2, V(0.76), w - m * 2, sub);
+        put(t.web, "body", 0.05 * fu, w / 2, V(0.86), w - m * 2, ink);
+      } else if (o.tpl === "gracias") {
+        put(t.frase, "title", 0.115 * fu, w / 2, V(0.45), w - m * 2.2, ink);
+        line(w / 2 - w * 0.1, V(0.56), w / 2 + w * 0.1, mark, Math.max(1, P(0.012)));
+        put(t.negocio, "label", 0.058 * fu, w / 2, V(0.69), w - m * 2, mark, "center", true);
+        put(t.web, "body", 0.05 * fu, w / 2, V(0.8), w - m * 2, sub);
+      } else if (o.tpl === "direccion") {
+        put(t.negocio, "title", 0.1 * fu, m, V(0.34), w - m * 2, ink, "left");
+        put(t.dir1, "body", 0.062 * fu, m, V(0.52), w - m * 2, sub, "left");
+        put(t.dir2, "body", 0.062 * fu, m, V(0.66), w - m * 2, sub, "left");
+        put(t.web, "body", 0.05 * fu, m, V(0.82), w - m * 2, mark, "left");
+      } else {
+        // foto: la imagen arriba y el nombre debajo
+        image(0, 0, w, h * (round ? 0.52 : 0.5));
+        put(t.negocio, "title", 0.115 * fu, w / 2, V(round ? 0.72 : 0.68), w - m * 2, ink);
+        put(t.producto, "body", 0.055 * fu, w / 2, V(round ? 0.84 : 0.82), w - m * 2, sub);
+        if (!round) put(t.peso, "body", 0.05 * fu, w / 2, V(0.94), w - m * 2, mark);
+      }
+
+      // El antirrayado deja la tinta un pelo más apagada y pareja
+      if (o.finish === "antirrayado" && !o.mini) {
+        c.fillStyle = "rgba(246,248,250,0.1)";
+        c.fillRect(X(0), Y(0), P(w), P(h));
+      }
+      c.restore();
+
+      // El filo del troquel
+      c.lineWidth = 1;
+      c.strokeStyle = "rgba(11,12,14,0.3)";
+      c.stroke(path);
+    };
+
+    // La etiqueta suelta, con su sombra y sus guías
+    const drawLabel = (x0: number, y0: number, s: number, o: Face) => {
+      const wPx = o.w * s;
+      const hPx = o.h * s;
+      ctx.save();
+      ctx.shadowColor = "rgba(18,26,36,0.4)";
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 8;
+      ctx.fillStyle = o.mat.edge;
+      ctx.fill(outline(x0, y0, wPx, hPx, o.shape, s));
+      ctx.restore();
+      drawFace(ctx, x0, y0, s, o, false);
+      if (guides) {
+        ctx.save();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = "#ED1B24";
+        ctx.stroke(outline(x0, y0, wPx, hPx, o.shape, s, BLEED * s));
+        ctx.strokeStyle = "#0094DA";
+        ctx.stroke(outline(x0, y0, wPx, hPx, o.shape, s, -SAFE * s));
+        ctx.restore();
+      }
+    };
+
+    // Rótulo chico sobre una pastilla clara
+    const tag = (txt: string, x: number, y: number, color: string) => {
+      ctx.font = `600 11px "Instrument Sans", system-ui, sans-serif`;
+      const lw = ctx.measureText(txt).width;
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x - lw / 2 - 7, y - 10, lw + 14, 20, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(txt, x, y + 1);
+      ctx.textBaseline = "alphabetic";
+    };
+
+    // La etiqueta dibujada aparte, para poder curvarla sobre el envase.
+    // La luz del cilindro se pinta aquí dentro, con source-atop: así respeta
+    // el contorno y no mancha las esquinas de las redondas.
+    const bake = (o: Face, s: number, cyl: boolean) => {
+      const off = document.createElement("canvas");
+      off.width = Math.max(2, Math.round(o.w * s));
+      off.height = Math.max(2, Math.round(o.h * s));
+      const c2 = off.getContext("2d")!;
+      drawFace(c2, 0, 0, s, o, true);
+      if (cyl) {
+        const g = c2.createLinearGradient(0, 0, off.width, 0);
+        g.addColorStop(0, "rgba(16,28,38,0.4)");
+        g.addColorStop(0.18, "rgba(255,255,255,0.12)");
+        g.addColorStop(0.44, "rgba(255,255,255,0.24)");
+        g.addColorStop(0.76, "rgba(16,28,38,0.1)");
+        g.addColorStop(1, "rgba(16,28,38,0.38)");
+        c2.globalCompositeOperation = "source-atop";
+        c2.fillStyle = g;
+        c2.fillRect(0, 0, off.width, off.height);
+        c2.globalCompositeOperation = "source-over";
+      }
+      return off;
+    };
+
+    // El envase, a escala, con la etiqueta pegada y curvada si es redondo
+    const drawPack = (x0: number, yBase: number, s: number, o: Face, kind: string) => {
+      const p = PACKS[kind] ?? PACKS.frasco;
+      const W = p.w * s;
+      const H = p.h * s;
+      const cx = x0 + W / 2;
+      const top = yBase - H;
+      const glass = (a: number) => `rgba(206,222,230,${a})`;
+
+      ctx.save();
+      ctx.shadowColor = "rgba(18,26,36,0.3)";
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 8;
+      const body = new Path2D();
+      if (kind === "frasco") {
+        body.roundRect(x0, top, W, H, [W * 0.1, W * 0.1, W * 0.12, W * 0.12]);
+      } else if (kind === "botella") {
+        const neckW = W * 0.34;
+        const shoulder = H * 0.17;
+        body.moveTo(x0, yBase - H * 0.62);
+        body.lineTo(x0, yBase - W * 0.08);
+        body.quadraticCurveTo(x0, yBase, x0 + W * 0.1, yBase);
+        body.lineTo(x0 + W - W * 0.1, yBase);
+        body.quadraticCurveTo(x0 + W, yBase, x0 + W, yBase - W * 0.08);
+        body.lineTo(x0 + W, yBase - H * 0.62);
+        body.quadraticCurveTo(x0 + W, yBase - H * 0.62 - shoulder, cx + neckW / 2, yBase - H * 0.82);
+        body.lineTo(cx + neckW / 2, top);
+        body.lineTo(cx - neckW / 2, top);
+        body.lineTo(cx - neckW / 2, yBase - H * 0.82);
+        body.quadraticCurveTo(x0, yBase - H * 0.62 - shoulder, x0, yBase - H * 0.62);
+      } else if (kind === "caja") {
+        body.roundRect(x0, top, W, H, W * 0.025);
+      } else {
+        body.roundRect(x0, top, W, H, [W * 0.03, W * 0.03, W * 0.06, W * 0.06]);
+      }
+      ctx.fillStyle = kind === "caja" ? "#C8A982" : kind === "bolsa" ? "#C5A179" : glass(0.85);
+      ctx.fill(body);
+      ctx.restore();
+
+      ctx.save();
+      ctx.clip(body);
+      // Volumen: los redondos con luz en el medio, los planos con una sombra suave
+      const g = ctx.createLinearGradient(x0, 0, x0 + W, 0);
+      if (p.r) {
+        g.addColorStop(0, "rgba(18,30,40,0.3)");
+        g.addColorStop(0.18, "rgba(255,255,255,0.35)");
+        g.addColorStop(0.46, "rgba(255,255,255,0.65)");
+        g.addColorStop(0.72, "rgba(18,30,40,0.12)");
+        g.addColorStop(1, "rgba(18,30,40,0.34)");
+      } else {
+        g.addColorStop(0, "rgba(18,30,40,0.14)");
+        g.addColorStop(0.3, "rgba(255,255,255,0.2)");
+        g.addColorStop(1, "rgba(18,30,40,0.16)");
+      }
+      ctx.fillStyle = g;
+      ctx.fillRect(x0, top, W, H);
+      if (kind === "caja") {
+        // La tapa y la cinta de la caja
+        ctx.fillStyle = "rgba(11,12,14,0.14)";
+        ctx.fillRect(x0, top, W, H * 0.06);
+        ctx.fillStyle = "rgba(255,255,255,0.22)";
+        ctx.fillRect(cx - W * 0.03, top, W * 0.06, H);
+      }
+      if (kind === "bolsa") {
+        // El doblez de arriba y el fuelle
+        ctx.fillStyle = "rgba(11,12,14,0.16)";
+        ctx.fillRect(x0, top, W, H * 0.11);
+        ctx.strokeStyle = "rgba(11,12,14,0.14)";
+        ctx.lineWidth = 1;
+        [0.2, 0.8].forEach((k) => {
+          ctx.beginPath();
+          ctx.moveTo(x0 + W * k, top + H * 0.11);
+          ctx.lineTo(x0 + W * k, yBase);
+          ctx.stroke();
+        });
+      }
+      ctx.restore();
+
+      if (kind === "frasco") {
+        // La tapa
+        const lidH = H * 0.17;
+        ctx.save();
+        ctx.fillStyle = mix(o.accent, -0.25);
+        ctx.beginPath();
+        ctx.roundRect(x0 - W * 0.03, top - lidH, W * 1.06, lidH, [W * 0.06, W * 0.06, 0, 0]);
+        ctx.fill();
+        const lg = ctx.createLinearGradient(x0, 0, x0 + W, 0);
+        lg.addColorStop(0, "rgba(0,0,0,0.3)");
+        lg.addColorStop(0.4, "rgba(255,255,255,0.28)");
+        lg.addColorStop(1, "rgba(0,0,0,0.32)");
+        ctx.fillStyle = lg;
+        ctx.fill();
+        ctx.restore();
+      }
+      if (kind === "botella") {
+        const capH = H * 0.07;
+        ctx.fillStyle = mix(o.accent, -0.3);
+        ctx.beginPath();
+        ctx.roundRect(cx - W * 0.19, top - capH, W * 0.38, capH + H * 0.02, W * 0.03);
+        ctx.fill();
+      }
+
+      // ---- La etiqueta encima ----
+      const labW = o.w * s;
+      const labH = o.h * s;
+      const cyTop = top + H * p.y - labH / 2;
+      const img = bake(o, s, !!p.r);
+      ctx.save();
+      if (p.r) {
+        // Curvada sobre el cilindro: cada tajada en su sitio
+        const R = p.r * s;
+        const halfArc = labW / R / 2;
+        const slices = 72;
+        for (let i = 0; i < slices; i++) {
+          const a0 = -halfArc + (i / slices) * halfArc * 2;
+          const a1 = -halfArc + ((i + 1) / slices) * halfArc * 2;
+          // Lo que pasa de los 90° se va a la parte de atrás: no se ve
+          if (a0 < -Math.PI / 2 || a1 > Math.PI / 2) continue;
+          const dx0 = cx + Math.sin(a0) * R;
+          const dx1 = cx + Math.sin(a1) * R;
+          ctx.drawImage(
+            img,
+            (i / slices) * img.width,
+            0,
+            img.width / slices,
+            img.height,
+            dx0,
+            cyTop,
+            Math.max(0.6, dx1 - dx0),
+            labH
+          );
+        }
+      } else {
+        ctx.shadowColor = "rgba(18,26,36,0.28)";
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetY = 2;
+        ctx.drawImage(img, cx - labW / 2, cyTop, labW, labH);
+      }
+      ctx.restore();
+
+      // ¿Cabe? Es la pregunta que trae a la gente aquí
+      const tooTall = o.h > p.band;
+      // En un envase redondo, lo que no cabe es dar más de una vuelta entera
+      const tooWide = p.r ? o.w > 2 * Math.PI * p.r : labW > W * 0.92;
+      const msg = tooTall ? cfg.copy.tooTall : tooWide ? cfg.copy.tooWide : cfg.copy.fits;
+      const color = tooTall || tooWide ? "#ED1B24" : "#4F7A2B";
+      if (tooTall || tooWide) {
+        ctx.save();
+        ctx.setLineDash([5, 4]);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "#ED1B24";
+        ctx.stroke(outline(cx - labW / 2, cyTop, labW, labH, o.shape, s));
+        ctx.restore();
+      }
+      tag(msg, cx, top + H + 22, color);
+      return { W, H };
+    };
+
+    const face = (mini: boolean, tpl?: string): Face => ({
+      ...dims(),
+      shape: shape(),
+      mat: mat(),
+      accent: accent().hex,
+      type: val("tipografia"),
+      tpl: tpl ?? val("plantilla"),
+      bg: val("fondo"),
+      photo: val("imagen") === "foto",
+      finish: val("acabado"),
+      t: texts(),
+      mini,
+    });
+
+    const draw = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      if (!cw || !ch) return;
+      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
+        canvas.width = Math.round(cw * dpr);
+        canvas.height = Math.round(ch * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+
+      const o = face(false);
+      const { w, h } = o;
+      const top = tools.offsetHeight + 24;
+      const keep = top + 48 + (approx.offsetParent ? 34 : 0);
+      const pack = PACKS[val("envase")] ?? PACKS.frasco;
+      const kind = val("envase");
+      // En el escenario, la etiqueta suelta y el envase van uno al lado del otro
+      const gap = 0.7;
+      const unitW = scene ? w + gap + pack.w + 0.4 : w;
+      const unitH = scene ? Math.max(h, pack.h + (kind === "frasco" ? pack.h * 0.17 : 0) + 0.5) : h;
+      const pad = guides ? 0.22 : 0.1;
+      const s = Math.min((cw - 44) / (unitW + pad * 2), (ch - keep) / (unitH + pad * 2));
+      const groupW = unitW * s;
+      const x0 = (cw - groupW) / 2;
+      const yMid = Math.max(top + (unitH * s) / 2, 16 + (ch - 44) / 2);
+
+      if (scene) {
+        drawLabel(x0, yMid - (h * s) / 2, s, o);
+        drawPack(x0 + (w + gap) * s, yMid + (unitH * s) / 2 - 24, s, o, kind);
+      } else {
+        drawLabel(x0, yMid - (h * s) / 2, s, o);
+      }
+
+      // Cota del ancho, debajo de la etiqueta
+      const gy = yMid + (h * s) / 2 + 20;
+      const tick = 5;
+      ctx.strokeStyle = "rgba(11,12,14,0.5)";
+      ctx.fillStyle = "rgba(11,12,14,0.66)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x0, gy);
+      ctx.lineTo(x0 + w * s, gy);
+      ctx.moveTo(x0, gy - tick);
+      ctx.lineTo(x0, gy + tick);
+      ctx.moveTo(x0 + w * s, gy - tick);
+      ctx.lineTo(x0 + w * s, gy + tick);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.font = `500 12px "Instrument Sans", system-ui, sans-serif`;
+      const sizeTxt = w === h ? `${fmtIn(w)} in` : `${fmtIn(w)} × ${fmtIn(h)} in`;
+      const txt = `${sizeTxt} · ${cfg.shapes[shape()]} · ${mat().name}`;
+      const half = ctx.measureText(txt).width / 2;
+      ctx.fillText(txt, Math.min(Math.max(x0 + (w * s) / 2, half + 8), cw - half - 8), gy + 7);
+
+      canvas.setAttribute(
+        "aria-label",
+        `${cfg.copy.preview}: ${sizeTxt} · ${cfg.shapes[shape()]} · ${mat().name} · ${cfg.tpls[val("plantilla")]} · ${accent().name}${texts().negocio ? ` · "${texts().negocio}"` : ""}`
+      );
+    };
+
+    // Miniaturas de los diseños, con el mismo dibujo que la vista previa
+    const renderTpls = () => {
+      const ids = Object.keys(cfg.tpls);
+      form.querySelectorAll<HTMLCanvasElement>(".et__tpl canvas").forEach((cv, i) => {
+        const c2 = cv.getContext("2d")!;
+        const o: Face = face(true, ids[i] ?? ids[0]);
+        c2.setTransform(1, 0, 0, 1, 0, 0);
+        c2.clearRect(0, 0, cv.width, cv.height);
+        const s = Math.min((cv.width - 12) / o.w, (cv.height - 12) / o.h);
+        const x = (cv.width - o.w * s) / 2;
+        const y = (cv.height - o.h * s) / 2;
+        drawFace(c2, x, y, s, o, false);
+      });
+    };
+
+    // ---------- Resumen para la cotización ----------
+    const summary = () => {
+      const k = cfg.copy;
+      const { w, h } = dims();
+      const t = texts();
+      const tpl = val("plantilla");
+      const sizeTxt = w === h ? `${fmtIn(w)} in` : `${fmtIn(w)} × ${fmtIn(h)} in`;
+      const out = [
+        `${k.summary}:`,
+        `• ${k.sShape}: ${cfg.shapes[shape()]}`,
+        `• ${k.sFormat}: ${sizeTxt}`,
+        `• ${k.sMaterial}: ${mat().name}`,
+        `• ${k.sFinish}: ${cfg.finishes[val("acabado")]}`,
+        `• ${k.sWhere}: ${cfg.wheres[val("envase")]}`,
+        `• ${k.sDesign}: ${cfg.tpls[tpl]}`,
+        `• ${k.sBg}: ${cfg.bgs[val("fondo")]}`,
+        `• ${k.sType}: ${cfg.types[val("tipografia")]}`,
+        `• ${k.sAccent}: ${accent().name}`,
+      ];
+      if (hasPhoto()) out.push(`• ${k.sImage}: ${cfg.images[val("imagen")]}`);
+      out.push(`• ${k.sName}: ${[t.negocio, t.lema].filter(Boolean).join(" · ")}`);
+      if (tpl === "producto" || tpl === "marca" || tpl === "foto") {
+        out.push(`• ${k.sProduct}: ${t.producto}`);
+        if (t.peso) out.push(`• ${k.sWeight}: ${t.peso}`);
+      }
+      if (tpl === "gracias" && t.frase) out.push(`• ${k.sPhrase}: "${t.frase}"`);
+      if (tpl === "direccion") out.push(`• ${k.sAddr}: ${[t.dir1, t.dir2].filter(Boolean).join(", ")}`);
+      if (t.nota) out.push(`• ${k.sNote}: "${t.nota}"`);
+      if (t.web) out.push(`• ${k.sWeb}: ${t.web}`);
+      out.push(`• ${k.sQty}: ${qty()}`, `• ${k.sLink}: ${shareUrl()}`);
+      return out.join("\n");
+    };
+
+    const syncUI = () => {
+      // Cada forma enseña solo sus medidas
+      sizesSeg.querySelectorAll<HTMLLabelElement>("label").forEach((l) => {
+        const mine = l.dataset.for === shape();
+        l.hidden = !mine;
+        l.querySelector("input")!.disabled = !mine;
+      });
+      if (SIZES[val("formato")].shape !== shape()) setRadio("formato", DEF_SIZE[shape()]);
+      imageSeg.querySelectorAll<HTMLInputElement>("input").forEach((i) => (i.disabled = !hasPhoto()));
+      imageSeg.toggleAttribute("data-off", !hasPhoto());
+      shapeHelp.textContent = cfg.shapeHelp[shape()] ?? "";
+      matHelp.textContent = cfg.matHelp[val("material")] ?? "";
+      finishHelp.textContent = cfg.finishHelp[val("acabado")] ?? "";
+      tplHelp.textContent = cfg.tplHelp[val("plantilla")] ?? "";
+      accentName.textContent = accent().name;
+      approx.textContent = guides ? cfg.copy.guidesOn : scene ? cfg.copy.sceneOn : cfg.copy.approx;
+      guidesBtn.setAttribute("aria-pressed", String(guides));
+      sceneBtn.setAttribute("aria-pressed", String(scene));
+      const q = qty();
+      root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.qty) === q)));
+    };
+    const update = () => {
+      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      if (touched) syncUrl();
+    };
+    const render = () => {
+      syncUI();
+      draw();
+      renderTpls();
+      update();
+    };
+
+    // ---------- Eventos ----------
+    const onEdit = (e: Event) => {
+      if (contactBox.contains(e.target as Node)) return;
+      touched = true;
+      render();
+    };
+    form.addEventListener("change", onEdit);
+    form.addEventListener("input", onEdit);
+    root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) =>
+      b.addEventListener("click", () => {
+        qtyEl.value = b.dataset.qty!;
+        touched = true;
+        render();
+      })
+    );
+    guidesBtn.addEventListener("click", () => {
+      guides = !guides;
+      syncUI();
+      draw();
+    });
+    sceneBtn.addEventListener("click", () => {
+      scene = !scene;
+      syncUI();
+      draw();
+    });
+
+    wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
+
+    new ResizeObserver(() => draw()).observe(canvas);
+    Promise.all(
+      [`800 40px "Saira"`, `700 40px "Playfair Display"`, `400 40px "Michroma"`, `500 40px "Instrument Sans"`].map((f) =>
+        document.fonts.load(f).catch(() => [])
+      )
+    ).then(() => render());
+    render();
+  }
+</script>
