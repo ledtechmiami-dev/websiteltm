@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "ltm-website",
-      "runtimeExecutable": "powershell",
-      "runtimeArgs": ["-NoProfile", "-Command", "$env:Path = 'C:\\Program Files\\nodejs;' + $env:Path; $p = if ($env:PORT) { $env:PORT } else { 4321 }; Set-Location 'D:\\Claude Projects\\LTM Website'; npm run dev -- --port $p"],
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; exec npm run dev -- --port \"${PORT:-4321}\""],
       "port": 4321,
       "autoPort": true
     }
