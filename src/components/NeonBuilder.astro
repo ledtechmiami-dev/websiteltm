@@ -269,6 +269,7 @@ const waLogo = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.logo
 
 <script>
   import { wireQuote } from "../scripts/builder-quote";
+  import { fitCanvas, setRadio, shareLink, urlSync, waHref } from "../scripts/builder-core";
 
   type Font = { id: string; name: string; css: string; weight: number };
   type Color = { id: string; hex: string; name: string };
@@ -327,19 +328,14 @@ const waLogo = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.logo
     };
 
     // ---------- Estado en la dirección: el diseño se puede compartir ----------
-    const setRadio = (name: string, v: string | null) => {
-      if (!v) return;
-      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
-      if (input) input.checked = true;
-    };
     const params = new URLSearchParams(location.search);
     if (params.get("neon")) {
       textEl.value = params.get("neon")!.slice(0, 90);
-      setRadio("font", params.get("letra"));
-      setRadio("color", params.get("color"));
-      setRadio("shape", params.get("base"));
-      setRadio("acrylic", params.get("acrilico"));
-      setRadio("use", params.get("uso"));
+      setRadio(form, "font", params.get("letra"));
+      setRadio(form, "color", params.get("color"));
+      setRadio(form, "shape", params.get("base"));
+      setRadio(form, "acrylic", params.get("acrilico"));
+      setRadio(form, "use", params.get("uso"));
       const w = Number(params.get("ancho"));
       if (w >= 12 && w <= MAX_W) widthEl.value = String(Math.round(w));
     }
@@ -353,13 +349,9 @@ const waLogo = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.logo
         acrilico: val("acrylic"),
         uso: val("use"),
       });
-      return `${location.origin}${location.pathname}?${p}#disena`;
+      return shareLink(p);
     };
-    let urlTimer = 0;
-    const syncUrl = () => {
-      clearTimeout(urlTimer);
-      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
-    };
+    const syncUrl = urlSync(shareUrl);
 
     // ---------- Medidas ----------
     type Metrics = { ls: { text: string; left: number; right: number; asc: number; desc: number }[]; inkW: number; inkH: number; top: number; lh: number };
@@ -426,16 +418,9 @@ const waLogo = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.logo
     const draw = (time = 0) => {
       const f = font();
       const col = color();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const cw = canvas.clientWidth;
-      const ch = canvas.clientHeight;
-      if (!cw || !ch) return;
-      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
-        canvas.width = Math.round(cw * dpr);
-        canvas.height = Math.round(ch * dpr);
-      }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cw, ch);
+      const fitted = fitCanvas(canvas, ctx);
+      if (!fitted) return;
+      const { cw, ch, dpr } = fitted;
 
       const m = measure(f);
       // Ancho mínimo según el texto, y alto a partir de la proporción real de las letras
@@ -621,7 +606,7 @@ const waLogo = `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(c.logo
       ].join("\n");
     };
     const update = () => {
-      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      waEl.href = waHref(cfg.phone, cfg.copy.waIntro, summary());
       root.querySelectorAll<HTMLButtonElement>("[data-size]").forEach((b) => {
         b.setAttribute("aria-pressed", String(Number(b.dataset.size) === dims.w));
         b.disabled = Number(b.dataset.size) < minW;

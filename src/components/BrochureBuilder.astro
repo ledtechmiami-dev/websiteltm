@@ -534,6 +534,7 @@ const TPLS = Object.keys(c.tpls);
 
 <script>
   import { wireQuote } from "../scripts/builder-quote";
+  import { afterFonts, fitCanvas, formReaders, onDesignEdit, setRadio, shareLink, urlSync, waHref } from "../scripts/builder-core";
 
   type Stock = { id: string; name: string; base: string; edge: string; ink: string; sub: string; tex: string };
   type Accent = { id: string; name: string; hex: string };
@@ -665,8 +666,7 @@ const TPLS = Object.keys(c.tpls);
     let view: (typeof VIEWS)[number] = "ambas";
     let touched = false; // la dirección cambia solo cuando el cliente toca algo
 
-    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
-    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const { val, text } = formReaders(form);
     const stock = () => cfg.stocks.find((s) => s.id === val("papel")) ?? cfg.stocks[0];
     const accent = () => cfg.accents.find((a) => a.id === val("acento")) ?? cfg.accents[0];
     const fold = () => val("doblez");
@@ -717,14 +717,9 @@ const TPLS = Object.keys(c.tpls);
       ["web", 34],
       ["direccion", 42],
     ];
-    const setRadio = (name: string, v: string | null) => {
-      if (!v) return;
-      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
-      if (input) input.checked = true;
-    };
     const params = new URLSearchParams(location.search);
     if (params.has("doblez") && params.has("formato")) {
-      RADIOS.forEach((n) => setRadio(n, params.get(n)));
+      RADIOS.forEach((n) => setRadio(form, n, params.get(n)));
       FIELDS.forEach(([n, max]) => {
         const v = params.get(n);
         if (v !== null) (form.elements.namedItem(n) as HTMLInputElement).value = v.slice(0, max);
@@ -737,13 +732,9 @@ const TPLS = Object.keys(c.tpls);
       RADIOS.forEach((n) => p.set(n, val(n)));
       FIELDS.forEach(([n]) => p.set(n, text(n)));
       p.set("cantidad", String(qty()));
-      return `${location.origin}${location.pathname}?${p}#disena`;
+      return shareLink(p);
     };
-    let urlTimer = 0;
-    const syncUrl = () => {
-      clearTimeout(urlTimer);
-      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
-    };
+    const syncUrl = urlSync(shareUrl);
 
     // ---------- Dibujo ----------
     // Textura del papel
@@ -1308,16 +1299,9 @@ const TPLS = Object.keys(c.tpls);
     });
 
     const draw = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const cw = canvas.clientWidth;
-      const ch = canvas.clientHeight;
-      if (!cw || !ch) return;
-      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
-        canvas.width = Math.round(cw * dpr);
-        canvas.height = Math.round(ch * dpr);
-      }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cw, ch);
+      const fitted = fitCanvas(canvas, ctx);
+      if (!fitted) return;
+      const { cw, ch } = fitted;
 
       const o = face(false);
       const { w, h } = o;
@@ -1472,7 +1456,7 @@ const TPLS = Object.keys(c.tpls);
       // El reciclado no se consigue grueso: se apaga la opción y se vuelve al estándar
       const grueso = thickSeg.querySelector<HTMLInputElement>("input[value='grueso']")!;
       grueso.disabled = !canThick();
-      if (!canThick() && grueso.checked) setRadio("grosor", "estandar");
+      if (!canThick() && grueso.checked) setRadio(form, "grosor", "estandar");
       imageSeg.querySelectorAll("input").forEach((i) => (i.disabled = !hasPhoto()));
       imageSeg.toggleAttribute("data-off", !hasPhoto());
       foldHelp.textContent = cfg.foldHelp[fold()] ?? "";
@@ -1486,7 +1470,7 @@ const TPLS = Object.keys(c.tpls);
       root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.qty) === q)));
     };
     const update = () => {
-      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      waEl.href = waHref(cfg.phone, cfg.copy.waIntro, summary());
       if (touched) syncUrl();
     };
     const render = () => {
@@ -1497,13 +1481,10 @@ const TPLS = Object.keys(c.tpls);
     };
 
     // ---------- Eventos ----------
-    const onEdit = (e: Event) => {
-      if (contactBox.contains(e.target as Node)) return;
+    onDesignEdit(form, contactBox, () => {
       touched = true;
       render();
-    };
-    form.addEventListener("change", onEdit);
-    form.addEventListener("input", onEdit);
+    });
     root.querySelectorAll<HTMLButtonElement>("[data-qty]").forEach((b) =>
       b.addEventListener("click", () => {
         qtyEl.value = b.dataset.qty!;
@@ -1525,11 +1506,7 @@ const TPLS = Object.keys(c.tpls);
     wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
 
     new ResizeObserver(() => draw()).observe(canvas);
-    Promise.all(
-      [`800 40px "Saira"`, `700 40px "Playfair Display"`, `400 40px "Michroma"`, `500 40px "Instrument Sans"`].map((f) =>
-        document.fonts.load(f).catch(() => [])
-      )
-    ).then(() => render());
+    afterFonts([`800 40px "Saira"`, `700 40px "Playfair Display"`, `400 40px "Michroma"`, `500 40px "Instrument Sans"`], render);
     render();
   }
 </script>

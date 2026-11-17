@@ -608,6 +608,7 @@ const seg = (name: string, options: Record<string, string>, checked?: string) =>
 
 <script>
   import { wireQuote } from "../scripts/builder-quote";
+  import { fitCanvas, setRadio, shareLink, urlSync, waHref } from "../scripts/builder-core";
 
   type Swatch = { id: string; hex: string; wood?: boolean; name: string };
   type Material = { id: string; name: string; sw: string };
@@ -862,15 +863,10 @@ const seg = (name: string, options: Record<string, string>, checked?: string) =>
     };
 
     // ---------- Estado en la dirección: el diseño se puede compartir ----------
-    const setRadio = (name: string, v: string | null) => {
-      if (!v) return;
-      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
-      if (input) input.checked = true;
-    };
     const params = new URLSearchParams(location.search);
     if (params.get("alto") || params.get("largo")) {
       ["alto", "modo", "colores", "material", "patron", "patron2", "variacion", "color", "cpostes", "pvc", "postes", "topes", "luz", "instal", "uso"]
-        .forEach((n) => setRadio(n, params.get(n)));
+        .forEach((n) => setRadio(form, n, params.get(n)));
       const l = Number(params.get("largo"));
       if (l >= MIN_LEN && l <= MAX_LEN) lenEl.value = String(Math.round(l));
       const md = Number(params.get("medida"));
@@ -920,13 +916,9 @@ const seg = (name: string, options: Record<string, string>, checked?: string) =>
       if (canVary()) p.set("variacion", val("variacion"));
       if (panelMode() && varied()) p.set("patron2", val("patron2"));
       if (mixed()) p.set("tablillas", design.map(code).join(","));
-      return `${location.origin}${location.pathname}?${p}#disena`;
+      return shareLink(p);
     };
-    let urlTimer = 0;
-    const syncUrl = () => {
-      clearTimeout(urlTimer);
-      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
-    };
+    const syncUrl = urlSync(shareUrl);
 
     // ---------- Texturas ----------
     // Veta de madera: va igual en el aluminio con simulación y en el PVC de madera
@@ -1120,16 +1112,9 @@ const seg = (name: string, options: Record<string, string>, checked?: string) =>
 
     // ---------- Dibujo ----------
     const draw = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const cw = canvas.clientWidth;
-      const ch = canvas.clientHeight;
-      if (!cw || !ch) return;
-      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
-        canvas.width = Math.round(cw * dpr);
-        canvas.height = Math.round(ch * dpr);
-      }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cw, ch);
+      const fitted = fitCanvas(canvas, ctx);
+      if (!fitted) return;
+      const { cw, ch, dpr } = fitted;
 
       const H = heightFt();
       const total = lengthFt();
@@ -1673,7 +1658,7 @@ const seg = (name: string, options: Record<string, string>, checked?: string) =>
           ? cfg.copy.slatsOut1
           : cfg.copy.slatsOut.replace("{n}", String(design.length));
       lenHelp.textContent = cfg.copy.lenHelp.replace("{m}", String(panelMax()));
-      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      waEl.href = waHref(cfg.phone, cfg.copy.waIntro, summary());
       if (touched) syncUrl();
     };
     const render = () => {

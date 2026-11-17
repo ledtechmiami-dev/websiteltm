@@ -389,6 +389,7 @@ const retSwatch = (hex: string) =>
 
 <script>
   import { wireQuote } from "../scripts/builder-quote";
+  import { fitCanvas, setRadio, shareLink, urlSync, waHref } from "../scripts/builder-core";
 
   type Font = { id: string; name: string; css: string; weight: number };
   type Face = { id: string; hex: string; glow: string; name: string };
@@ -495,16 +496,11 @@ const retSwatch = (hex: string) =>
     };
 
     // ---------- Estado en la dirección: el diseño se puede compartir ----------
-    const setRadio = (name: string, v: string | null) => {
-      if (!v) return;
-      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
-      if (input) input.checked = true;
-    };
     const params = new URLSearchParams(location.search);
     if (params.get("letrero")) {
       textEl.value = params.get("letrero")!.slice(0, 60);
       ["font", "luz", "cara", "halo", "canto", "montaje", "instal", "uso"].forEach((n) =>
-        setRadio(n, params.get(n === "font" ? "letra" : n))
+        setRadio(form, n, params.get(n === "font" ? "letra" : n))
       );
       const h = Number(params.get("altura"));
       if (h >= MIN_H && h <= MAX_H) heightEl.value = String(Math.round(h));
@@ -525,13 +521,9 @@ const retSwatch = (hex: string) =>
         uso: val("uso"),
       });
       if (val("cara") === "marca") p.set("color", hexEl.value.slice(1));
-      return `${location.origin}${location.pathname}?${p}#disena`;
+      return shareLink(p);
     };
-    let urlTimer = 0;
-    const syncUrl = () => {
-      clearTimeout(urlTimer);
-      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
-    };
+    const syncUrl = urlSync(shareUrl);
 
     // ---------- Medidas (a 100 px; la altura de la letra es la de la mayúscula) ----------
     type Line = { text: string; left: number; right: number; asc: number; desc: number };
@@ -561,16 +553,9 @@ const retSwatch = (hex: string) =>
     // ---------- Dibujo ----------
     const draw = () => {
       const f = font();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const cw = canvas.clientWidth;
-      const ch = canvas.clientHeight;
-      if (!cw || !ch) return;
-      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
-        canvas.width = Math.round(cw * dpr);
-        canvas.height = Math.round(ch * dpr);
-      }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cw, ch);
+      const fitted = fitCanvas(canvas, ctx);
+      if (!fitted) return;
+      const { cw, ch, dpr } = fitted;
 
       const m = measure(f);
       const H = heightIn();
@@ -807,7 +792,7 @@ const retSwatch = (hex: string) =>
     };
     const update = () => {
       lengthOut.value = `≈ ${Math.round(size.len)} in · ${fmtFt(size.len)}`;
-      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      waEl.href = waHref(cfg.phone, cfg.copy.waIntro, summary());
       if (touched) syncUrl();
     };
 
@@ -833,7 +818,7 @@ const retSwatch = (hex: string) =>
         const ls = textEl.value.split("\n");
         if (ls.length > 2) textEl.value = ls.slice(0, 2).join("\n");
       }
-      if (e.target === hexEl) setRadio("cara", "marca");
+      if (e.target === hexEl) setRadio(form, "cara", "marca");
       render();
     };
     form.addEventListener("input", onEdit);

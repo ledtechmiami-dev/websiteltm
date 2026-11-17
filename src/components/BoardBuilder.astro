@@ -341,6 +341,7 @@ const swatch = (m: (typeof MATERIALS)[number]) =>
 
 <script>
   import { wireQuote } from "../scripts/builder-quote";
+  import { afterFonts, fitCanvas, formReaders, onDesignEdit, setRadio, shareLink, urlSync, waHref } from "../scripts/builder-core";
 
   type Mat = { id: string; name: string; base: string; dark: string; grain: string; ink: string; strips: number };
   type Cfg = {
@@ -499,8 +500,7 @@ const swatch = (m: (typeof MATERIALS)[number]) =>
     let bg = "clara";
     let touched = false; // la dirección cambia solo cuando el cliente toca algo
 
-    const val = (name: string) => (form.elements.namedItem(name) as RadioNodeList).value;
-    const text = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value.trim();
+    const { val, text } = formReaders(form);
     const mat = () => cfg.materials.find((m) => m.id === val("material")) ?? cfg.materials[0];
     const dims = () => {
       const L = Number(lenEl.value);
@@ -511,17 +511,12 @@ const swatch = (m: (typeof MATERIALS)[number]) =>
     const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
     // ---------- Estado en la dirección: el diseño se puede compartir ----------
-    const setRadio = (name: string, v: string | null) => {
-      if (!v) return;
-      const input = form.querySelector<HTMLInputElement>(`input[name='${name}'][value='${CSS.escape(v)}']`);
-      if (input) input.checked = true;
-    };
     const setText = (name: string, v: string | null, max: number) => {
       if (v !== null) (form.elements.namedItem(name) as HTMLInputElement).value = v.slice(0, max);
     };
     const params = new URLSearchParams(location.search);
     if (params.has("forma")) {
-      ["material", "forma", "grosor", "canal", "agarraderas", "plantilla", "uso"].forEach((n) => setRadio(n, params.get(n)));
+      ["material", "forma", "grosor", "canal", "agarraderas", "plantilla", "uso"].forEach((n) => setRadio(form, n, params.get(n)));
       const L = Number(params.get("largo"));
       const W = Number(params.get("ancho"));
       if (L >= 8 && L <= 30) lenEl.value = String(Math.round(L));
@@ -547,13 +542,9 @@ const swatch = (m: (typeof MATERIALS)[number]) =>
         cantidad: String(qty()),
         uso: val("uso"),
       });
-      return `${location.origin}${location.pathname}?${p}#disena`;
+      return shareLink(p);
     };
-    let urlTimer = 0;
-    const syncUrl = () => {
-      clearTimeout(urlTimer);
-      urlTimer = window.setTimeout(() => history.replaceState(null, "", shareUrl()), 400);
-    };
+    const syncUrl = urlSync(shareUrl);
 
     // ---------- Dibujo ----------
     // Madera: tiras encoladas con tonos un poco distintos y vetas a lo largo
@@ -693,16 +684,9 @@ const swatch = (m: (typeof MATERIALS)[number]) =>
     };
 
     const draw = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const cw = canvas.clientWidth;
-      const ch = canvas.clientHeight;
-      if (!cw || !ch) return;
-      if (canvas.width !== Math.round(cw * dpr) || canvas.height !== Math.round(ch * dpr)) {
-        canvas.width = Math.round(cw * dpr);
-        canvas.height = Math.round(ch * dpr);
-      }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cw, ch);
+      const fitted = fitCanvas(canvas, ctx);
+      if (!fitted) return;
+      const { cw, ch, dpr } = fitted;
 
       const { L, W } = dims();
       const shape = val("forma");
@@ -849,7 +833,7 @@ const swatch = (m: (typeof MATERIALS)[number]) =>
       });
     };
     const update = () => {
-      waEl.href = `https://wa.me/${cfg.phone}?text=${encodeURIComponent(`${cfg.copy.waIntro}\n\n${summary()}`)}`;
+      waEl.href = waHref(cfg.phone, cfg.copy.waIntro, summary());
       if (touched) syncUrl();
     };
     const render = () => {
@@ -859,13 +843,7 @@ const swatch = (m: (typeof MATERIALS)[number]) =>
     };
 
     // ---------- Eventos ----------
-    form.addEventListener("change", (e) => {
-      if (contactBox.contains(e.target as Node)) return;
-      touched = true;
-      render();
-    });
-    form.addEventListener("input", (e) => {
-      if (contactBox.contains(e.target as Node)) return;
+    onDesignEdit(form, contactBox, () => {
       touched = true;
       render();
     });
@@ -888,9 +866,7 @@ const swatch = (m: (typeof MATERIALS)[number]) =>
     wireQuote(form, { formValue: cfg.formValue, lang: cfg.lang, summary });
 
     new ResizeObserver(() => draw()).observe(canvas);
-    Promise.all(
-      [`400 40px "Great Vibes"`, `700 40px "Playfair Display"`, `700 40px "Saira"`].map((f) => document.fonts.load(f).catch(() => []))
-    ).then(() => draw());
+    afterFonts([`400 40px "Great Vibes"`, `700 40px "Playfair Display"`, `700 40px "Saira"`], draw);
     render();
   }
 </script>
