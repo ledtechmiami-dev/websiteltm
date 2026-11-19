@@ -2,6 +2,12 @@
 import Layout from "../layouts/Layout.astro";
 import LineArt from "../components/LineArt.astro";
 import PhotoSlot from "../components/PhotoSlot.astro";
+import { Image } from "astro:assets";
+import heroLetreros from "../assets/hero/letreros.png";
+import heroFabricacion from "../assets/hero/fabricacion.png";
+import heroMarino from "../assets/hero/marino.png";
+import heroIluminacion from "../assets/hero/iluminacion.png";
+import heroGraficos from "../assets/hero/graficos.png";
 import Strip from "../components/Strip.astro";
 import Marquee from "../components/Marquee.astro";
 import Steps from "../components/Steps.astro";
@@ -27,6 +33,16 @@ const COPY = {
   en: { pack: "Package", from: "From", pricePending: "starting price", packCta: "Get a quote for this package", workLink: "See projects" },
 };
 const c = COPY[lang];
+
+// Foto de cada mosaico; las líneas sin foto siguen con su dibujo
+// Foto de cada mosaico (llena el mosaico); pos: punto de la foto que queda centrado al recortar
+const heroPhotos: Partial<Record<LineKey, { src: ImageMetadata; pos?: string }>> = {
+  letreros: { src: heroLetreros, pos: "50% 45%" },
+  fabricacion: { src: heroFabricacion, pos: "38% 60%" },
+  marino: { src: heroMarino, pos: "48% 50%" },
+  iluminacion: { src: heroIluminacion, pos: "50% 22%" },
+  graficos: { src: heroGraficos, pos: "55% 45%" },
+};
 
 const heroTiles: { area: string; key: LineKey }[] = [
   { area: "a", key: "letreros" },
@@ -94,7 +110,9 @@ const schema = {
         const l = lineByKey(key);
         return (
           <a class={`tile bento__${area}`} href={lineUrl(l, lang)} style={`--ground:${l.ground}`}>
-            <LineArt type={key} />
+            {heroPhotos[key]
+              ? <Image class="tile__photo" src={heroPhotos[key].src} alt="" widths={[480, 960]} sizes="(max-width: 700px) 60vw, 26vw" loading="eager" style={`object-position:${heroPhotos[key].pos ?? "center"}`} />
+              : <LineArt type={key} />}
             <span class="tile__label">
               <span class="chip" style={`--c:${l.color}`}></span>{l[lang].name}
               <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
